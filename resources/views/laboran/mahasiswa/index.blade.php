@@ -1,0 +1,48 @@
+@extends('layouts.app')
+@section('title','Mahasiswa')
+@section('page-title','Manajemen Mahasiswa')
+@section('content')
+<div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Mahasiswa</button></div>
+<div class="card"><div class="table-wrapper"><table class="table">
+    <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas / Praktikum</th><th>Mata Kuliah</th><th>Aksi</th></tr></thead>
+    <tbody>
+    @forelse($mahasiswaAll as $m)
+    <tr>
+        <td style="font-family:monospace;font-size:13px;">{{ $m->nim_mahasiswa }}</td>
+        <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">{{ $m->initials }}</div><span class="fw-600">{{ $m->nama_mahasiswa }}</span></div></td>
+        <td><span class="badge badge-primary">{{ $m->praktikum?->nama_kelas }}</span></td>
+        <td class="fs-13">{{ $m->praktikum?->mataKuliah?->nama_mk }}</td>
+        <td>
+            <div style="display:flex;gap:6px;">
+                <a href="{{ route('laboran.mahasiswa.nilai',$m) }}" class="btn btn-sm btn-primary">Nilai &amp; Absensi</a>
+                <a href="{{ route('laboran.mahasiswa.edit',$m) }}" class="btn btn-sm btn-outline">Edit</a>
+                <form method="POST" action="{{ route('laboran.mahasiswa.destroy',$m) }}" style="margin:0;">@csrf @method('DELETE')
+                <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus mahasiswa ini?')">Hapus</button></form>
+            </div>
+        </td>
+    </tr>
+    @empty<tr><td colspan="5"><div class="empty-state"><p>Belum ada mahasiswa.</p></div></td></tr>
+    @endforelse
+    </tbody>
+</table></div>
+@if($mahasiswaAll->hasPages())<div class="card-footer">{{ $mahasiswaAll->links() }}</div>@endif
+</div>
+<div id="modalTambah" class="modal-overlay"><div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Mahasiswa</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
+    <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.store') }}">@csrf
+    <div class="grid grid-2">
+        <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" required></div>
+        <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" required></div>
+        <div class="form-group" style="grid-column:span 2"><label class="form-label required">Kelas / Praktikum</label>
+            <select name="praktikum_id" class="form-select" required>
+                <option value="">Pilih kelas...</option>
+                @foreach($praktikumAll as $p)
+                <option value="{{ $p->id }}">{{ $p->mataKuliah?->kode_mk }} — {{ $p->mataKuliah?->nama_mk }} ({{ $p->nama_kelas }}) {{ $p->asisten ? '| Asisten: '.$p->asisten->nama_asisten : '' }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Tambah</button></div>
+    </form></div>
+</div></div>
+@endsection

@@ -1,0 +1,78 @@
+@php $role = auth()->user()?->role_name; @endphp
+<aside class="sidebar" id="sidebar">
+    {{-- Brand dengan logo dari file image (poin #5) --}}
+    <div class="sidebar-brand">
+        <img src="{{ asset('images/logo.svg') }}" alt="Asistio Logo" class="sidebar-logo-img">
+        <span class="sidebar-brand-name">Asistio</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        {{-- Laboran --}}
+        @if($role === 'laboran')
+            <a href="{{ route('laboran.dashboard') }}" class="nav-item {{ request()->routeIs('laboran.dashboard') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <div class="nav-section-label">Data Master</div>
+            <a href="{{ route('laboran.mata-kuliah') }}" class="nav-item {{ request()->routeIs('laboran.mata-kuliah*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                <span>Mata Kuliah</span>
+            </a>
+            <a href="{{ route('laboran.kelas') }}" class="nav-item {{ request()->routeIs('laboran.kelas*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Kelas Praktikum</span>
+            </a>
+            <a href="{{ route('laboran.ruangan') }}" class="nav-item {{ request()->routeIs('laboran.ruangan*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Ruangan</span>
+            </a>
+            <div class="nav-section-label">Kelola Pengguna</div>
+            <a href="{{ route('laboran.asisten') }}" class="nav-item {{ request()->routeIs('laboran.asisten*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <span>Asisten</span>
+            </a>
+            <a href="{{ route('laboran.dosen') }}" class="nav-item {{ request()->routeIs('laboran.dosen*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                <span>Dosen</span>
+            </a>
+            <a href="{{ route('laboran.mahasiswa') }}" class="nav-item {{ request()->routeIs('laboran.mahasiswa*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <span>Mahasiswa</span>
+            </a>
+        @endif
+
+        {{-- Asisten --}}
+        @if($role === 'asisten')
+            <a href="{{ route('asisten.dashboard') }}" class="nav-item {{ request()->routeIs('asisten.dashboard') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+            </a>
+        @endif
+
+        {{-- Dosen/Pengawas --}}
+        @if($role === 'dosen')
+            <a href="{{ route('pengawas.dashboard') }}" class="nav-item {{ request()->routeIs('pengawas.dashboard') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+            </a>
+        @endif
+    </nav>
+
+    {{-- User info + logout di bagian bawah sidebar --}}
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="sidebar-user-avatar">{{ auth()->user()->initials }}</div>
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">{{ auth()->user()->nama }}</div>
+                <div class="sidebar-user-role">{{ ucfirst($role) }}</div>
+            </div>
+        </div>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="sidebar-logout" title="Keluar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </form>
+    </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
