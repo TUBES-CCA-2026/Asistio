@@ -2,6 +2,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Praktikum extends Model {
+    protected $table = 'praktikum';
     protected $fillable = ['mata_kuliah_id','nama_kelas','jadwal','ruangan_id','dosen_id','asisten_id'];
     public function mataKuliah() { return $this->belongsTo(MataKuliah::class); }
     public function ruangan()    { return $this->belongsTo(Ruangan::class); }

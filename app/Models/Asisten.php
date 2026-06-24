@@ -2,6 +2,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Asisten extends Model {
+    protected $table = 'asisten';
     protected $fillable = ['nama_asisten','nim','user_id'];
     public function user()      { return $this->belongsTo(User::class); }
     public function praktikum() { return $this->hasMany(Praktikum::class); }

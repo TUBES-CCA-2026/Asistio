@@ -2,6 +2,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Mahasiswa extends Model {
+    protected $table = 'mahasiswa';
     protected $fillable = ['nim_mahasiswa','nama_mahasiswa','praktikum_id'];
     public function praktikum()      { return $this->belongsTo(Praktikum::class); }
     // Shortcut: mata kuliah melalui praktikum

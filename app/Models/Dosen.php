@@ -2,6 +2,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Dosen extends Model {
+    protected $table = 'dosen';
     protected $fillable = ['nama_dosen','nidn','user_id'];
     public function user()      { return $this->belongsTo(User::class); }
     public function praktikum() { return $this->hasMany(Praktikum::class); }
