@@ -51,11 +51,16 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // Sistem auto-redirect berdasarkan role di database
+        // Catat session ini sebagai satu-satunya sesi aktif milik akun ini.
+        // Login dari device lain akan menimpa nilai ini, sehingga sesi lama otomatis tidak valid.
+        Auth::user()->update(['current_session_id' => $request->session()->getId()]);
+
         return redirect()->intended($this->redirectPath());
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        Auth::user()?->update(['current_session_id' => null]);
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

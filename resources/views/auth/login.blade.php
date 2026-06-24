@@ -31,6 +31,12 @@
                 <span>{{ session('success') }}</span>
             </div>
         @endif
+        @if(session('error'))
+            <div class="alert alert-error" style="margin-bottom:16px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
 
         {{-- Form Login — tanpa pemilihan role --}}
         <form method="POST" action="{{ route('login.post') }}" class="auth-form">
