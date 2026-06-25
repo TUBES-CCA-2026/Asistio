@@ -42,7 +42,6 @@
     <div class="modal-body"><form method="POST" action="{{ route('laboran.dosen.store') }}">@csrf
     <div class="form-group"><label class="form-label required">Nama Dosen</label><input name="nama_dosen" class="form-control" required></div>
     <div class="form-group"><label class="form-label">NIDN</label><input name="nidn" class="form-control" placeholder="opsional"></div>
-    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">Mata kuliah yang diampu ditentukan saat membuat Kelas Praktikum.</p>
     <div class="form-group"><label class="form-label required">Username (untuk login)</label><input name="username" class="form-control" required></div>
     <div class="form-group"><label class="form-label required">Password</label><input type="password" name="password" class="form-control" required minlength="6"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
