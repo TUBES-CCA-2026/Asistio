@@ -11,10 +11,20 @@
     </tr></thead>
     <tbody>
     <?php $__currentLoopData = $mahasiswaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-    <?php $pp = $presensiAll[$m->id] ?? collect(); ?>
-    <tr>
+    <?php
+        $pp = $presensiAll[$m->id] ?? collect();
+        $jumlahAlpa = $pp->where('status_kehadiran','A')->count();
+        $alpaTinggi = $jumlahAlpa >= \App\Models\Mahasiswa::BATAS_ALPA;
+    ?>
+    <tr class="<?php echo e($alpaTinggi ? 'row-alpa-alert' : ''); ?>">
         <td style="font-family:monospace;font-size:11px;"><?php echo e($m->nim_mahasiswa); ?></td>
-        <td class="fw-500"><?php echo e($m->nama_mahasiswa); ?></td>
+        <td class="fw-500">
+            <?php echo e($m->nama_mahasiswa); ?>
+
+            <?php if($alpaTinggi): ?>
+                <span class="badge-alpa-alert" title="Sudah alpa <?php echo e($jumlahAlpa); ?>x — sudah mencapai/melewati batas <?php echo e(\App\Models\Mahasiswa::BATAS_ALPA); ?> pertemuan">⚠ Alpa <?php echo e($jumlahAlpa); ?>×</span>
+            <?php endif; ?>
+        </td>
         <?php for($j=1;$j<=14;$j++): ?>
         <?php $ps=$pp[$j]??null; ?>
         <td style="text-align:center;padding:4px 2px;">

@@ -12,10 +12,19 @@
     </tr></thead>
     <tbody>
     @foreach($mahasiswaList as $m)
-    @php $pp = $presensiAll[$m->id] ?? collect(); @endphp
-    <tr>
+    @php
+        $pp = $presensiAll[$m->id] ?? collect();
+        $jumlahAlpa = $pp->where('status_kehadiran','A')->count();
+        $alpaTinggi = $jumlahAlpa >= \App\Models\Mahasiswa::BATAS_ALPA;
+    @endphp
+    <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
         <td style="font-family:monospace;font-size:11px;">{{ $m->nim_mahasiswa }}</td>
-        <td class="fw-500">{{ $m->nama_mahasiswa }}</td>
+        <td class="fw-500">
+            {{ $m->nama_mahasiswa }}
+            @if($alpaTinggi)
+                <span class="badge-alpa-alert" title="Sudah alpa {{ $jumlahAlpa }}x — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Alpa {{ $jumlahAlpa }}×</span>
+            @endif
+        </td>
         @for($j=1;$j<=14;$j++)
         @php $ps=$pp[$j]??null; @endphp
         <td style="text-align:center;padding:4px 2px;">
