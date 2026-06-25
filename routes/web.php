@@ -2,6 +2,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\LaboranController;
 use App\Http\Controllers\AsistenController;
+use App\Http\Controllers\DosenController;
 use App\Http\Controllers\PengawasController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,8 +65,14 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     Route::post('/ganti-password', [AsistenController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
 });
 
-// ── Pengawas / Dosen ────────────────────────────────────────────────────────
+// ── Dosen (Pengawas) ────────────────────────────────────────────────────────
 Route::prefix('pengawas')->middleware(['auth','role:dosen'])->name('pengawas.')->group(function () {
     Route::get('/dashboard',            [PengawasController::class,'dashboard'])->name('dashboard');
     Route::get('/rekap/{praktikum}',    [PengawasController::class,'rekap'])->name('rekap');
+});
+
+// ── Dosen — Ganti Password ─────────────────────────────────────────────────
+Route::prefix('dosen')->middleware(['auth','role:dosen'])->name('dosen.')->group(function () {
+    Route::get('/ganti-password',  [DosenController::class,'gantiPassword'])->name('ganti-password');
+    Route::post('/ganti-password', [DosenController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
 });

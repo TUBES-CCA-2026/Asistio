@@ -10,4 +10,8 @@ class Dosen extends Model {
     public function mataKuliah() {
         return MataKuliah::whereIn('id', $this->praktikum()->pluck('mata_kuliah_id'))->get();
     }
+    // Daftar mata kuliah yang diampu (lewat praktikum) — method biasa, BUKAN relasi Eloquent.
+    public function daftarMataKuliah() {
+        return MataKuliah::whereIn('id', $this->praktikum()->pluck('mata_kuliah_id'))->get();
+    }
 }
