@@ -7,9 +7,14 @@
     <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas / Praktikum</th><th>Mata Kuliah</th><th>Aksi</th></tr></thead>
     <tbody>
     @forelse($mahasiswaAll as $m)
-    <tr>
+    @php $alpaTinggi = $m->melebihiBatasAlpa(); @endphp
+    <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
         <td style="font-family:monospace;font-size:13px;">{{ $m->nim_mahasiswa }}</td>
-        <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">{{ $m->initials }}</div><span class="fw-600">{{ $m->nama_mahasiswa }}</span></div></td>
+        <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">{{ $m->initials }}</div><span class="fw-600">{{ $m->nama_mahasiswa }}</span>
+            @if($alpaTinggi)
+                <span class="badge-alpa-alert" title="Sudah alpa {{ $m->jumlah_alpa }}x — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Alpa {{ $m->jumlah_alpa }}×</span>
+            @endif
+        </div></td>
         <td><span class="badge badge-primary">{{ $m->praktikum?->nama_kelas }}</span></td>
         <td class="fs-13">{{ $m->praktikum?->mataKuliah?->nama_mk }}</td>
         <td>

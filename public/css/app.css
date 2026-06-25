@@ -246,6 +246,15 @@ img { max-width: 100%; height: auto; }
 .table td { padding: 12px 14px; border-bottom: 1px solid var(--border-light); font-size: 13.5px; vertical-align: middle; }
 .table tbody tr:hover { background: var(--bg-page); }
 .table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr.row-alpa-alert { background: rgba(239,68,68,.10); }
+.table tbody tr.row-alpa-alert:hover { background: rgba(239,68,68,.16); }
+.badge-alpa-alert {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 8px; padding: 2px 8px;
+  background: var(--status-a); color: #fff;
+  font-size: 11px; font-weight: 700; border-radius: 999px;
+  white-space: nowrap; vertical-align: middle;
+}
 
 /* ─── FORMS ──────────────────────────────────────────────────────── */
 .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }

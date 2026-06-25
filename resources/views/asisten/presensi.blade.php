@@ -31,11 +31,20 @@
         <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $i => $m)
-        @php $p = $presensiMap[$m->id] ?? null; $status = $p?->status_kehadiran ?? 'H'; @endphp
-        <tr>
+        @php
+            $p = $presensiMap[$m->id] ?? null;
+            $status = $p?->status_kehadiran ?? 'H';
+            $alpaTinggi = $m->melebihiBatasAlpa();
+        @endphp
+        <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
             <td>{{ str_pad($i+1,2,'0',STR_PAD_LEFT) }}</td>
             <td style="font-family:monospace;font-size:12px;">{{ $m->nim_mahasiswa }}</td>
-            <td class="fw-500">{{ $m->nama_mahasiswa }}</td>
+            <td class="fw-500">
+                {{ $m->nama_mahasiswa }}
+                @if($alpaTinggi)
+                    <span class="badge-alpa-alert" title="Sudah alpa {{ $m->jumlah_alpa }}x — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Alpa {{ $m->jumlah_alpa }}×</span>
+                @endif
+            </td>
             @foreach(['H','I','S','A'] as $s)
             <td style="text-align:center;">
                 <label class="radio-circle radio-{{ strtolower($s) }}">
