@@ -4,6 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 class Mahasiswa extends Model {
     protected $table = 'mahasiswa';
     protected $fillable = ['nim_mahasiswa','nama_mahasiswa','praktikum_id'];
+    public const BATAS_ALPA = 4;
     public function praktikum()      { return $this->belongsTo(Praktikum::class); }
     // Shortcut: mata kuliah melalui praktikum
     public function getMataKuliahAttribute() { return $this->praktikum?->mataKuliah; }
@@ -19,6 +20,10 @@ class Mahasiswa extends Model {
     // Hitung alpa secara dinamis (tidak disimpan di DB)
     public function getJumlahAlpaAttribute(): int {
         return $this->presensi()->where('status_kehadiran','A')->count();
+    }
+    // Cek apakah jumlah alpa sudah melebihi batas (4)
+    public function melebihiBatasAlpa(): bool {
+        return $this->jumlah_alpa >= self::BATAS_ALPA;
     }
     // Persentase kehadiran dari presensi aktual
     public function getPersentaseHadirAttribute(): string {
