@@ -28,6 +28,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // ── Dropdown toggle ──────────────────────────────────────────
+    document.querySelectorAll('[data-dropdown-toggle]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = document.getElementById(btn.getAttribute('data-dropdown-toggle'));
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+            if (!isOpen) {
+                menu.classList.add('open');
+                const rect = btn.getBoundingClientRect();
+                let left = rect.right - menu.offsetWidth;
+                if (left < 8) left = 8;
+                menu.style.top  = (rect.bottom + 6) + 'px';
+                menu.style.left = left + 'px';
+            }
+        });
+    });
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    });
+    window.addEventListener('scroll', () => {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    }, true);
+
     // Tutup modal: data-modal-close="namaId" atau klik overlay
     document.querySelectorAll('[data-modal-close]').forEach(btn => {
         btn.addEventListener('click', () => {

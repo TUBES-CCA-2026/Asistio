@@ -94,6 +94,17 @@ class LaboranController extends Controller
         $asisten->user?->delete(); $asisten->delete();
         return back()->with('success','Asisten dihapus.');
     }
+    public function asistenResetPassword(Request $request, Asisten $asisten): RedirectResponse {
+        $v = $request->validate([
+            'password' => ['required','min:6','confirmed'],
+        ]);
+        // current_session_id ikut di-null-kan → kalau ada sesi lama yang masih aktif, otomatis ter-logout
+        $asisten->user?->update([
+            'password'           => Hash::make($v['password']),
+            'current_session_id' => null,
+        ]);
+        return back()->with('success', "Password {$asisten->nama_asisten} berhasil direset.");
+    }
 
     // ── Dosen ──────────────────────────────────────────────────────────────
     public function dosen(): View {
@@ -119,6 +130,14 @@ class LaboranController extends Controller
     public function dosenDestroy(Dosen $dosen): RedirectResponse {
         $dosen->user?->delete(); $dosen->delete();
         return back()->with('success','Dosen dihapus.');
+    }
+    public function dosenResetPassword(Request $request, Dosen $dosen): RedirectResponse {
+        $v = $request->validate(['password' => ['required','min:6','confirmed']]);
+        $dosen->user?->update([
+            'password'           => Hash::make($v['password']),
+            'current_session_id' => null,
+        ]);
+        return back()->with('success', "Password {$dosen->nama_dosen} berhasil direset.");
     }
 
     // ── Mahasiswa — kini memilih praktikum bukan mata kuliah ───────────────

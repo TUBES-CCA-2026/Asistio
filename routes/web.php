@@ -31,10 +31,12 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
     Route::post('/asisten',                   [LaboranController::class,'asistenStore'])->name('asisten.store');
+    Route::patch('/asisten/{asisten}/reset-password', [LaboranController::class,'asistenResetPassword'])->name('asisten.reset-password');
     Route::delete('/asisten/{asisten}',       [LaboranController::class,'asistenDestroy'])->name('asisten.destroy');
     // Dosen
     Route::get('/dosen',                      [LaboranController::class,'dosen'])->name('dosen');
     Route::post('/dosen',                     [LaboranController::class,'dosenStore'])->name('dosen.store');
+    Route::patch('/dosen/{dosen}/reset-password', [LaboranController::class,'dosenResetPassword'])->name('dosen.reset-password');
     Route::delete('/dosen/{dosen}',           [LaboranController::class,'dosenDestroy'])->name('dosen.destroy');
     // Mahasiswa
     Route::get('/mahasiswa',                  [LaboranController::class,'mahasiswa'])->name('mahasiswa');
@@ -57,6 +59,9 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     Route::post('/nilai/{praktikum}/mahasiswa/{mahasiswa}',           [AsistenController::class,'nilaiSimpan'])->name('nilai.simpan');
     // Rekap per kelas
     Route::get('/rekap/{praktikum}',                                  [AsistenController::class,'rekap'])->name('rekap');
+    // Ganti password
+    Route::get('/ganti-password',  [AsistenController::class,'gantiPassword'])->name('ganti-password');
+    Route::post('/ganti-password', [AsistenController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
 });
 
 // ── Pengawas / Dosen ────────────────────────────────────────────────────────
