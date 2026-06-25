@@ -63,6 +63,7 @@ class LaboranController extends Controller
             'ruangan_id'     => ['nullable','exists:ruangan,id'],
             'dosen_id'       => ['nullable','exists:dosen,id'],
             'asisten_id'     => ['nullable','exists:asisten,id'],
+            'asisten2_id'    => ['nullable','exists:asisten,id'],
         ]);
         Praktikum::create($v);
         return back()->with('success','Kelas ditambahkan.');

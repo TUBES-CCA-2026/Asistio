@@ -24,6 +24,6 @@ class DosenController extends Controller
 
         Auth::user()->update(['password' => Hash::make($v['password_baru'])]);
 
-        return back()->with('success', 'Password berhasil diubah.');
+        return redirect()->route('pengawas.dashboard')->with('success', 'Password berhasil diubah.');
     }
 }

@@ -101,6 +101,6 @@ class AsistenController extends Controller
             'password_baru.confirmed'        => 'Konfirmasi password tidak cocok.',
         ]);
         Auth::user()->update(['password' => Hash::make($v['password_baru'])]);
-        return back()->with('success','Password berhasil diubah.');
+        return redirect()->route('asisten.dashboard')->with('success','Password berhasil diubah.');
     }
 }

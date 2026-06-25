@@ -2,6 +2,9 @@
 @section('title','Dashboard Asisten')
 @section('page-title','Dashboard Asisten')
 @section('content')
+@if($errors->any())
+<script>document.addEventListener('DOMContentLoaded',()=>{ const o=document.getElementById('modalGantiPassword'); if(o) o.classList.add('is-open'); });</script>
+@endif
 <div class="hero-banner">
     <h1 class="hero-title">Halo, {{ auth()->user()->nama }}! 👋</h1>
     <p class="hero-subtitle">Pilih kelas yang Anda ampu untuk memulai presensi atau pengisian nilai.</p>
@@ -31,4 +34,15 @@
 @endforeach
 </div>
 @endif
+<div id="modalGantiPassword" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">...</div>
+        <div class="modal-body">
+            <form method="POST" action="{{ route('asisten.ganti-password.update') }}">
+                @csrf
+                {{-- input password_lama, password_baru, konfirmasi --}}
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

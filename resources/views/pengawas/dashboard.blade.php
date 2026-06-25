@@ -2,6 +2,9 @@
 @section('title','Dashboard Pengawas')
 @section('page-title','Monitoring Praktikum')
 @section('content')
+@if($errors->any())
+<script>document.addEventListener('DOMContentLoaded',()=>{ const o=document.getElementById('modalGantiPassword'); if(o) o.classList.add('is-open'); });</script>
+@endif
 <div class="hero-banner">
     <h1 class="hero-title">Selamat datang, {{ $dosen?->nama_dosen ?? auth()->user()->username }}!</h1>
     <p class="hero-subtitle">Pantau rekap nilai dan presensi mahasiswa per kelas.</p>
@@ -20,6 +23,8 @@
             @if($kelas->jadwal)<span>{{ $kelas->jadwal }}</span>@endif
             <span>{{ $kelas->mahasiswa_count }} mahasiswa</span>
             @if($kelas->asisten)<span>Asisten: {{ $kelas->asisten->nama_asisten }}</span>@endif
+            @if($kelas->asisten)<span>Asisten 1: {{ $kelas->asisten->nama_asisten }}</span>@endif
+            @if($kelas->asisten2)<span>Asisten 2: {{ $kelas->asisten2->nama_asisten }}</span>@endif
         </div>
     </div>
     <div class="course-card-footer">
@@ -29,4 +34,15 @@
 @endforeach
 </div>
 @endif
+<div id="modalGantiPassword" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">...</div>
+        <div class="modal-body">
+            <form method="POST" action="{{ route('asisten.ganti-password.update') }}">
+                @csrf
+                {{-- input password_lama, password_baru, konfirmasi --}}
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
