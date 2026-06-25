@@ -110,6 +110,7 @@ class LaboranController extends Controller
     public function dosen(): View {
         return view('laboran.dosen.index', [
             'dosenAll' => Dosen::with(['user','praktikum.mataKuliah'])->latest()->get(),
+            'mataKuliah' => MataKuliah::orderBy('nama_mk')->get(),
         ]);
     }
     public function dosenStore(Request $request): RedirectResponse {

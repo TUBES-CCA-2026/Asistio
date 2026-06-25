@@ -9,7 +9,7 @@
     <tr>
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm"><?php echo e(strtoupper(substr($d->nama_dosen,0,2))); ?></div><span class="fw-600"><?php echo e($d->nama_dosen); ?></span></div></td>
         <td style="font-family:monospace;"><?php echo e($d->nidn ?? '—'); ?></td>
-        <td><?php echo e($d->mataKuliah?->nama_mk ?? '—'); ?></td>
+        <td><?php echo e($d->praktikum->first()?->mataKuliah?->nama_mk ?? '—'); ?></td>
         <td><?php echo e($d->user?->username ?? '—'); ?></td>
         <td>
             <div class="action-group">

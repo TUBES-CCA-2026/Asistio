@@ -10,7 +10,7 @@
     <tr>
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">{{ strtoupper(substr($d->nama_dosen,0,2)) }}</div><span class="fw-600">{{ $d->nama_dosen }}</span></div></td>
         <td style="font-family:monospace;">{{ $d->nidn ?? '—' }}</td>
-        <td>{{ $d->mataKuliah?->nama_mk ?? '—' }}</td>
+        <td>{{ $d->praktikum->first()?->mataKuliah?->nama_mk ?? '—' }}</td>
         <td>{{ $d->user?->username ?? '—' }}</td>
         <td>
             <div class="action-group">
@@ -30,7 +30,7 @@
     </tbody>
 </table></div></div>
 
-{{-- Modal Tambah Dosen — TIDAK BERUBAH --}}
+{{-- Modal Tambah Dosen --}}
 <div id="modalTambah" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Tambah Dosen</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.dosen.store') }}">@csrf
