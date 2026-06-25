@@ -13,7 +13,7 @@ class LaboranController extends Controller
             'totalMahasiswa' => Mahasiswa::count(),
             'totalAsisten'   => Asisten::count(),
             'totalDosen'     => Dosen::count(),
-            'mataKuliah'     => MataKuliah::withCount('praktikum')->latest()->get(),
+            'mataKuliah'     => MataKuliah::withCount(['praktikum', 'mahasiswa'])->latest()->get(),
         ]);
     }
 
