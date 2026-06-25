@@ -3,6 +3,12 @@
 @section('page-title','Input Nilai')
 @section('page-subtitle') {{ $praktikum->mataKuliah?->nama_mk }} — {{ $praktikum->nama_kelas }} @endsection
 @section('content')
+@section('page-subtitle') 
+{{ $praktikum->mataKuliah?->nama_mk }} — {{ $praktikum->nama_kelas }}
+@if($praktikum->dosen)
+<span style="font-weight:400;opacity:.75;font-size:.9em;">· Dosen: {{ $praktikum->dosen->nama_dosen }}</span>
+@endif
+@endsection
 <div class="page-toolbar"><a href="{{ route('asisten.dashboard') }}" class="btn btn-outline">← Kembali</a></div>
 <div class="card"><div class="table-wrapper" style="overflow-x:auto;">
     <table class="table" style="min-width:900px;">

@@ -12,7 +12,8 @@ class AsistenController extends Controller
     /** Dashboard: daftar kelas yang diampu asisten ini */
     public function dashboard(): View {
         $asisten   = $this->getAsisten();
-        $kelasList = $asisten ? $asisten->praktikum()->with(['mataKuliah','ruangan'])->withCount('mahasiswa')->get() : collect();
+        $kelasList = $asisten ? $asisten->praktikum()->with(['mataKuliah','ruangan','dosen'])->withCount('mahasiswa')->get() : collect();
+
         return view('asisten.dashboard', compact('asisten','kelasList'));
     }
 
@@ -81,6 +82,7 @@ class AsistenController extends Controller
 
     /** Rekap presensi per kelas */
     public function rekap(Praktikum $praktikum): View {
+        $praktikum->load(['mataKuliah','ruangan','dosen']);
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));

@@ -17,6 +17,7 @@
         <div class="course-card-name">{{ $kelas->mataKuliah?->nama_mk }}</div>
         <div class="course-card-meta">
             <span class="fw-600">{{ $kelas->nama_kelas }}</span>
+            @if($kelas->dosen)<span>{{ $kelas->dosen->nama_dosen }}</span>@endif
             @if($kelas->jadwal)<span>{{ $kelas->jadwal }}</span>@endif
             @if($kelas->ruangan)<span>{{ $kelas->ruangan->nama_ruangan }}</span>@endif
             <span>{{ $kelas->mahasiswa_count }} mahasiswa</span>
