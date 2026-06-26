@@ -49,7 +49,6 @@ class Mahasiswa extends Model {
     public function melebihiBatasAlpaDiKelas(int $praktikumId): bool {
         return $this->jumlahAlpaDiKelas($praktikumId) >= self::BATAS_ALPA;
     }
-<<<<<<< HEAD
     // Persentase kehadiran dihitung dari jumlah pertemuan yang SUDAH BERJALAN di kelas
     // (Praktikum::jumlah_pertemuan), bukan dari jumlah record presensi mahasiswa ini saja.
     // Sebab saat mengisi presensi, asisten bisa melewati (skip) mahasiswa yang belum
@@ -62,6 +61,4 @@ class Mahasiswa extends Model {
         $hadir = $this->presensi()->where('status_kehadiran','H')->count();
         return round(($hadir / $totalPertemuan) * 100, 1) . '%';
     }
-=======
->>>>>>> 0927e776b329e1701aa6bae4b43be1baf1fa76d7
 }
