@@ -26,7 +26,12 @@ class Mahasiswa extends Model {
     public function nilaiAsistensi()  { return $this->hasMany(NilaiAsistensi::class); }
     public function nilaiUjian()      { return $this->hasMany(NilaiUjian::class); }
     public function nilaiEvaluasi()   { return $this->hasMany(NilaiEvaluasi::class); }
-    public function rekap()           { return $this->hasMany(RekapDetailNilai::class); }
+    public function rekap()  { return $this->hasMany(RekapDetailNilai::class); }
+    public function rekapDiKelas(int $praktikumId) {
+        return $this->hasMany(RekapDetailNilai::class)
+                    ->where('praktikum_id', $praktikumId)
+                    ->first();
+    }
 
     public function getInitialsAttribute(): string {
         $w = explode(' ', trim($this->nama_mahasiswa));
