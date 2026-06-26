@@ -1,6 +1,6 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{Praktikum,Mahasiswa,Presensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
+use App\Models\{Praktikum,Mahasiswa,Presensi,PresensiAsistensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
 use Illuminate\Http\{Request,RedirectResponse};
 use Illuminate\Support\Facades\{Auth,Hash};
 use Illuminate\View\View;
@@ -44,7 +44,11 @@ class AsistenController extends Controller
             'hadir' => $presensiMap->where('status_kehadiran','H')->count(),
             'alpa'  => $presensiMap->where('status_kehadiran','A')->count(),
         ];
-        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats'));
+        ;
+        // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi (asistensi_ke)
+        $presensiAsistensiMap = PresensiAsistensi::where('praktikum_id', $praktikum->id)
+            ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
+        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats','presensiAsistensiMap'));
     }
 
     public function presensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
@@ -62,6 +66,26 @@ class AsistenController extends Controller
             );
         }
         return back()->with('success',"Presensi pertemuan {$pertemuan} disimpan.");
+    }
+
+    /** Simpan absensi sesi Asistensi (1, 2, atau 3) — terpisah dari presensi praktikum P1-P14 */
+    public function presensiAsistensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+ 
+        $v = $request->validate([
+            'asistensi_ke'   => ['required','integer','in:1,2,3'],
+            'presensi'       => ['array'],
+            'presensi.*.hadir' => ['nullable'],
+        ]);
+        $asistensiKe = (int) $v['asistensi_ke'];
+        foreach ($request->input('presensi', []) as $mahasiswaId => $data) {
+            PresensiAsistensi::updateOrCreate(
+                ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id,'asistensi_ke'=>$asistensiKe],
+                ['hadir'=>!empty($data['hadir'])]
+            );
+        }
+        return back()->with('success',"Absensi Asistensi {$asistensiKe} disimpan.");
     }
 
     /** Nilai per kelas (Praktikum) */
@@ -87,10 +111,20 @@ class AsistenController extends Controller
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
 
         $v = $request->validate([
-            'nilai_evaluasi1'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi2'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi3'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi4'=>['nullable','numeric','min:0','max:100'],
+            'p1'=>['nullable','numeric','min:0','max:100'],
+            'p2'=>['nullable','numeric','min:0','max:100'],
+            'p3'=>['nullable','numeric','min:0','max:100'],
+            'p4'=>['nullable','numeric','min:0','max:100'],
+            'p5'=>['nullable','numeric','min:0','max:100'],
+            'p6'=>['nullable','numeric','min:0','max:100'],
+            'p7'=>['nullable','numeric','min:0','max:100'],
+            'p8'=>['nullable','numeric','min:0','max:100'],
+            'p9'=>['nullable','numeric','min:0','max:100'],
+            'p10'=>['nullable','numeric','min:0','max:100'],
+            'p11'=>['nullable','numeric','min:0','max:100'],
+            'p12'=>['nullable','numeric','min:0','max:100'],
+            'p13'=>['nullable','numeric','min:0','max:100'],
+            'p14'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi1'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi2'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi3'=>['nullable','numeric','min:0','max:100'],
@@ -98,7 +132,7 @@ class AsistenController extends Controller
             'nilai_UAS'=>['nullable','numeric','min:0','max:100'],
         ]);
         NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],
-            array_filter(array_intersect_key($v, array_flip(['nilai_evaluasi1','nilai_evaluasi2','nilai_evaluasi3','nilai_evaluasi4'])),fn($v)=>$v!==null));
+            array_filter(array_intersect_key($v, array_flip(['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14'])),fn($v)=>$v!==null));
         NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],
             array_filter(array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])),fn($v)=>$v!==null));
         NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],

@@ -134,8 +134,10 @@ class DatabaseSeeder extends Seeder
         // ── Nilai untuk kelas1
         foreach ($kelas1Mhs as $m) {
             NilaiEvaluasi::firstOrCreate(['mahasiswa_id'=>$m->id,'praktikum_id'=>$kelas1->id],[
-                'nilai_evaluasi1'=>rand(70,95),'nilai_evaluasi2'=>rand(70,95),
-                'nilai_evaluasi3'=>rand(70,95),'nilai_evaluasi4'=>rand(70,95),
+                'p1'=>rand(70,95),'p2'=>rand(70,95),'p3'=>rand(70,95),'p4'=>rand(70,95),
+                'p5'=>rand(70,95),'p6'=>rand(70,95),'p7'=>rand(70,95),'p8'=>rand(70,95),
+                'p9'=>rand(70,95),'p10'=>rand(70,95),'p11'=>rand(70,95),'p12'=>rand(70,95),
+                'p13'=>rand(70,95),'p14'=>rand(70,95),
             ]);
             NilaiAsistensi::firstOrCreate(['mahasiswa_id'=>$m->id,'praktikum_id'=>$kelas1->id],[
                 'nilai_asistensi1'=>rand(75,95),'nilai_asistensi2'=>rand(75,95),'nilai_asistensi3'=>rand(75,95),
