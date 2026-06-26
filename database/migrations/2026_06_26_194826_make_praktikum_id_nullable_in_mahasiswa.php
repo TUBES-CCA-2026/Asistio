@@ -12,11 +12,7 @@ return new class extends Migration
     public function up(): void {
         Schema::table('mahasiswa', function (Blueprint $table) {
             $table->dropForeign(['praktikum_id']);
-        });
-        // Pakai raw SQL untuk MODIFY supaya tidak butuh package doctrine/dbal
-        DB::statement('ALTER TABLE mahasiswa MODIFY praktikum_id BIGINT UNSIGNED NULL');
-        Schema::table('mahasiswa', function (Blueprint $table) {
-            // nullOnDelete: kalau kelasnya dihapus, mahasiswa TIDAK ikut terhapus — cuma jadi tanpa kelas
+            $table->foreignId('praktikum_id')->nullable()->change();
             $table->foreign('praktikum_id')->references('id')->on('praktikum')->nullOnDelete();
         });
     }
@@ -27,9 +23,7 @@ return new class extends Migration
     public function down(): void {
         Schema::table('mahasiswa', function (Blueprint $table) {
             $table->dropForeign(['praktikum_id']);
-        });
-        DB::statement('ALTER TABLE mahasiswa MODIFY praktikum_id BIGINT UNSIGNED NOT NULL');
-        Schema::table('mahasiswa', function (Blueprint $table) {
+            $table->foreignId('praktikum_id')->nullable(false)->change();
             $table->foreign('praktikum_id')->references('id')->on('praktikum')->cascadeOnDelete();
         });
     }

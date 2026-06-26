@@ -46,7 +46,7 @@
                 <form method="POST" action="{{ route('laboran.kelas.mahasiswa.add',$kelas) }}" style="display:flex;gap:8px;">
                     @csrf
                     <select name="mahasiswa_id" class="form-select" required>
-                        <option value="">Pilih mahasiswa yang belum punya kelas...</option>
+                        <option value="">Tambah Mahasiswa...</option>
                         @foreach($mahasiswaBelumKelas as $m)
                         <option value="{{ $m->id }}">{{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}</option>
                         @endforeach

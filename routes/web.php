@@ -49,9 +49,8 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     Route::get('/mahasiswa/{mahasiswa}/edit', [LaboranController::class,'mahasiswaEdit'])->name('mahasiswa.edit');
     Route::patch('/mahasiswa/{mahasiswa}',    [LaboranController::class,'mahasiswaUpdate'])->name('mahasiswa.update');
     Route::delete('/mahasiswa/{mahasiswa}',   [LaboranController::class,'mahasiswaDestroy'])->name('mahasiswa.destroy');
-    Route::get('/mahasiswa/{mahasiswa}/nilai',[LaboranController::class,'mahasiswaNilai'])->name('mahasiswa.nilai');
-    Route::post('/mahasiswa/{mahasiswa}/nilai',[LaboranController::class,'mahasiswaNilaiUpdate'])->name('mahasiswa.nilai.update');
-});
+    Route::get('/mahasiswa/{mahasiswa}/nilai/{praktikum}', [LaboranController::class,'mahasiswaNilai'])->name('mahasiswa.nilai');
+    Route::post('/mahasiswa/{mahasiswa}/nilai/{praktikum}',[LaboranController::class,'mahasiswaNilaiUpdate'])->name('mahasiswa.nilai.update');});
 
 // ── Asisten ────────────────────────────────────────────────────────────────
 Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')->group(function () {
@@ -59,6 +58,7 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     // Presensi per kelas (Praktikum)
     Route::get('/presensi/{praktikum}',                               [AsistenController::class,'presensi'])->name('presensi');
     Route::post('/presensi/{praktikum}/simpan',                       [AsistenController::class,'presensiSimpan'])->name('presensi.simpan');
+    Route::post('/presensi/{praktikum}/asistensi', [AsistenController::class,'presensiAsistensiSimpan'])->name('presensi.asistensi.simpan');
     // Nilai per kelas (Praktikum)
     Route::get('/nilai/{praktikum}',                                  [AsistenController::class,'nilai'])->name('nilai');
     Route::post('/nilai/{praktikum}/mahasiswa/{mahasiswa}',           [AsistenController::class,'nilaiSimpan'])->name('nilai.simpan');

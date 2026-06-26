@@ -13,7 +13,7 @@ class LaboranController extends Controller
             'totalMahasiswa' => Mahasiswa::count(),
             'totalAsisten'   => Asisten::count(),
             'totalDosen'     => Dosen::count(),
-            'mataKuliah'     => MataKuliah::withCount(['praktikum', 'mahasiswa'])->latest()->get(),
+            'mataKuliah' => MataKuliah::withCount('praktikum')->latest()->get(),
         ]);
     }
 
@@ -74,11 +74,13 @@ class LaboranController extends Controller
 
     /** Dashboard 1 kelas: kelola asisten1/2 + kelola praktikan di dalamnya */
     public function kelasShow(Praktikum $praktikum): View {
+        $sudahDiSini = $praktikum->mahasiswa()->pluck('mahasiswa.id');
         return view('laboran.kelas.show', [
             'kelas'               => $praktikum->load(['mataKuliah','dosen','ruangan','asisten','asisten2']),
             'asistenAll'          => Asisten::orderBy('nama_asisten')->get(),
-            'mahasiswaDiKelas'    => Mahasiswa::where('praktikum_id', $praktikum->id)->orderBy('nama_mahasiswa')->get(),
-            'mahasiswaBelumKelas' => Mahasiswa::whereNull('praktikum_id')->orderBy('nama_mahasiswa')->get(),
+            'mahasiswaDiKelas'    => $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get(),
+            'mahasiswaBelumKelas' => Mahasiswa::whereNotIn('id', $sudahDiSini)
+                                            ->orderBy('nama_mahasiswa')->get(),
         ]);
     }
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
@@ -93,15 +95,19 @@ class LaboranController extends Controller
     /** Masukkan mahasiswa yang belum punya kelas ke kelas ini */
     public function kelasTambahMahasiswa(Request $request, Praktikum $praktikum): RedirectResponse {
         $v = $request->validate(['mahasiswa_id' => ['required','exists:mahasiswa,id']]);
-        Mahasiswa::where('id', $v['mahasiswa_id'])->update(['praktikum_id' => $praktikum->id]);
-        return back()->with('success','Mahasiswa ditambahkan ke kelas ini.');
+
+        $sudahAda = $praktikum->mahasiswa()->where('mahasiswa.id', $v['mahasiswa_id'])->exists();
+        if ($sudahAda) {
+            return back()->with('error', 'Mahasiswa sudah ada di kelas ini.');
+        }
+
+        $praktikum->mahasiswa()->attach($v['mahasiswa_id']);
+        return back()->with('success', 'Mahasiswa ditambahkan ke kelas ini.');
     }
     /** Keluarkan mahasiswa dari kelas ini (mahasiswa TIDAK dihapus, cuma jadi tanpa kelas) */
     public function kelasHapusMahasiswa(Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse {
-        if ($mahasiswa->praktikum_id === $praktikum->id) {
-            $mahasiswa->update(['praktikum_id' => null]);
-        }
-        return back()->with('success','Mahasiswa dikeluarkan dari kelas ini.');
+        $praktikum->mahasiswa()->detach($mahasiswa->id);
+        return back()->with('success', 'Mahasiswa dikeluarkan dari kelas ini.');
     }
  
     // ── Asisten ────────────────────────────────────────────────────────────
@@ -177,8 +183,8 @@ class LaboranController extends Controller
     // ── Mahasiswa — kini memilih praktikum bukan mata kuliah ───────────────
     public function mahasiswa(): View {
         return view('laboran.mahasiswa.index', [
+            // load relasi many-to-many
             'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(20),
-            'praktikumAll' => Praktikum::with(['mataKuliah','asisten'])->orderBy('id')->get(),
         ]);
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
@@ -191,18 +197,16 @@ class LaboranController extends Controller
     }
     public function mahasiswaEdit(Mahasiswa $mahasiswa): View {
         return view('laboran.mahasiswa.edit', [
-            'mahasiswa'    => $mahasiswa,
-            'praktikumAll' => Praktikum::with(['mataKuliah','asisten'])->get(),
+            'mahasiswa' => $mahasiswa,
         ]);
     }
     public function mahasiswaUpdate(Request $request, Mahasiswa $mahasiswa): RedirectResponse {
         $v = $request->validate([
-            'nim_mahasiswa'  => ['required',"unique:mahasiswa,nim_mahasiswa,{$mahasiswa->id}"],
-            'nama_mahasiswa' => ['required','string'],
-            'praktikum_id'   => ['nullable','exists:praktikum,id'],
+            'nim_mahasiswa'  => ['required', "unique:mahasiswa,nim_mahasiswa,{$mahasiswa->id}"],
+            'nama_mahasiswa' => ['required', 'string'],
         ]);
         $mahasiswa->update($v);
-        return redirect()->route('laboran.mahasiswa')->with('success','Data mahasiswa diperbarui.');
+        return redirect()->route('laboran.mahasiswa')->with('success', 'Data mahasiswa diperbarui.');
     }
     public function mahasiswaDestroy(Mahasiswa $mahasiswa): RedirectResponse {
         $mahasiswa->delete(); return back()->with('success','Mahasiswa dihapus.');
@@ -210,8 +214,10 @@ class LaboranController extends Controller
 
     // ── Pengentrian Nilai & Absensi per Mahasiswa ──────────────────────────
     public function mahasiswaNilai(Mahasiswa $mahasiswa): View {
-        $pid = $mahasiswa->praktikum_id;
+        $pid = $praktikum->id;
         return view('laboran.mahasiswa.nilai', [
+            'mahasiswa'      => $mahasiswa->load('praktikum.mataKuliah'),
+            'praktikum'      => $praktikum,
             'mahasiswa'      => $mahasiswa->load('praktikum.mataKuliah'),
             'presensiList'   => Presensi::where(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid])->orderBy('pertemuan_ke')->get(),
             'nilaiAsistensi' => NilaiAsistensi::firstOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid]),
@@ -221,8 +227,8 @@ class LaboranController extends Controller
             'jumlahPertemuan'=> 14,
         ]);
     }
-    public function mahasiswaNilaiUpdate(Request $request, Mahasiswa $mahasiswa): RedirectResponse {
-        $pid = $mahasiswa->praktikum_id;
+    public function mahasiswaNilaiUpdate(Request $request, Mahasiswa $mahasiswa, Praktikum $praktikum): RedirectResponse {
+        $pid = $praktikum->id;
         $v   = $request->validate([
             'p1'=>['nullable','numeric','min:0','max:100'],
             'p2'=>['nullable','numeric','min:0','max:100'],

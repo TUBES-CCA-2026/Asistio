@@ -1,30 +1,55 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+
 class Mahasiswa extends Model {
-    protected $table = 'mahasiswa';
-    protected $fillable = ['nim_mahasiswa','nama_mahasiswa','praktikum_id'];
+    protected $table    = 'mahasiswa';
+    // HAPUS 'praktikum_id' dari fillable — sekarang via pivot
+    protected $fillable = ['nim_mahasiswa', 'nama_mahasiswa'];
+
     public const BATAS_ALPA = 4;
-    public function praktikum()      { return $this->belongsTo(Praktikum::class); }
-    // Shortcut: mata kuliah melalui praktikum
-    public function getMataKuliahAttribute() { return $this->praktikum?->mataKuliah; }
-    public function presensi()        { return $this->hasMany(Presensi::class); }
-    public function nilaiAsistensi()  { return $this->hasOne(NilaiAsistensi::class); }
-    public function nilaiUjian()      { return $this->hasOne(NilaiUjian::class); }
-    public function nilaiEvaluasi()   { return $this->hasOne(NilaiEvaluasi::class); }
-    public function rekap()           { return $this->hasOne(RekapDetailNilai::class); }
+
+    // many-to-many — 1 mahasiswa bisa banyak kelas
+    public function praktikum() {
+        return $this->belongsToMany(Praktikum::class, 'mahasiswa_praktikum');
+    }
+
+    // Ambil presensi mahasiswa untuk 1 kelas tertentu
+    public function presensi() {
+        return $this->hasMany(Presensi::class);
+    }
+    public function presensiDiKelas(int $praktikumId) {
+        return $this->presensi()->where('praktikum_id', $praktikumId);
+    }
+
+    // Nilai per kelas (tetap pakai praktikum_id di tabel nilai)
+    public function nilaiAsistensi()  { return $this->hasMany(NilaiAsistensi::class); }
+    public function nilaiUjian()      { return $this->hasMany(NilaiUjian::class); }
+    public function nilaiEvaluasi()   { return $this->hasMany(NilaiEvaluasi::class); }
+    public function rekap()  { return $this->hasMany(RekapDetailNilai::class); }
+    public function rekapDiKelas(int $praktikumId) {
+        return $this->hasMany(RekapDetailNilai::class)
+                    ->where('praktikum_id', $praktikumId)
+                    ->first();
+    }
+
     public function getInitialsAttribute(): string {
         $w = explode(' ', trim($this->nama_mahasiswa));
-        return strtoupper(substr($w[0],0,1) . (isset($w[1]) ? substr($w[1],0,1) : ''));
+        return strtoupper(substr($w[0], 0, 1) . (isset($w[1]) ? substr($w[1], 0, 1) : ''));
     }
-    // Hitung alpa secara dinamis (tidak disimpan di DB)
-    public function getJumlahAlpaAttribute(): int {
-        return $this->presensi()->where('status_kehadiran','A')->count();
+
+    // Jumlah alpa di kelas tertentu
+    public function jumlahAlpaDiKelas(int $praktikumId): int {
+        return $this->presensi()
+            ->where('praktikum_id', $praktikumId)
+            ->where('status_kehadiran', 'A')
+            ->count();
     }
-    // Cek apakah jumlah alpa sudah melebihi batas (4)
-    public function melebihiBatasAlpa(): bool {
-        return $this->jumlah_alpa >= self::BATAS_ALPA;
+
+    public function melebihiBatasAlpaDiKelas(int $praktikumId): bool {
+        return $this->jumlahAlpaDiKelas($praktikumId) >= self::BATAS_ALPA;
     }
+<<<<<<< HEAD
     // Persentase kehadiran dihitung dari jumlah pertemuan yang SUDAH BERJALAN di kelas
     // (Praktikum::jumlah_pertemuan), bukan dari jumlah record presensi mahasiswa ini saja.
     // Sebab saat mengisi presensi, asisten bisa melewati (skip) mahasiswa yang belum
@@ -37,4 +62,6 @@ class Mahasiswa extends Model {
         $hadir = $this->presensi()->where('status_kehadiran','H')->count();
         return round(($hadir / $totalPertemuan) * 100, 1) . '%';
     }
+=======
+>>>>>>> 0927e776b329e1701aa6bae4b43be1baf1fa76d7
 }

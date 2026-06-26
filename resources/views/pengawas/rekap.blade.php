@@ -22,7 +22,7 @@
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;">Eval</th><th style="text-align:center;">Asist</th><th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th><th style="text-align:center;">Nilai Akhir</th><th style="text-align:center;">Huruf</th><th style="text-align:center;">Kehadiran</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $m)
-        @php $r = $m->rekap; $alpa = $m->jumlah_alpa; $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; @endphp
+        @php $r = $m->rekap->where('praktikum_id', $praktikum->id)->first(); $alpa = $m->jumlah_alpa; $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; @endphp
         
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
             <td style="font-family:monospace;font-size:12px;">{{ $m->nim_mahasiswa }}</td>

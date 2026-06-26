@@ -7,6 +7,13 @@ class MataKuliah extends Model {
     public function praktikum() { return $this->hasMany(Praktikum::class); }
     // Mahasiswa didapat melalui praktikum, bukan langsung
     public function mahasiswa() {
-        return $this->hasManyThrough(Mahasiswa::class, Praktikum::class);
+    return $this->hasManyThrough(Mahasiswa::class, Praktikum::class);
+    }
+    public function getMahasiswaCountAttribute(): int {
+        return \DB::table('mahasiswa_praktikum')
+            ->join('praktikum', 'praktikum.id', '=', 'mahasiswa_praktikum.praktikum_id')
+            ->where('praktikum.mata_kuliah_id', $this->id)
+            ->distinct('mahasiswa_praktikum.mahasiswa_id')
+            ->count('mahasiswa_praktikum.mahasiswa_id');
     }
 }
