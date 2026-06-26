@@ -38,7 +38,7 @@
         @forelse($mahasiswaList as $i => $m)
         @php
             $p = $presensiMap[$m->id] ?? null;
-            $status = $p?->status_kehadiran; {{-- null jika belum diisi, agar tidak ada radio yang tercentang otomatis --}}
+            $status = $p?->status_kehadiran; // null jika belum diisi, agar tidak ada radio yang tercentang otomatis
             $alpaTinggi = $m->melebihiBatasAlpa();
         @endphp
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">

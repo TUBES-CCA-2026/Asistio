@@ -37,7 +37,7 @@
         <?php $__empty_1 = true; $__currentLoopData = $mahasiswaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <?php
             $p = $presensiMap[$m->id] ?? null;
-            $status = $p?->status_kehadiran ?? 'H';
+            $status = $p?->status_kehadiran; // null jika belum diisi, agar tidak ada radio yang tercentang otomatis
             $alpaTinggi = $m->melebihiBatasAlpa();
         ?>
         <tr class="<?php echo e($alpaTinggi ? 'row-alpa-alert' : ''); ?>">
