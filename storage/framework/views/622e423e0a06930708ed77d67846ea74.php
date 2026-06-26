@@ -21,7 +21,7 @@
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;">Eval</th><th style="text-align:center;">Asist</th><th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th><th style="text-align:center;">Nilai Akhir</th><th style="text-align:center;">Huruf</th><th style="text-align:center;">Kehadiran</th></tr></thead>
         <tbody>
         <?php $__empty_1 = true; $__currentLoopData = $mahasiswaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <?php $r = $m->rekap; $alpa = $m->jumlah_alpa; $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; ?>
+        <?php $r = $m->rekap->where('praktikum_id', $praktikum->id)->first(); $alpa = $m->jumlahAlpaDiKelas($praktikum->id); $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; ?>
         
         <tr class="<?php echo e($alpaTinggi ? 'row-alpa-alert' : ''); ?>">
             <td style="font-family:monospace;font-size:12px;"><?php echo e($m->nim_mahasiswa); ?></td>
@@ -33,7 +33,7 @@
             <td style="text-align:center;font-weight:700;color:var(--primary);"><?php echo e($r?->nilai_akhir ?? '—'); ?></td>
             <td style="text-align:center;"><?php if($r?->nilai_huruf): ?><span class="grade-badge badge-<?php echo e(strtolower($r->nilai_huruf)); ?>"><?php echo e($r->nilai_huruf); ?></span><?php else: ?>—<?php endif; ?></td>
             <td style="text-align:center;">
-                <?php echo e($m->persentase_hadir); ?>
+                <?php echo e($m->persentaseHadirDiKelas($praktikum->id)); ?>
 
                 <?php if($alpa >= 4): ?><span class="badge badge-danger ml-1"><?php echo e($alpa); ?>α</span><?php endif; ?>
             </td>
@@ -74,5 +74,4 @@
     </table></div>
 </div>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\asistio\resources\views/pengawas/rekap.blade.php ENDPATH**/ ?>

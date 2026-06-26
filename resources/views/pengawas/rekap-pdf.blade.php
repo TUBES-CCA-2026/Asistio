@@ -102,7 +102,7 @@
     </thead>
     <tbody>
     @forelse($mahasiswaList as $m)
-        @php $r = $m->rekap; $alpa = $m->jumlah_alpa; @endphp
+        @php $r = $m->rekap->firstWhere('praktikum_id', $praktikum->id); $alpa = $m->jumlahAlpaDiKelas($praktikum->id); @endphp
         <tr>
             <td class="nim">{{ $m->nim_mahasiswa }}</td>
             <td class="nama">{{ $m->nama_mahasiswa }}</td>
@@ -117,7 +117,7 @@
                 @else — @endif
             </td>
             <td class="center">
-                {{ $m->persentase_hadir }}
+                {{ $m->persentaseHadirDiKelas($praktikum->id) }}
                 @if($alpa >= \App\Models\Mahasiswa::BATAS_ALPA) <span style="color:#DC2626;font-weight:700;">({{ $alpa }}&alpha;)</span>@endif
             </td>
         </tr>

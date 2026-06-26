@@ -36,10 +36,9 @@ class PengawasController extends Controller
 
     /** Ambil data mahasiswa + presensi yang sama dipakai baik untuk halaman web, PDF, maupun Excel */
     private function dataRekap(Praktikum $praktikum): array {
-        $mahasiswaList = $praktikum->mahasiswa()->with(['rekap','presensi'])->orderBy('nama_mahasiswa')->get();
-        // Set relasi praktikum manual (sudah ada di memori) agar $m->praktikum->jumlah_pertemuan
-        // pada getPersentaseHadirAttribute() tidak memicu query N+1 per mahasiswa.
-        $mahasiswaList->each(fn($m) => $m->setRelation('praktikum', $praktikum));
+        $mahasiswaList = $praktikum->mahasiswa()
+            ->with(['rekap', 'praktikum', 'presensi' => fn($q) => $q->where('praktikum_id', $praktikum->id)])
+            ->orderBy('nama_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
         return [$mahasiswaList, $presensiAll];
@@ -70,13 +69,13 @@ class PengawasController extends Controller
         $headerNilai = ['NIM','Nama','Eval','Asistensi','MID','UAS','Nilai Akhir','Huruf','Kehadiran (%)','Jumlah Alpha'];
         $rowsNilai = [];
         foreach ($mahasiswaList as $m) {
-            $r = $m->rekap;
+            $r = $m->rekap->firstWhere('praktikum_id', $praktikum->id);
             $rowsNilai[] = [
                 $m->nim_mahasiswa, $m->nama_mahasiswa,
                 $r?->nilai_praktikum ?? '', $r?->nilai_asistensi ?? '',
                 $r?->nilai_MID ?? '', $r?->nilai_UAS ?? '',
                 $r?->nilai_akhir ?? '', $r?->nilai_huruf ?? '',
-                rtrim($m->persentase_hadir, '%'), $m->jumlah_alpa,
+                rtrim($m->persentaseHadirDiKelas($praktikum->id), '%'), $m->jumlahAlpaDiKelas($praktikum->id),
             ];
         }
         $xlsx->addSheet('Rekap Nilai', $headerNilai, $rowsNilai);

@@ -49,16 +49,23 @@ class Mahasiswa extends Model {
     public function melebihiBatasAlpaDiKelas(int $praktikumId): bool {
         return $this->jumlahAlpaDiKelas($praktikumId) >= self::BATAS_ALPA;
     }
-    // Persentase kehadiran dihitung dari jumlah pertemuan yang SUDAH BERJALAN di kelas
-    // (Praktikum::jumlah_pertemuan), bukan dari jumlah record presensi mahasiswa ini saja.
-    // Sebab saat mengisi presensi, asisten bisa melewati (skip) mahasiswa yang belum
-    // dipilih statusnya sehingga record presensi mahasiswa bisa tidak lengkap/lebih sedikit
-    // dari jumlah pertemuan yang sebenarnya sudah terjadi — jika dipakai sebagai penyebut,
-    // persentase akan ter-inflate (mis. baru hadir 5 dari 14 pertemuan tapi tampil 100%).
-    public function getPersentaseHadirAttribute(): string {
-        $totalPertemuan = $this->praktikum?->jumlah_pertemuan ?? 0;
+    // Persentase kehadiran DI SATU KELAS TERTENTU, dihitung dari jumlah pertemuan yang
+    // SUDAH BERJALAN di kelas itu (Praktikum::jumlah_pertemuan), bukan dari jumlah record
+    // presensi mahasiswa secara keseluruhan. Sebab saat mengisi presensi, asisten bisa
+    // melewati (skip) mahasiswa yang belum dipilih statusnya sehingga record presensi
+    // mahasiswa bisa tidak lengkap/lebih sedikit dari jumlah pertemuan yang sebenarnya
+    // sudah terjadi — jika dipakai sebagai penyebut, persentase akan ter-inflate.
+    //
+    // PENTING: harus dihitung PER KELAS ($praktikumId), bukan global lintas kelas.
+    // Sejak mahasiswa bisa mengikuti lebih dari satu kelas (relasi many-to-many via
+    // mahasiswa_praktikum), menghitung "Hadir" dari SEMUA kelas lalu membaginya dengan
+    // jumlah_pertemuan HANYA SATU kelas akan membuat persentase bisa lebih dari 100%
+    // (mis. 200% jika mahasiswa hadir penuh di 2 kelas yang masing-masing 14 pertemuan).
+    public function persentaseHadirDiKelas(int $praktikumId): string {
+        $praktikum = $this->praktikum->firstWhere('id', $praktikumId);
+        $totalPertemuan = $praktikum?->jumlah_pertemuan ?? 0;
         if ($totalPertemuan === 0) return '0%';
-        $hadir = $this->presensi()->where('status_kehadiran','H')->count();
-        return round(($hadir / $totalPertemuan) * 100, 1) . '%';
+        $hadir = $this->presensiDiKelas($praktikumId)->where('status_kehadiran', 'H')->count();
+        return round(min($hadir / $totalPertemuan, 1) * 100, 1) . '%';
     }
 }

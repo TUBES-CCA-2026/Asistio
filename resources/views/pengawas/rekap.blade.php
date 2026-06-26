@@ -22,7 +22,7 @@
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;">Eval</th><th style="text-align:center;">Asist</th><th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th><th style="text-align:center;">Nilai Akhir</th><th style="text-align:center;">Huruf</th><th style="text-align:center;">Kehadiran</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $m)
-        @php $r = $m->rekap->where('praktikum_id', $praktikum->id)->first(); $alpa = $m->jumlah_alpa; $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; @endphp
+        @php $r = $m->rekap->where('praktikum_id', $praktikum->id)->first(); $alpa = $m->jumlahAlpaDiKelas($praktikum->id); $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; @endphp
         
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
             <td style="font-family:monospace;font-size:12px;">{{ $m->nim_mahasiswa }}</td>
@@ -34,7 +34,7 @@
             <td style="text-align:center;font-weight:700;color:var(--primary);">{{ $r?->nilai_akhir ?? '—' }}</td>
             <td style="text-align:center;">@if($r?->nilai_huruf)<span class="grade-badge badge-{{ strtolower($r->nilai_huruf) }}">{{ $r->nilai_huruf }}</span>@else—@endif</td>
             <td style="text-align:center;">
-                {{ $m->persentase_hadir }}
+                {{ $m->persentaseHadirDiKelas($praktikum->id) }}
                 @if($alpa >= 4)<span class="badge badge-danger ml-1">{{ $alpa }}α</span>@endif
             </td>
         </tr>
