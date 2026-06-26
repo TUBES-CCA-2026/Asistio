@@ -52,8 +52,10 @@ class AsistenController extends Controller
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
 
         $pertemuan = max(1, min($request->integer('pertemuan', 1), 14));
-        $request->validate(['presensi'=>'array','presensi.*.status_kehadiran'=>'in:H,I,S,A']);
+        $request->validate(['presensi'=>'array','presensi.*.status_kehadiran'=>'nullable|in:H,I,S,A']);
         foreach ($request->input('presensi',[]) as $mahasiswaId => $data) {
+            // Lewati mahasiswa yang status kehadirannya belum dipilih (tidak dipaksa default 'Hadir')
+            if (empty($data['status_kehadiran'])) continue;
             Presensi::updateOrCreate(
                 ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id,'pertemuan_ke'=>$pertemuan],
                 ['status_kehadiran'=>$data['status_kehadiran'],'catatan'=>$data['catatan']??null]
