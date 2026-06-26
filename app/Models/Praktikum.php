@@ -16,7 +16,10 @@ class Praktikum extends Model {
     public function nilaiEvaluasi()  { return $this->hasMany(NilaiEvaluasi::class); }
     public function rekap()          { return $this->hasMany(RekapDetailNilai::class); }
     // Jumlah pertemuan yang sudah dicatat (dari data presensi)
+    // Hasil di-cache pada instance agar tidak query ulang saat diakses berkali-kali
+    // (mis. dipanggil untuk setiap mahasiswa di halaman/export rekap kelas yang sama).
+    private ?int $jumlahPertemuanCache = null;
     public function getJumlahPertemuanAttribute(): int {
-        return $this->presensi()->max('pertemuan_ke') ?? 0;
+        return $this->jumlahPertemuanCache ??= ($this->presensi()->max('pertemuan_ke') ?? 0);
     }
 }

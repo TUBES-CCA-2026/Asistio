@@ -20,9 +20,8 @@ class PengawasController extends Controller
 
     /** Rekap data per kelas praktikum */
     public function rekap(Praktikum $praktikum): View {
-        $mahasiswaList = $praktikum->mahasiswa()->with(['rekap','presensi'])->orderBy('nama_mahasiswa')->get();
-        $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
-            ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
+        $this->authorizeKelas($praktikum);
+        [$mahasiswaList, $presensiAll] = $this->dataRekap($praktikum);
         return view('pengawas.rekap', compact('praktikum','mahasiswaList','presensiAll'));
     }
 
@@ -38,6 +37,9 @@ class PengawasController extends Controller
     /** Ambil data mahasiswa + presensi yang sama dipakai baik untuk halaman web, PDF, maupun Excel */
     private function dataRekap(Praktikum $praktikum): array {
         $mahasiswaList = $praktikum->mahasiswa()->with(['rekap','presensi'])->orderBy('nama_mahasiswa')->get();
+        // Set relasi praktikum manual (sudah ada di memori) agar $m->praktikum->jumlah_pertemuan
+        // pada getPersentaseHadirAttribute() tidak memicu query N+1 per mahasiswa.
+        $mahasiswaList->each(fn($m) => $m->setRelation('praktikum', $praktikum));
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
         return [$mahasiswaList, $presensiAll];

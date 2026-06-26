@@ -25,11 +25,16 @@ class Mahasiswa extends Model {
     public function melebihiBatasAlpa(): bool {
         return $this->jumlah_alpa >= self::BATAS_ALPA;
     }
-    // Persentase kehadiran dari presensi aktual
+    // Persentase kehadiran dihitung dari jumlah pertemuan yang SUDAH BERJALAN di kelas
+    // (Praktikum::jumlah_pertemuan), bukan dari jumlah record presensi mahasiswa ini saja.
+    // Sebab saat mengisi presensi, asisten bisa melewati (skip) mahasiswa yang belum
+    // dipilih statusnya sehingga record presensi mahasiswa bisa tidak lengkap/lebih sedikit
+    // dari jumlah pertemuan yang sebenarnya sudah terjadi — jika dipakai sebagai penyebut,
+    // persentase akan ter-inflate (mis. baru hadir 5 dari 14 pertemuan tapi tampil 100%).
     public function getPersentaseHadirAttribute(): string {
-        $total = $this->presensi()->count();
-        if ($total === 0) return '0%';
+        $totalPertemuan = $this->praktikum?->jumlah_pertemuan ?? 0;
+        if ($totalPertemuan === 0) return '0%';
         $hadir = $this->presensi()->where('status_kehadiran','H')->count();
-        return round(($hadir / $total) * 100, 1) . '%';
+        return round(($hadir / $totalPertemuan) * 100, 1) . '%';
     }
 }
