@@ -13,16 +13,20 @@ class DatabaseSeeder extends Seeder
         $rAsisten = Role::firstOrCreate(['role_name'=>'asisten']);
         $rDosen   = Role::firstOrCreate(['role_name'=>'dosen']);
 
-        // ── Users
-        $uLaboran = User::firstOrCreate(['username'=>'laboran'],   ['password'=>Hash::make('laboran123'),'role_id'=>$rLaboran->id]);
+        // ── User untuk Laboran
+        $uLaboran = User::firstOrCreate(['username'=>'laboran'],   ['password'=>Hash::make(env('PASSWORD_LABORAN')),'role_id'=>$rLaboran->id]);
+
+        // ── Users untuk Asisten & Dosen
         $uAsisten1= User::firstOrCreate(['username'=>'asisten1'],  ['password'=>Hash::make('asisten123'),'role_id'=>$rAsisten->id]);
         $uAsisten2= User::firstOrCreate(['username'=>'asisten2'],  ['password'=>Hash::make('asisten123'),'role_id'=>$rAsisten->id]);
         $uDosen1  = User::firstOrCreate(['username'=>'dosen1'],    ['password'=>Hash::make('dosen123'),  'role_id'=>$rDosen->id]);
 
         // ── Ruangan
-        $r1 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Komputer 1']);
-        $r2 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Komputer 2']);
-
+        $r1 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab StartUp']);
+        $r2 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab IOT']);
+        $r3 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Computer Netwrok']);
+        $r3 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Computer Netwrok']);
+        
         // ── Mata Kuliah
         $mkBD  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD'],  ['nama_mk'=>'Basis Data']);
         $mkSO  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-SO'],  ['nama_mk'=>'Sistem Operasi']);
@@ -99,7 +103,7 @@ class DatabaseSeeder extends Seeder
         $this->command->table(
             ['Role','Username','Password','Keterangan'],
             [
-                ['Laboran','laboran','laboran123','Kelola semua data'],
+                ['Laboran','laboran','.env','Kelola semua data'],
                 ['Asisten','asisten1','asisten123','Kelas A — Basis Data'],
                 ['Asisten','asisten2','asisten123','Kelas B Basis Data + SO Kelas A'],
                 ['Dosen','dosen1','dosen123','Monitor Basis Data Kelas A & B'],
