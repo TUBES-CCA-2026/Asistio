@@ -9,6 +9,11 @@
         <a href="?pertemuan={{ max(1,$pertemuan-1) }}" class="btn btn-outline btn-sm">‹ Sebelumnya</a>
         <span class="fw-600 text-primary">Pertemuan {{ $pertemuan }}</span>
         <a href="?pertemuan={{ $pertemuan+1 }}" class="btn btn-outline btn-sm">Berikutnya ›</a>
+        <form method="GET" action="{{ url()->current() }}" style="display:flex;align-items:center;gap:6px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-color, #e5e7eb);">
+            <label for="pertemuan-jump" class="fs-12 text-muted" style="margin:0;">Lompat ke:</label>
+            <input type="number" id="pertemuan-jump" name="pertemuan" min="1" max="14" value="{{ $pertemuan }}" class="form-control form-control-sm" style="width:64px;">
+            <button type="submit" class="btn btn-outline btn-sm">Lompat</button>
+        </form>
     </div>
 </div>
 <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">

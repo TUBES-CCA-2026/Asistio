@@ -8,6 +8,11 @@
         <a href="?pertemuan=<?php echo e(max(1,$pertemuan-1)); ?>" class="btn btn-outline btn-sm">‹ Sebelumnya</a>
         <span class="fw-600 text-primary">Pertemuan <?php echo e($pertemuan); ?></span>
         <a href="?pertemuan=<?php echo e($pertemuan+1); ?>" class="btn btn-outline btn-sm">Berikutnya ›</a>
+        <form method="GET" action="<?php echo e(url()->current()); ?>" style="display:flex;align-items:center;gap:6px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-color, #e5e7eb);">
+            <label for="pertemuan-jump" class="fs-12 text-muted" style="margin:0;">Lompat ke:</label>
+            <input type="number" id="pertemuan-jump" name="pertemuan" min="1" max="14" value="<?php echo e($pertemuan); ?>" class="form-control form-control-sm" style="width:64px;">
+            <button type="submit" class="btn btn-outline btn-sm">Lompat</button>
+        </form>
     </div>
 </div>
 <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
@@ -65,5 +70,4 @@
 </div>
 </form>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\asistio\resources\views/asisten/presensi.blade.php ENDPATH**/ ?>
