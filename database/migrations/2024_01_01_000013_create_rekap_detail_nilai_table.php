@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->decimal('nilai_MID',       5, 2)->nullable()->comment('Nilai MID (bobot 20%)');
             $table->decimal('nilai_UAS',       5, 2)->nullable()->comment('Nilai UAS (bobot 30%)');
             $table->decimal('nilai_akhir',     5, 2)->nullable()->comment('NA = eval*0.2 + asist*0.3 + MID*0.2 + UAS*0.3');
-            $table->string('nilai_huruf', 2)->nullable()->comment('A/AB/B/BC/C/D/E');
+            $table->string('nilai_huruf', 2)->nullable()->comment('A/B/C/D/E');
             // HAPUS status_kehadiran — hitung dinamis dari tabel presensi
             $table->timestamps();
             $table->unique(['mahasiswa_id','praktikum_id'], 'rekap_unique');

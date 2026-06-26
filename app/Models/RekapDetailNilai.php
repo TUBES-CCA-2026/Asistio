@@ -20,7 +20,7 @@ class RekapDetailNilai extends Model {
         if ($rEval !== null && $rAsist !== null && $mid !== null && $uas !== null) {
             $akhir = round((0.20*$rEval) + (0.30*$rAsist) + (0.20*$mid) + (0.30*$uas), 2);
             $huruf = match(true) {
-                $akhir>=85=>'A', $akhir>=80=>'AB', $akhir>=75=>'B', $akhir>=70=>'BC',
+                $akhir>=85=>'A', $akhir>=75=>'B',
                 $akhir>=65=>'C', $akhir>=55=>'D', default=>'E'
             };
         }
