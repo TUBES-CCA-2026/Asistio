@@ -2,7 +2,19 @@
 <?php $__env->startSection('page-title','Rekap Data Praktikan'); ?>
 <?php $__env->startSection('page-subtitle'); ?> <?php echo e($praktikum->mataKuliah?->nama_mk); ?> — <?php echo e($praktikum->nama_kelas); ?> <?php $__env->stopSection(); ?>
 <?php $__env->startSection('content'); ?>
-<div class="page-toolbar"><a href="<?php echo e(route('pengawas.dashboard')); ?>" class="btn btn-outline">← Kembali</a></div>
+<div class="page-toolbar">
+    <a href="<?php echo e(route('pengawas.dashboard')); ?>" class="btn btn-outline">← Kembali</a>
+    <div style="display:flex;gap:8px;">
+        <a href="<?php echo e(route('pengawas.rekap.export.pdf', $praktikum)); ?>" class="btn btn-outline btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export PDF
+        </a>
+        <a href="<?php echo e(route('pengawas.rekap.export.excel', $praktikum)); ?>" class="btn btn-outline btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export Excel
+        </a>
+    </div>
+</div>
 <div class="card mb-4">
     <div class="card-header"><span class="card-title">Rekap Nilai Akhir</span></div>
     <div class="table-wrapper"><table class="table">

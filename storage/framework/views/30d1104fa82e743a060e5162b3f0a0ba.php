@@ -6,7 +6,7 @@
 <?php endif; ?>
 <div class="hero-banner">
     <h1 class="hero-title">Halo, <?php echo e(auth()->user()->nama); ?>! 👋</h1>
-    <p class="hero-subtitle">Pilih kelas yang Anda ampu untuk memulai presensi atau pengisian nilai.</p>
+    <p class="hero-subtitle">Pilih kelas yang Anda dampingi untuk memulai presensi atau pengisian nilai.</p>
 </div>
 <?php if($kelasList->isEmpty()): ?>
 <div class="card"><div class="empty-state"><p>Anda belum ditugaskan ke kelas manapun. Hubungi laboran.</p></div></div>
