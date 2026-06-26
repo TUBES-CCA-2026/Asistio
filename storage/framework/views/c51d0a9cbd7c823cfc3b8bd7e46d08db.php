@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
-    <link rel="icon" type="image/svg+xml" href="<?php echo e(asset('images/logo.svg')); ?>">
+    <link rel="icon" type="image/png" href="<?php echo e(asset('images/logo_2.png')); ?>">
 </head>
 <body class="auth-page">
     <?php echo $__env->yieldContent('content'); ?>

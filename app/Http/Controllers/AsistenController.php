@@ -9,15 +9,32 @@ class AsistenController extends Controller
 {
     private function getAsisten() { return Auth::user()->asisten; }
 
-    /** Dashboard: daftar kelas yang diampu asisten ini */
-    public function dashboard(): View {
+    /**
+     * Cek apakah asisten yang login berwenang mengakses kelas ini
+     * (baik sebagai Asisten 1 maupun Asisten 2).
+     */
+    private function isAuthorizedForKelas(Praktikum $praktikum): bool
+    {
+        $asisten = $this->getAsisten();
+        if (!$asisten) return false;
+        return $praktikum->asisten_id  === $asisten->id
+            || $praktikum->asisten2_id === $asisten->id;
+    }
+
+    /** Dashboard: daftar SEMUA kelas yang diampu asisten ini (Asisten 1 ATAU Asisten 2) */
+    public function dashboard(): View
+    {
         $asisten   = $this->getAsisten();
-        $kelasList = $asisten ? $asisten->praktikum()->with(['mataKuliah','ruangan'])->withCount('mahasiswa')->get() : collect();
+        // Gunakan semuaPraktikum() agar menggabungkan kelas sebagai Asisten 1 dan 2
+        $kelasList = $asisten ? $asisten->semuaPraktikum() : collect();
         return view('asisten.dashboard', compact('asisten','kelasList'));
     }
 
     /** Presensi per kelas (Praktikum) */
-    public function presensi(Request $request, Praktikum $praktikum): View {
+    public function presensi(Request $request, Praktikum $praktikum): View
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
         $pertemuan    = max(1, min($request->integer('pertemuan', 1), 14));
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
         $presensiMap  = Presensi::where('praktikum_id', $praktikum->id)
@@ -30,7 +47,10 @@ class AsistenController extends Controller
         return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats'));
     }
 
-    public function presensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse {
+    public function presensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
         $pertemuan = max(1, min($request->integer('pertemuan', 1), 14));
         $request->validate(['presensi'=>'array','presensi.*.status_kehadiran'=>'in:H,I,S,A']);
         foreach ($request->input('presensi',[]) as $mahasiswaId => $data) {
@@ -43,7 +63,10 @@ class AsistenController extends Controller
     }
 
     /** Nilai per kelas (Praktikum) */
-    public function nilai(Praktikum $praktikum): View {
+    public function nilai(Praktikum $praktikum): View
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
         $nilaiMap = [];
         foreach ($mahasiswaList as $m) {
@@ -57,7 +80,10 @@ class AsistenController extends Controller
         return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap'));
     }
 
-    public function nilaiSimpan(Request $request, Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse {
+    public function nilaiSimpan(Request $request, Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
         $v = $request->validate([
             'nilai_evaluasi1'=>['nullable','numeric','min:0','max:100'],
             'nilai_evaluasi2'=>['nullable','numeric','min:0','max:100'],
@@ -80,7 +106,10 @@ class AsistenController extends Controller
     }
 
     /** Rekap presensi per kelas */
-    public function rekap(Praktikum $praktikum): View {
+    public function rekap(Praktikum $praktikum): View
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
@@ -88,11 +117,13 @@ class AsistenController extends Controller
     }
 
     /** Form ganti password sendiri */
-    public function gantiPassword(): View {
+    public function gantiPassword(): View
+    {
         return view('asisten.ganti-password');
     }
 
-    public function gantiPasswordUpdate(Request $request): RedirectResponse {
+    public function gantiPasswordUpdate(Request $request): RedirectResponse
+    {
         $v = $request->validate([
             'password_lama' => ['required','current_password'],
             'password_baru' => ['required','min:6','confirmed'],

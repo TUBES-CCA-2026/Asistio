@@ -30,11 +30,21 @@
         <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th></tr></thead>
         <tbody>
         <?php $__empty_1 = true; $__currentLoopData = $mahasiswaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <?php $p = $presensiMap[$m->id] ?? null; $status = $p?->status_kehadiran ?? 'H'; ?>
-        <tr>
+        <?php
+            $p = $presensiMap[$m->id] ?? null;
+            $status = $p?->status_kehadiran ?? 'H';
+            $alpaTinggi = $m->melebihiBatasAlpa();
+        ?>
+        <tr class="<?php echo e($alpaTinggi ? 'row-alpa-alert' : ''); ?>">
             <td><?php echo e(str_pad($i+1,2,'0',STR_PAD_LEFT)); ?></td>
             <td style="font-family:monospace;font-size:12px;"><?php echo e($m->nim_mahasiswa); ?></td>
-            <td class="fw-500"><?php echo e($m->nama_mahasiswa); ?></td>
+            <td class="fw-500">
+                <?php echo e($m->nama_mahasiswa); ?>
+
+                <?php if($alpaTinggi): ?>
+                    <span class="badge-alpa-alert" title="Sudah alpa <?php echo e($m->jumlah_alpa); ?>x — sudah mencapai/melewati batas <?php echo e(\App\Models\Mahasiswa::BATAS_ALPA); ?> pertemuan">⚠ Alpa <?php echo e($m->jumlah_alpa); ?>×</span>
+                <?php endif; ?>
+            </td>
             <?php $__currentLoopData = ['H','I','S','A']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <td style="text-align:center;">
                 <label class="radio-circle radio-<?php echo e(strtolower($s)); ?>">

@@ -1,9 +1,12 @@
 <?php $__env->startSection('title','Dashboard Asisten'); ?>
 <?php $__env->startSection('page-title','Dashboard Asisten'); ?>
 <?php $__env->startSection('content'); ?>
+<?php if($errors->any()): ?>
+<script>document.addEventListener('DOMContentLoaded',()=>{ const o=document.getElementById('modalGantiPassword'); if(o) o.classList.add('is-open'); });</script>
+<?php endif; ?>
 <div class="hero-banner">
     <h1 class="hero-title">Halo, <?php echo e(auth()->user()->nama); ?>! 👋</h1>
-    <p class="hero-subtitle">Pilih kelas yang Anda ampu untuk memulai presensi atau pengisian nilai.</p>
+    <p class="hero-subtitle">Pilih kelas yang Anda dampingi untuk memulai presensi atau pengisian nilai.</p>
 </div>
 <?php if($kelasList->isEmpty()): ?>
 <div class="card"><div class="empty-state"><p>Anda belum ditugaskan ke kelas manapun. Hubungi laboran.</p></div></div>
@@ -30,6 +33,17 @@
 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 <?php endif; ?>
+<div id="modalGantiPassword" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">...</div>
+        <div class="modal-body">
+            <form method="POST" action="<?php echo e(route('asisten.ganti-password.update')); ?>">
+                <?php echo csrf_field(); ?>
+                
+            </form>
+        </div>
+    </div>
+</div>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\asistio\resources\views/asisten/dashboard.blade.php ENDPATH**/ ?>

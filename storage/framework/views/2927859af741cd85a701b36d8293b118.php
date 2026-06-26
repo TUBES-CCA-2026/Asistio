@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
     
-    <link rel="icon" type="image/svg+xml" href="<?php echo e(asset('images/logo.svg')); ?>">
+    <link rel="icon" type="image/png" href="<?php echo e(asset('images/logo_2.png')); ?>">
     <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 <body>

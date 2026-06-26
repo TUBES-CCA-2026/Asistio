@@ -5,7 +5,7 @@
 
         
         <div class="auth-brand">
-            <img src="<?php echo e(asset('images/logo.svg')); ?>" alt="Asistio Logo" class="auth-logo-img">
+            <img src="<?php echo e(asset('images/logo_2.png')); ?>" alt="ICLABS FIKOM UMI Logo" class="auth-logo-img">
             <div class="auth-brand-text">
                 <h1 class="auth-brand-name">Asistio</h1>
                 <p class="auth-brand-sub">Practicum Management System</p>
@@ -107,7 +107,7 @@ unset($__errorArgs, $__bag); ?>
         </p>
     </div>
 
-    <p class="auth-copy">© <?php echo e(date('Y')); ?> Asistio — ICo Labs UMI</p>
+    <p class="auth-copy">© <?php echo e(date('Y')); ?> Asistio — ICLABS FIKOM UMI</p>
 </div>
 
 <?php $__env->startPush('scripts'); ?>

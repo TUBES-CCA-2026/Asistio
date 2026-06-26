@@ -6,7 +6,7 @@
 
         {{-- Logo dari file image — bukan inline SVG (poin #5) --}}
         <div class="auth-brand">
-            <img src="{{ asset('images/logo.svg') }}" alt="Asistio Logo" class="auth-logo-img">
+            <img src="{{ asset('images/logo_2.png') }}" alt="ICLABS FIKOM UMI Logo" class="auth-logo-img">
             <div class="auth-brand-text">
                 <h1 class="auth-brand-name">Asistio</h1>
                 <p class="auth-brand-sub">Practicum Management System</p>
@@ -94,7 +94,7 @@
         </p>
     </div>
 
-    <p class="auth-copy">© {{ date('Y') }} Asistio — ICo Labs UMI</p>
+    <p class="auth-copy">© {{ date('Y') }} Asistio — ICLABS FIKOM UMI</p>
 </div>
 
 @push('scripts')

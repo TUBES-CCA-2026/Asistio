@@ -1,6 +1,6 @@
 <?php $__env->startSection('title','Dashboard Laboran'); ?>
 <?php $__env->startSection('page-title','Dashboard'); ?>
-<?php $__env->startSection('page-subtitle','Selamat datang di Asistio — ICo Labs UMI'); ?>
+<?php $__env->startSection('page-subtitle','Selamat datang di Asistio — ICLABS FIKOM UMI'); ?>
 <?php $__env->startSection('content'); ?>
 <div class="stats-grid">
     <div class="stat-card"><div class="stat-icon stat-icon-primary"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div class="stat-body"><div class="stat-value"><?php echo e($totalMK); ?></div><div class="stat-label">Mata Kuliah</div></div></div>

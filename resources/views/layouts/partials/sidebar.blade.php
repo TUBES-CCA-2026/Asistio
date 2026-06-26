@@ -2,7 +2,7 @@
 <aside class="sidebar" id="sidebar">
     {{-- Brand dengan logo dari file image (poin #5) --}}
     <div class="sidebar-brand">
-        <img src="{{ asset('images/logo.svg') }}" alt="Asistio Logo" class="sidebar-logo-img">
+        <img src="{{ asset('images/logo_2.png') }}" alt="ICLABS FIKOM UMI Logo" class="sidebar-logo-img">
         <span class="sidebar-brand-name">Asistio</span>
     </div>
 
