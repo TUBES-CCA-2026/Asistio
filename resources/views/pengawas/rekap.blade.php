@@ -3,15 +3,28 @@
 @section('page-title','Rekap Data Praktikan')
 @section('page-subtitle') {{ $praktikum->mataKuliah?->nama_mk }} — {{ $praktikum->nama_kelas }} @endsection
 @section('content')
-<div class="page-toolbar"><a href="{{ route('pengawas.dashboard') }}" class="btn btn-outline">← Kembali</a></div>
+<div class="page-toolbar">
+    <a href="{{ route('pengawas.dashboard') }}" class="btn btn-outline">← Kembali</a>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ route('pengawas.rekap.export.pdf', $praktikum) }}" class="btn btn-outline btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export PDF
+        </a>
+        <a href="{{ route('pengawas.rekap.export.excel', $praktikum) }}" class="btn btn-outline btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export Excel
+        </a>
+    </div>
+</div>
 <div class="card mb-4">
     <div class="card-header"><span class="card-title">Rekap Nilai Akhir</span></div>
     <div class="table-wrapper"><table class="table">
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;">Eval</th><th style="text-align:center;">Asist</th><th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th><th style="text-align:center;">Nilai Akhir</th><th style="text-align:center;">Huruf</th><th style="text-align:center;">Kehadiran</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $m)
-        @php $r = $m->rekap; $alpa = $m->jumlah_alpa; @endphp
-        <tr>
+        @php $r = $m->rekap; $alpa = $m->jumlah_alpa; $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA; @endphp
+        
+        <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
             <td style="font-family:monospace;font-size:12px;">{{ $m->nim_mahasiswa }}</td>
             <td class="fw-600">{{ $m->nama_mahasiswa }}</td>
             <td style="text-align:center;">{{ $r?->nilai_praktikum ?? '—' }}</td>
@@ -36,10 +49,19 @@
         <thead><tr><th>NIM</th><th>Nama</th>@for($i=1;$i<=14;$i++)<th style="text-align:center;width:32px;">P{{ $i }}</th>@endfor<th>H</th><th>A</th></tr></thead>
         <tbody>
         @foreach($mahasiswaList as $m)
-        @php $pp = $presensiAll[$m->id] ?? collect(); @endphp
-        <tr>
+        @php
+            $pp = $presensiAll[$m->id] ?? collect();
+            $jumlahAlpaPertemuan = $pp->where('status_kehadiran','A')->count();
+            $alpaTinggiPertemuan = $jumlahAlpaPertemuan >= \App\Models\Mahasiswa::BATAS_ALPA;
+        @endphp
+        <tr class="{{ $alpaTinggiPertemuan ? 'row-alpa-alert' : '' }}">
             <td style="font-family:monospace;font-size:11px;">{{ $m->nim_mahasiswa }}</td>
-            <td>{{ $m->nama_mahasiswa }}</td>
+            <td>
+                {{ $m->nama_mahasiswa }}
+                @if($alpaTinggiPertemuan)
+                    <span class="badge-alpa-alert" title="Sudah alpa {{ $jumlahAlpaPertemuan }}x — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Alpa {{ $jumlahAlpaPertemuan }}×</span>
+                @endif
+            </td>
             @for($j=1;$j<=14;$j++)@php $ps=$pp[$j]??null; @endphp
             <td style="text-align:center;padding:4px 2px;">@if($ps)<span class="status-chip status-chip-{{ $ps->status_kehadiran }}">{{ $ps->status_kehadiran }}</span>@else<span class="status-chip status-chip-empty">—</span>@endif</td>
             @endfor

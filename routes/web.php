@@ -69,6 +69,8 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
 Route::prefix('pengawas')->middleware(['auth','role:dosen'])->name('pengawas.')->group(function () {
     Route::get('/dashboard',            [PengawasController::class,'dashboard'])->name('dashboard');
     Route::get('/rekap/{praktikum}',    [PengawasController::class,'rekap'])->name('rekap');
+    Route::get('/rekap/{praktikum}/export/pdf',   [PengawasController::class,'rekapPdf'])->name('rekap.export.pdf');
+    Route::get('/rekap/{praktikum}/export/excel', [PengawasController::class,'rekapExcel'])->name('rekap.export.excel');
 });
 
 // ── Dosen — Ganti Password ─────────────────────────────────────────────────
