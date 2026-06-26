@@ -69,5 +69,62 @@
     <?php endif; ?>
 </div>
 </form>
+
+<div class="card" style="margin-top:20px;">
+    <div class="card-header">
+        <span class="card-title">Absensi Asistensi</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <div style="display:flex;gap:8px;padding:14px 16px 0;">
+            <?php $__currentLoopData = [1,2,3]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ke): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <button type="button" class="btn btn-sm <?php echo e($ke===1 ? 'btn-primary' : 'btn-outline'); ?> asistensi-tab-btn" data-asistensi="<?php echo e($ke); ?>">Asistensi <?php echo e($ke); ?></button>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </div>
+        <?php $__currentLoopData = [1,2,3]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ke): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <div class="asistensi-tab-panel" data-asistensi-panel="<?php echo e($ke); ?>" style="<?php echo e($ke!==1 ? 'display:none;' : ''); ?>">
+            <form method="POST" action="<?php echo e(route('asisten.presensi.asistensi.simpan', $praktikum)); ?>">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="asistensi_ke" value="<?php echo e($ke); ?>">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">Hadir</th></tr></thead>
+                        <tbody>
+                        <?php $__empty_1 = true; $__currentLoopData = $mahasiswaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php $hadir = ($presensiAsistensiMap[$m->id] ?? null)?->get($ke)?->hadir ?? false; ?>
+                        <tr>
+                            <td><?php echo e(str_pad($i+1,2,'0',STR_PAD_LEFT)); ?></td>
+                            <td style="font-family:monospace;font-size:12px;"><?php echo e($m->nim_mahasiswa); ?></td>
+                            <td class="fw-500"><?php echo e($m->nama_mahasiswa); ?></td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" name="presensi[<?php echo e($m->id); ?>][hadir]" value="1" <?php echo e($hadir ? 'checked' : ''); ?>>
+                            </td>
+                        </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?><tr><td colspan="4"><div class="empty-state"><p>Belum ada mahasiswa di kelas ini.</p></div></td></tr>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php if($mahasiswaList->count() > 0): ?>
+                <div class="card-footer"><button type="submit" class="btn btn-primary">Simpan Absensi Asistensi <?php echo e($ke); ?></button></div>
+                <?php endif; ?>
+            </form>
+        </div>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    </div>
+</div>
+<script>
+document.querySelectorAll('.asistensi-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var target = btn.dataset.asistensi;
+        document.querySelectorAll('.asistensi-tab-btn').forEach(function(b) {
+            b.classList.toggle('btn-primary', b === btn);
+            b.classList.toggle('btn-outline', b !== btn);
+        });
+        document.querySelectorAll('.asistensi-tab-panel').forEach(function(panel) {
+            panel.style.display = (panel.dataset.asistensiPanel === target) ? '' : 'none';
+        });
+    });
+});
+</script>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\asistio\resources\views/asisten/presensi.blade.php ENDPATH**/ ?>

@@ -1,6 +1,6 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{Praktikum,Mahasiswa,Presensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
+use App\Models\{Praktikum,Mahasiswa,Presensi,PresensiAsistensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
 use Illuminate\Http\{Request,RedirectResponse};
 use Illuminate\Support\Facades\{Auth,Hash};
 use Illuminate\View\View;
@@ -44,7 +44,11 @@ class AsistenController extends Controller
             'hadir' => $presensiMap->where('status_kehadiran','H')->count(),
             'alpa'  => $presensiMap->where('status_kehadiran','A')->count(),
         ];
-        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats'));
+        ;
+        // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi (asistensi_ke)
+        $presensiAsistensiMap = PresensiAsistensi::where('praktikum_id', $praktikum->id)
+            ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
+        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats','presensiAsistensiMap'));
     }
 
     public function presensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
@@ -62,6 +66,26 @@ class AsistenController extends Controller
             );
         }
         return back()->with('success',"Presensi pertemuan {$pertemuan} disimpan.");
+    }
+
+    /** Simpan absensi sesi Asistensi (1, 2, atau 3) — terpisah dari presensi praktikum P1-P14 */
+    public function presensiAsistensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+ 
+        $v = $request->validate([
+            'asistensi_ke'   => ['required','integer','in:1,2,3'],
+            'presensi'       => ['array'],
+            'presensi.*.hadir' => ['nullable'],
+        ]);
+        $asistensiKe = (int) $v['asistensi_ke'];
+        foreach ($request->input('presensi', []) as $mahasiswaId => $data) {
+            PresensiAsistensi::updateOrCreate(
+                ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id,'asistensi_ke'=>$asistensiKe],
+                ['hadir'=>!empty($data['hadir'])]
+            );
+        }
+        return back()->with('success',"Absensi Asistensi {$asistensiKe} disimpan.");
     }
 
     /** Nilai per kelas (Praktikum) */

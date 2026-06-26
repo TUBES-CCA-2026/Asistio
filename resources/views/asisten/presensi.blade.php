@@ -69,4 +69,61 @@
     @endif
 </div>
 </form>
+
+<div class="card" style="margin-top:20px;">
+    <div class="card-header">
+        <span class="card-title">Absensi Asistensi</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <div style="display:flex;gap:8px;padding:14px 16px 0;">
+            @foreach([1,2,3] as $ke)
+            <button type="button" class="btn btn-sm {{ $ke===1 ? 'btn-primary' : 'btn-outline' }} asistensi-tab-btn" data-asistensi="{{ $ke }}">Asistensi {{ $ke }}</button>
+            @endforeach
+        </div>
+        @foreach([1,2,3] as $ke)
+        <div class="asistensi-tab-panel" data-asistensi-panel="{{ $ke }}" style="{{ $ke!==1 ? 'display:none;' : '' }}">
+            <form method="POST" action="{{ route('asisten.presensi.asistensi.simpan', $praktikum) }}">
+                @csrf
+                <input type="hidden" name="asistensi_ke" value="{{ $ke }}">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">Hadir</th></tr></thead>
+                        <tbody>
+                        @forelse($mahasiswaList as $i => $m)
+                        @php $hadir = ($presensiAsistensiMap[$m->id] ?? null)?->get($ke)?->hadir ?? false; @endphp
+                        <tr>
+                            <td>{{ str_pad($i+1,2,'0',STR_PAD_LEFT) }}</td>
+                            <td style="font-family:monospace;font-size:12px;">{{ $m->nim_mahasiswa }}</td>
+                            <td class="fw-500">{{ $m->nama_mahasiswa }}</td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" name="presensi[{{ $m->id }}][hadir]" value="1" {{ $hadir ? 'checked' : '' }}>
+                            </td>
+                        </tr>
+                        @empty<tr><td colspan="4"><div class="empty-state"><p>Belum ada mahasiswa di kelas ini.</p></div></td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if($mahasiswaList->count() > 0)
+                <div class="card-footer"><button type="submit" class="btn btn-primary">Simpan Absensi Asistensi {{ $ke }}</button></div>
+                @endif
+            </form>
+        </div>
+        @endforeach
+    </div>
+</div>
+<script>
+document.querySelectorAll('.asistensi-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var target = btn.dataset.asistensi;
+        document.querySelectorAll('.asistensi-tab-btn').forEach(function(b) {
+            b.classList.toggle('btn-primary', b === btn);
+            b.classList.toggle('btn-outline', b !== btn);
+        });
+        document.querySelectorAll('.asistensi-tab-panel').forEach(function(panel) {
+            panel.style.display = (panel.dataset.asistensiPanel === target) ? '' : 'none';
+        });
+    });
+});
+</script>
 @endsection
