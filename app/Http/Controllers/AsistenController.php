@@ -85,10 +85,20 @@ class AsistenController extends Controller
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
 
         $v = $request->validate([
-            'nilai_evaluasi1'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi2'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi3'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi4'=>['nullable','numeric','min:0','max:100'],
+            'p1'=>['nullable','numeric','min:0','max:100'],
+            'p2'=>['nullable','numeric','min:0','max:100'],
+            'p3'=>['nullable','numeric','min:0','max:100'],
+            'p4'=>['nullable','numeric','min:0','max:100'],
+            'p5'=>['nullable','numeric','min:0','max:100'],
+            'p6'=>['nullable','numeric','min:0','max:100'],
+            'p7'=>['nullable','numeric','min:0','max:100'],
+            'p8'=>['nullable','numeric','min:0','max:100'],
+            'p9'=>['nullable','numeric','min:0','max:100'],
+            'p10'=>['nullable','numeric','min:0','max:100'],
+            'p11'=>['nullable','numeric','min:0','max:100'],
+            'p12'=>['nullable','numeric','min:0','max:100'],
+            'p13'=>['nullable','numeric','min:0','max:100'],
+            'p14'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi1'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi2'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi3'=>['nullable','numeric','min:0','max:100'],
@@ -96,7 +106,7 @@ class AsistenController extends Controller
             'nilai_UAS'=>['nullable','numeric','min:0','max:100'],
         ]);
         NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],
-            array_filter(array_intersect_key($v, array_flip(['nilai_evaluasi1','nilai_evaluasi2','nilai_evaluasi3','nilai_evaluasi4'])),fn($v)=>$v!==null));
+            array_filter(array_intersect_key($v, array_flip(['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14'])),fn($v)=>$v!==null));
         NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],
             array_filter(array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])),fn($v)=>$v!==null));
         NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$praktikum->id],

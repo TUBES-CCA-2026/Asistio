@@ -193,10 +193,20 @@ class LaboranController extends Controller
     public function mahasiswaNilaiUpdate(Request $request, Mahasiswa $mahasiswa): RedirectResponse {
         $pid = $mahasiswa->praktikum_id;
         $v   = $request->validate([
-            'nilai_evaluasi1'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi2'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi3'=>['nullable','numeric','min:0','max:100'],
-            'nilai_evaluasi4'=>['nullable','numeric','min:0','max:100'],
+            'p1'=>['nullable','numeric','min:0','max:100'],
+            'p2'=>['nullable','numeric','min:0','max:100'],
+            'p3'=>['nullable','numeric','min:0','max:100'],
+            'p4'=>['nullable','numeric','min:0','max:100'],
+            'p5'=>['nullable','numeric','min:0','max:100'],
+            'p6'=>['nullable','numeric','min:0','max:100'],
+            'p7'=>['nullable','numeric','min:0','max:100'],
+            'p8'=>['nullable','numeric','min:0','max:100'],
+            'p9'=>['nullable','numeric','min:0','max:100'],
+            'p10'=>['nullable','numeric','min:0','max:100'],
+            'p11'=>['nullable','numeric','min:0','max:100'],
+            'p12'=>['nullable','numeric','min:0','max:100'],
+            'p13'=>['nullable','numeric','min:0','max:100'],
+            'p14'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi1'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi2'=>['nullable','numeric','min:0','max:100'],
             'nilai_asistensi3'=>['nullable','numeric','min:0','max:100'],
@@ -206,7 +216,7 @@ class LaboranController extends Controller
             'presensi.*.status_kehadiran'=>['in:H,I,S,A'],
         ]);
         NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid],
-            array_intersect_key($v, array_flip(['nilai_evaluasi1','nilai_evaluasi2','nilai_evaluasi3','nilai_evaluasi4'])));
+            array_intersect_key($v, array_flip(['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14'])));
         NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid],
             array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
         NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid],

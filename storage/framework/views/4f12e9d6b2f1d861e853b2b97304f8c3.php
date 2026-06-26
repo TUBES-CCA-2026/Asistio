@@ -11,4 +11,4 @@
         <p class="footer-copy">© <?php echo e(date('Y')); ?> Asistio. Hak cipta dilindungi.</p>
     </div>
 </footer>
-<?php /**PATH C:\xampp\htdocs\asistio\resources\views/layouts/partials/footer.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\tes1\resources\views/layouts/partials/footer.blade.php ENDPATH**/ ?>

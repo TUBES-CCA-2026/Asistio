@@ -26,16 +26,16 @@
         <div class="card">
             <div class="card-header"><span class="card-title">Nilai Evaluasi</span><span class="badge badge-gray">Bobot 20%</span></div>
             <div class="card-body">
-                <div class="grid grid-2">
-                    @foreach([1,2,3,4] as $i)
+                <div class="grid grid-4">
+                    @for($i = 1; $i <= 14; $i++)
                     <div class="form-group">
-                        <label class="form-label">Evaluasi {{ $i }}</label>
-                        <input type="number" name="nilai_evaluasi{{ $i }}" class="form-control"
+                        <label class="form-label">P{{ $i }}</label>
+                        <input type="number" name="p{{ $i }}" class="form-control"
                             min="0" max="100" step="0.01"
-                            value="{{ $nilaiEvaluasi->{'nilai_evaluasi'.$i} ?? '' }}"
+                            value="{{ $nilaiEvaluasi->{'p'.$i} ?? '' }}"
                             placeholder="0–100">
                     </div>
-                    @endforeach
+                    @endfor
                 </div>
                 @if($nilaiEvaluasi->rata_rata)
                 <div class="info-row"><span class="text-muted fs-13">Rata-rata evaluasi:</span><span class="fw-700 text-primary">{{ $nilaiEvaluasi->rata_rata }}</span></div>
