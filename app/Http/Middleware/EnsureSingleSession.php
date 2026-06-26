@@ -11,7 +11,7 @@ class EnsureSingleSession
     {
         // Jangan jalankan pengecekan ini di route login/logout itu sendiri —
         // mencegah kemungkinan redirect loop balik ke halaman yang sama.
-        if ($request->routeIs('login') || $request->routeIs('logout')) {
+        if ($request->routeIs('login') || $request->routeIs('login.post') || $request->routeIs('logout')) {
             return $next($request);
         }
 

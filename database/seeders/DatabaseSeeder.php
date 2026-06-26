@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
         $uKharisma= User::firstOrCreate(['username'=>'kharisma'],  ['password'=>Hash::make('password'),'role_id'=>$rAsisten->id]);
 
         // ── User untuk Dosen
-        $uDosen1  = User::firstOrCreate(['username'=>'dosen1'],    ['password'=>Hash::make('dosen123'),  'role_id'=>$rDosen->id]);
+        $uDosen1  = User::firstOrCreate(['username'=>'dosen1'], ['password'=>Hash::make('dosen123'),'role_id'=>$rDosen->id]);
 
         // ── Ruangan
         $r1 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab StartUp']);
@@ -53,24 +53,24 @@ class DatabaseSeeder extends Seeder
         $r5 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Computer Vision']);
         $r6 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Data Science']);
         $r7 = Ruangan::firstOrCreate(['nama_ruangan'=>'Lab Microcontroller']);
-        
+
         // ── Mata Kuliah
-        $mkBD  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD'],  ['nama_mk'=>'Basis Data']);
-        $mkBD2  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD2'],  ['nama_mk'=>'Basis Data 2']);
-        $mkJKO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-JKO'], ['nama_mk'=>'Jaringan Komputer']);
-        $mkPW = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PW'], ['nama_mk'=>'Pemrograman Web']);
-        $mkPBO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PBO'], ['nama_mk'=>'Pemrograman Berorientasi Objek']);
-        $mkSTR = MataKuliah::firstOrCreate(['kode_mk'=>'IF-STR'], ['nama_mk'=>'Struktur Data']);
+        $mkBD    = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD'],    ['nama_mk'=>'Basis Data']);
+        $mkBD2   = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD2'],   ['nama_mk'=>'Basis Data 2']);
+        $mkJKO   = MataKuliah::firstOrCreate(['kode_mk'=>'IF-JKO'],   ['nama_mk'=>'Jaringan Komputer']);
+        $mkPW    = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PW'],    ['nama_mk'=>'Pemrograman Web']);
+        $mkPBO   = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PBO'],   ['nama_mk'=>'Pemrograman Berorientasi Objek']);
+        $mkSTR   = MataKuliah::firstOrCreate(['kode_mk'=>'IF-STR'],   ['nama_mk'=>'Struktur Data']);
         $mkALPRO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-ALPRO'], ['nama_mk'=>'Algoritma dan Pemrograman']);
         $mkELDAS = MataKuliah::firstOrCreate(['kode_mk'=>'IF-ELDAS'], ['nama_mk'=>'Elektronika Dasar']);
 
-        // ── Dosen (tanpa mata_kuliah_id — relasi via praktikum)
+        // ── Dosen
         $dosen1 = Dosen::firstOrCreate(['user_id'=>$uDosen1->id],
             ['nama_dosen'=>'Dr. Budi Santoso, M.T.','nidn'=>'0012345678']);
 
         // ── Asisten
         $asisten1        = Asisten::firstOrCreate(['user_id'=>$uAsisten1->id], ['nama_asisten'=>'Ahmad Fauzi','nim'=>'13020210001']);
-        $asisten2        = Asisten::firstOrCreate(['user_id'=>$uAsisten2->id], ['nama_asisten'=>'Siti Rahayu','nim'=>'13020210002']);        
+        $asisten2        = Asisten::firstOrCreate(['user_id'=>$uAsisten2->id], ['nama_asisten'=>'Siti Rahayu','nim'=>'13020210002']);
         $asistenBintang  = Asisten::firstOrCreate(['user_id'=>$uBintang->id],  ['nama_asisten'=>'Bintang', 'nim'=>'13020210003']);
         $asistenAgys     = Asisten::firstOrCreate(['user_id'=>$uAgys->id],     ['nama_asisten'=>'Agys',    'nim'=>'13020210004']);
         $asistenValdi    = Asisten::firstOrCreate(['user_id'=>$uValdi->id],    ['nama_asisten'=>'Valdi',   'nim'=>'13020210005']);
@@ -92,41 +92,59 @@ class DatabaseSeeder extends Seeder
         $asistenAlisa    = Asisten::firstOrCreate(['user_id'=>$uAlisa->id],    ['nama_asisten'=>'Alisa',   'nim'=>'13020210021']);
         $asistenTiara    = Asisten::firstOrCreate(['user_id'=>$uTiara->id],    ['nama_asisten'=>'Tiara',   'nim'=>'13020210022']);
         $asistenNajiya   = Asisten::firstOrCreate(['user_id'=>$uNajiya->id],   ['nama_asisten'=>'Najiya',  'nim'=>'13020210023']);
-        $asistenKharisma = Asisten::firstOrCreate(['user_id'=>$uKharisma->id], ['nama_asisten'=>'Kharisma','nim'=>'13020210024']);    
+        $asistenKharisma = Asisten::firstOrCreate(['user_id'=>$uKharisma->id], ['nama_asisten'=>'Kharisma','nim'=>'13020210024']);
 
         // ── Praktikum (kelas)
         $kelas1 = Praktikum::firstOrCreate(
             ['mata_kuliah_id'=>$mkBD->id,'nama_kelas'=>'Kelas A'],
-            ['jadwal'=>'Senin 08:00–10:00','ruangan_id'=>$r1->id,'dosen_id'=>$dosen1->id,'asisten_id'=>$asisten1->id]
+            ['jadwal'=>'Senin 08:00-10:00','ruangan_id'=>$r1->id,'dosen_id'=>$dosen1->id,'asisten_id'=>$asisten1->id]
         );
         $kelas2 = Praktikum::firstOrCreate(
             ['mata_kuliah_id'=>$mkBD->id,'nama_kelas'=>'Kelas B'],
-            ['jadwal'=>'Selasa 10:00–12:00','ruangan_id'=>$r2->id,'dosen_id'=>$dosen1->id,'asisten_id'=>$asisten2->id]
+            ['jadwal'=>'Selasa 10:00-12:00','ruangan_id'=>$r2->id,'dosen_id'=>$dosen1->id,'asisten_id'=>$asisten2->id]
         );
         $kelas3 = Praktikum::firstOrCreate(
             ['mata_kuliah_id'=>$mkBD2->id,'nama_kelas'=>'Kelas A'],
-            ['jadwal'=>'Rabu 08:00–10:00','ruangan_id'=>$r1->id,'asisten_id'=>$asisten2->id]
+            ['jadwal'=>'Rabu 08:00-10:00','ruangan_id'=>$r1->id,'asisten_id'=>$asisten2->id]
         );
 
-        // ── Mahasiswa (langsung ke kelas, bukan ke MK)
-        $mhsList = [
-            ['nim_mahasiswa'=>'13020220001','nama_mahasiswa'=>'Muhammad Rizky',    'praktikum_id'=>$kelas1->id],
-            ['nim_mahasiswa'=>'13020220002','nama_mahasiswa'=>'Nurul Hidayah',     'praktikum_id'=>$kelas1->id],
-            ['nim_mahasiswa'=>'13020220003','nama_mahasiswa'=>'Andi Pratama',      'praktikum_id'=>$kelas1->id],
-            ['nim_mahasiswa'=>'13020220004','nama_mahasiswa'=>'Dewi Anggraini',    'praktikum_id'=>$kelas1->id],
-            ['nim_mahasiswa'=>'13020220005','nama_mahasiswa'=>'Farhan Maulana',    'praktikum_id'=>$kelas1->id],
-            ['nim_mahasiswa'=>'13020220006','nama_mahasiswa'=>'Reza Firmansyah',   'praktikum_id'=>$kelas2->id],
-            ['nim_mahasiswa'=>'13020220007','nama_mahasiswa'=>'Indah Permatasari', 'praktikum_id'=>$kelas2->id],
-            ['nim_mahasiswa'=>'13020220008','nama_mahasiswa'=>'Bagas Prasetyo',    'praktikum_id'=>$kelas3->id],
+        // ── Mahasiswa — buat TANPA praktikum_id, lalu attach ke kelas via pivot
+        $mhsData = [
+            ['nim_mahasiswa'=>'13020220001','nama_mahasiswa'=>'Muhammad Rizky'],
+            ['nim_mahasiswa'=>'13020220002','nama_mahasiswa'=>'Nurul Hidayah'],
+            ['nim_mahasiswa'=>'13020220003','nama_mahasiswa'=>'Andi Pratama'],
+            ['nim_mahasiswa'=>'13020220004','nama_mahasiswa'=>'Dewi Anggraini'],
+            ['nim_mahasiswa'=>'13020220005','nama_mahasiswa'=>'Farhan Maulana'],
+            ['nim_mahasiswa'=>'13020220006','nama_mahasiswa'=>'Reza Firmansyah'],
+            ['nim_mahasiswa'=>'13020220007','nama_mahasiswa'=>'Indah Permatasari'],
+            ['nim_mahasiswa'=>'13020220008','nama_mahasiswa'=>'Bagas Prasetyo'],
         ];
+
         $mhsObjs = [];
-        foreach ($mhsList as $d) {
-            $mhsObjs[] = Mahasiswa::firstOrCreate(['nim_mahasiswa'=>$d['nim_mahasiswa']], $d);
+        foreach ($mhsData as $d) {
+            $mhsObjs[] = Mahasiswa::firstOrCreate(
+                ['nim_mahasiswa' => $d['nim_mahasiswa']],
+                ['nama_mahasiswa' => $d['nama_mahasiswa']]
+            );
         }
+
+        // Assign ke kelas via pivot — syncWithoutDetaching aman dijalankan berkali-kali
+        foreach (array_slice($mhsObjs, 0, 5) as $m) {        // BD Kelas A: mhs 0-4
+            $kelas1->mahasiswa()->syncWithoutDetaching([$m->id]);
+        }
+        foreach (array_slice($mhsObjs, 5, 2) as $m) {        // BD Kelas B: mhs 5-6
+            $kelas2->mahasiswa()->syncWithoutDetaching([$m->id]);
+        }
+        $kelas3->mahasiswa()->syncWithoutDetaching([$mhsObjs[7]->id]); // BD2: Bagas
+        $kelas3->mahasiswa()->syncWithoutDetaching([$mhsObjs[0]->id]); // BD2: Muhammad Rizky (2 kelas, demo)
 
         // ── Presensi untuk kelas1 (3 pertemuan demo)
         $kelas1Mhs = array_slice($mhsObjs, 0, 5);
-        $pola = [1=>['H','H','H','H','H'], 2=>['H','A','H','H','I'], 3=>['H','H','S','H','H']];
+        $pola = [
+            1 => ['H','H','H','H','H'],
+            2 => ['H','A','H','H','I'],
+            3 => ['H','H','S','H','H'],
+        ];
         foreach ($kelas1Mhs as $i => $m) {
             foreach ($pola as $pertemuan => $statuses) {
                 Presensi::firstOrCreate(
@@ -153,13 +171,13 @@ class DatabaseSeeder extends Seeder
             RekapDetailNilai::hitungDanSimpan($m->id, $kelas1->id);
         }
 
-        $this->command->info('✅ Seeder selesai!');
+        $this->command->info('Seeder selesai!');
         $this->command->table(
             ['Role','Username','Password','Keterangan'],
             [
                 ['Laboran','laboran','.env','Kelola semua data'],
-                ['Asisten','asisten1','asisten123','Kelas A — Basis Data'],
-                ['Asisten','asisten2','asisten123','Kelas B Basis Data + SO Kelas A'],
+                ['Asisten','asisten1','asisten123','Kelas A - Basis Data'],
+                ['Asisten','asisten2','asisten123','Kelas B BD + BD2 Kelas A'],
                 ['Asisten','bintang','password','-'],
                 ['Asisten','agys','password','-'],
                 ['Asisten','valdi','password','-'],
