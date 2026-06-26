@@ -72,6 +72,38 @@ class LaboranController extends Controller
         $praktikum->delete(); return back()->with('success','Kelas dihapus.');
     }
 
+    /** Dashboard 1 kelas: kelola asisten1/2 + kelola praktikan di dalamnya */
+    public function kelasShow(Praktikum $praktikum): View {
+        return view('laboran.kelas.show', [
+            'kelas'               => $praktikum->load(['mataKuliah','dosen','ruangan','asisten','asisten2']),
+            'asistenAll'          => Asisten::orderBy('nama_asisten')->get(),
+            'mahasiswaDiKelas'    => Mahasiswa::where('praktikum_id', $praktikum->id)->orderBy('nama_mahasiswa')->get(),
+            'mahasiswaBelumKelas' => Mahasiswa::whereNull('praktikum_id')->orderBy('nama_mahasiswa')->get(),
+        ]);
+    }
+    /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
+    public function kelasUpdate(Request $request, Praktikum $praktikum): RedirectResponse {
+        $v = $request->validate([
+            'asisten_id'  => ['nullable','exists:asisten,id'],
+            'asisten2_id' => ['nullable','exists:asisten,id'],
+        ]);
+        $praktikum->update($v);
+        return back()->with('success','Asisten kelas diperbarui.');
+    }
+    /** Masukkan mahasiswa yang belum punya kelas ke kelas ini */
+    public function kelasTambahMahasiswa(Request $request, Praktikum $praktikum): RedirectResponse {
+        $v = $request->validate(['mahasiswa_id' => ['required','exists:mahasiswa,id']]);
+        Mahasiswa::where('id', $v['mahasiswa_id'])->update(['praktikum_id' => $praktikum->id]);
+        return back()->with('success','Mahasiswa ditambahkan ke kelas ini.');
+    }
+    /** Keluarkan mahasiswa dari kelas ini (mahasiswa TIDAK dihapus, cuma jadi tanpa kelas) */
+    public function kelasHapusMahasiswa(Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse {
+        if ($mahasiswa->praktikum_id === $praktikum->id) {
+            $mahasiswa->update(['praktikum_id' => null]);
+        }
+        return back()->with('success','Mahasiswa dikeluarkan dari kelas ini.');
+    }
+ 
     // ── Asisten ────────────────────────────────────────────────────────────
     public function asisten(): View {
         return view('laboran.asisten.index', ['asistenAll' => Asisten::with('user')->latest()->get()]);
@@ -153,10 +185,9 @@ class LaboranController extends Controller
         $v = $request->validate([
             'nim_mahasiswa'  => ['required','unique:mahasiswa,nim_mahasiswa'],
             'nama_mahasiswa' => ['required','string'],
-            'praktikum_id'   => ['required','exists:praktikum,id'],
         ]);
         Mahasiswa::create($v);
-        return back()->with('success','Mahasiswa ditambahkan.');
+        return back()->with('success','Mahasiswa ditambahkan. Tentukan kelasnya lewat menu Kelas Praktikum → Edit.');
     }
     public function mahasiswaEdit(Mahasiswa $mahasiswa): View {
         return view('laboran.mahasiswa.edit', [
@@ -168,7 +199,7 @@ class LaboranController extends Controller
         $v = $request->validate([
             'nim_mahasiswa'  => ['required',"unique:mahasiswa,nim_mahasiswa,{$mahasiswa->id}"],
             'nama_mahasiswa' => ['required','string'],
-            'praktikum_id'   => ['required','exists:praktikum,id'],
+            'praktikum_id'   => ['nullable','exists:praktikum,id'],
         ]);
         $mahasiswa->update($v);
         return redirect()->route('laboran.mahasiswa')->with('success','Data mahasiswa diperbarui.');

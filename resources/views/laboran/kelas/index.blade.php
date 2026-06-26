@@ -15,8 +15,13 @@
         <td class="fs-12">{{ $k->dosen?->nama_dosen ?? '—' }}</td>
         <td class="fs-12">{{ $k->asisten?->nama_asisten ?? '—' }}</td>
         <td class="fs-12">{{ $k->asisten2?->nama_asisten ?? '—' }}</td>
-        <td><form method="POST" action="{{ route('laboran.kelas.destroy',$k) }}">@csrf @method('DELETE')
-        <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus kelas ini?')">Hapus</button></form></td>
+        <td>
+            <div style="display:flex;gap:6px;">
+            <a href="{{ route('laboran.kelas.show',$k) }}" class="btn btn-sm btn-outline">Edit</a>
+            <form method="POST" action="{{ route('laboran.kelas.destroy',$k) }}">@csrf @method('DELETE')
+            <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus kelas ini?')">Hapus</button></form>
+            </div>
+        </td>
     </tr>
     @empty<tr><td colspan="8"><div class="empty-state"><p>Belum ada kelas praktikum.</p></div></td></tr>
     @endforelse

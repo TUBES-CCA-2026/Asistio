@@ -19,7 +19,11 @@
         <td class="fs-13">{{ $m->praktikum?->mataKuliah?->nama_mk }}</td>
         <td>
             <div style="display:flex;gap:6px;">
-                <a href="{{ route('laboran.mahasiswa.nilai',$m) }}" class="btn btn-sm btn-primary">Nilai &amp; Absensi</a>
+                @if($m->praktikum_id)
+                    <a href="{{ route('laboran.mahasiswa.nilai',$m) }}" class="btn btn-sm btn-primary">Nilai &amp; Absensi</a>
+                @else
+                    <span class="btn btn-sm btn-outline" style="opacity:.5;cursor:not-allowed;" title="Tambahkan ke kelas dulu lewat menu Kelas Praktikum">Nilai &amp; Absensi</span>
+                @endif
                 <a href="{{ route('laboran.mahasiswa.edit',$m) }}" class="btn btn-sm btn-outline">Edit</a>
                 <form method="POST" action="{{ route('laboran.mahasiswa.destroy',$m) }}" style="margin:0;">@csrf @method('DELETE')
                 <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus mahasiswa ini?')">Hapus</button></form>
@@ -38,15 +42,8 @@
     <div class="grid grid-2">
         <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" required></div>
         <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" required></div>
-        <div class="form-group" style="grid-column:span 2"><label class="form-label required">Kelas / Praktikum</label>
-            <select name="praktikum_id" class="form-select" required>
-                <option value="">Pilih kelas...</option>
-                @foreach($praktikumAll as $p)
-                <option value="{{ $p->id }}">{{ $p->mataKuliah?->kode_mk }} — {{ $p->mataKuliah?->nama_mk }} ({{ $p->nama_kelas }}) {{ $p->asisten ? '| Asisten: '.$p->asisten->nama_asisten : '' }}</option>
-                @endforeach
-            </select>
-        </div>
     </div>
+    <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px;">Kelas belum perlu dipilih sekarang — bisa ditentukan nanti lewat menu <strong>Kelas Praktikum → Edit</strong>.</p>
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Tambah</button></div>
     </form></div>
 </div></div>

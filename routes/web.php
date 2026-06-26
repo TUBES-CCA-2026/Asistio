@@ -28,6 +28,10 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     // Kelas Praktikum
     Route::get('/kelas',                      [LaboranController::class,'kelas'])->name('kelas');
     Route::post('/kelas',                     [LaboranController::class,'kelasStore'])->name('kelas.store');
+    Route::get('/kelas/{praktikum}',           [LaboranController::class,'kelasShow'])->name('kelas.show');
+    Route::patch('/kelas/{praktikum}',         [LaboranController::class,'kelasUpdate'])->name('kelas.update');
+    Route::post('/kelas/{praktikum}/mahasiswa', [LaboranController::class,'kelasTambahMahasiswa'])->name('kelas.mahasiswa.add');
+    Route::delete('/kelas/{praktikum}/mahasiswa/{mahasiswa}', [LaboranController::class,'kelasHapusMahasiswa'])->name('kelas.mahasiswa.remove');
     Route::delete('/kelas/{praktikum}',       [LaboranController::class,'kelasDestroy'])->name('kelas.destroy');
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
@@ -55,8 +59,6 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     // Presensi per kelas (Praktikum)
     Route::get('/presensi/{praktikum}',                               [AsistenController::class,'presensi'])->name('presensi');
     Route::post('/presensi/{praktikum}/simpan',                       [AsistenController::class,'presensiSimpan'])->name('presensi.simpan');
-    Route::post('/presensi/{praktikum}/asistensi/simpan',              [AsistenController::class,'presensiAsistensiSimpan'])->name('presensi.asistensi.simpan');
-    Route::post('/presensi/{praktikum}/asistensi/simpan',             [AsistenController::class,'presensiAsistensiSimpan'])->name('presensi.asistensi.simpan');
     // Nilai per kelas (Praktikum)
     Route::get('/nilai/{praktikum}',                                  [AsistenController::class,'nilai'])->name('nilai');
     Route::post('/nilai/{praktikum}/mahasiswa/{mahasiswa}',           [AsistenController::class,'nilaiSimpan'])->name('nilai.simpan');

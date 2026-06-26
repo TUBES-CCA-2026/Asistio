@@ -9,8 +9,9 @@
     <form method="POST" action="{{ route('laboran.mahasiswa.update',$mahasiswa) }}">@csrf @method('PATCH')
     <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" value="{{ $mahasiswa->nim_mahasiswa }}" required></div>
     <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" value="{{ $mahasiswa->nama_mahasiswa }}" required></div>
-    <div class="form-group"><label class="form-label required">Kelas / Praktikum</label>
-        <select name="praktikum_id" class="form-select" required>
+    <div class="form-group"><label class="form-label">Kelas / Praktikum</label>
+        <select name="praktikum_id" class="form-select">
+            <option value="">— Belum ada kelas —</option>
             @foreach($praktikumAll as $p)
             <option value="{{ $p->id }}" {{ $mahasiswa->praktikum_id==$p->id?'selected':'' }}>
                 {{ $p->mataKuliah?->kode_mk }} — {{ $p->mataKuliah?->nama_mk }} ({{ $p->nama_kelas }})
