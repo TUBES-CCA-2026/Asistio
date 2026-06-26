@@ -7,7 +7,6 @@
     <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas yang Diikuti</th><th>Aksi</th></tr></thead>
     <tbody>
     @forelse($mahasiswaAll as $m)
-    @php $alpaTinggi = $m->melebihiBatasAlpa(); @endphp
     @php $adaAlpa = $m->praktikum->contains(fn($p) => $m->melebihiBatasAlpaDiKelas($p->id)); @endphp
     <tr class="{{ $adaAlpa ? 'row-alpa-alert' : '' }}">
         <td style="font-family:monospace;font-size:13px;">{{ $m->nim_mahasiswa }}</td>
