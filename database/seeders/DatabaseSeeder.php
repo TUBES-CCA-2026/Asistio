@@ -56,8 +56,13 @@ class DatabaseSeeder extends Seeder
         
         // ── Mata Kuliah
         $mkBD  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD'],  ['nama_mk'=>'Basis Data']);
-        $mkSO  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-SO'],  ['nama_mk'=>'Sistem Operasi']);
+        $mkBD2  = MataKuliah::firstOrCreate(['kode_mk'=>'IF-BD2'],  ['nama_mk'=>'Basis Data 2']);
         $mkJKO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-JKO'], ['nama_mk'=>'Jaringan Komputer']);
+        $mkPW = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PW'], ['nama_mk'=>'Pemrograman Web']);
+        $mkPBO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-PBO'], ['nama_mk'=>'Pemrograman Berorientasi Objek']);
+        $mkSTR = MataKuliah::firstOrCreate(['kode_mk'=>'IF-STR'], ['nama_mk'=>'Struktur Data']);
+        $mkALPRO = MataKuliah::firstOrCreate(['kode_mk'=>'IF-ALPRO'], ['nama_mk'=>'Algoritma dan Pemrograman']);
+        $mkELDAS = MataKuliah::firstOrCreate(['kode_mk'=>'IF-ELDAS'], ['nama_mk'=>'Elektronika Dasar']);
 
         // ── Dosen (tanpa mata_kuliah_id — relasi via praktikum)
         $dosen1 = Dosen::firstOrCreate(['user_id'=>$uDosen1->id],
@@ -99,7 +104,7 @@ class DatabaseSeeder extends Seeder
             ['jadwal'=>'Selasa 10:00–12:00','ruangan_id'=>$r2->id,'dosen_id'=>$dosen1->id,'asisten_id'=>$asisten2->id]
         );
         $kelas3 = Praktikum::firstOrCreate(
-            ['mata_kuliah_id'=>$mkSO->id,'nama_kelas'=>'Kelas A'],
+            ['mata_kuliah_id'=>$mkBD2->id,'nama_kelas'=>'Kelas A'],
             ['jadwal'=>'Rabu 08:00–10:00','ruangan_id'=>$r1->id,'asisten_id'=>$asisten2->id]
         );
 
