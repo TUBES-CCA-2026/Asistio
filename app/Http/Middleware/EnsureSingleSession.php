@@ -9,11 +9,18 @@ class EnsureSingleSession
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Jangan jalankan pengecekan ini di route login/logout itu sendiri —
+        // mencegah kemungkinan redirect loop balik ke halaman yang sama.
+        if ($request->routeIs('login') || $request->routeIs('logout')) {
+            return $next($request);
+        }
+
         if (Auth::check()) {
             $user = Auth::user();
             $currentId = $request->session()->getId();
 
             if ($user->current_session_id && $user->current_session_id !== $currentId) {
+                $user->update(['current_session_id' => null]); // ← INI yang sebelumnya hilang
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
