@@ -141,15 +141,21 @@ class AsistenController extends Controller
         return back()->with('success','Nilai disimpan.');
     }
 
-    /** Rekap presensi per kelas */
+    /** Rekap nilai, presensi, dan absensi asistensi per kelas */
     public function rekap(Praktikum $praktikum): View
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
-
+ 
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
-        return view('asisten.rekap', compact('praktikum','mahasiswaList','presensiAll'));
+        // Rekap nilai akhir per mahasiswa, khusus untuk kelas (praktikum) ini
+        $rekapNilaiMap = RekapDetailNilai::where('praktikum_id', $praktikum->id)
+            ->get()->keyBy('mahasiswa_id');
+        // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi (asistensi_ke)
+        $presensiAsistensiAll = PresensiAsistensi::where('praktikum_id', $praktikum->id)
+            ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
+        return view('asisten.rekap', compact('praktikum','mahasiswaList','presensiAll','rekapNilaiMap','presensiAsistensiAll'));
     }
 
     /** Form ganti password sendiri */

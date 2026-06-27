@@ -102,7 +102,7 @@
     </thead>
     <tbody>
     @forelse($mahasiswaList as $m)
-        @php $r = $m->rekap; $alpa = $m->jumlah_alpa; @endphp
+        @php $r = $m->rekap->firstWhere('praktikum_id', $praktikum->id); $alpa = $m->jumlahAlpaDiKelas($praktikum->id); @endphp
         <tr>
             <td class="nim">{{ $m->nim_mahasiswa }}</td>
             <td class="nama">{{ $m->nama_mahasiswa }}</td>
@@ -117,7 +117,7 @@
                 @else — @endif
             </td>
             <td class="center">
-                {{ $m->persentase_hadir }}
+                {{ $m->persentaseHadirDiKelas($praktikum->id) }}
                 @if($alpa >= \App\Models\Mahasiswa::BATAS_ALPA) <span style="color:#DC2626;font-weight:700;">({{ $alpa }}&alpha;)</span>@endif
             </td>
         </tr>
@@ -158,6 +158,47 @@
             <td class="center" style="font-weight:700;color:#DC2626;">{{ $pp->where('status_kehadiran','A')->count() }}</td>
         </tr>
     @endforeach
+    </tbody>
+</table>
+
+<h2 class="section-title">Rekap Absensi Asistensi</h2>
+<table class="data">
+    <thead>
+        <tr>
+            <th style="width:14%;">NIM</th>
+            <th style="width:26%;">Nama</th>
+            <th style="width:15%;">Asistensi 1</th>
+            <th style="width:15%;">Asistensi 2</th>
+            <th style="width:15%;">Asistensi 3</th>
+            <th style="width:15%;">Jumlah Hadir</th>
+        </tr>
+    </thead>
+    <tbody>
+    @forelse($mahasiswaList as $m)
+        @php
+            $pa = $presensiAsistensiAll[$m->id] ?? collect();
+            $hadirAsistensi = $pa->where('hadir', true)->count();
+        @endphp
+        <tr>
+            <td class="nim">{{ $m->nim_mahasiswa }}</td>
+            <td class="nama">{{ $m->nama_mahasiswa }}</td>
+            @for($k = 1; $k <= 3; $k++)
+                @php $pas = $pa[$k] ?? null; @endphp
+                <td class="center">
+                    @if(!$pas)
+                        <span class="chip chip-empty">–</span>
+                    @elseif($pas->hadir)
+                        <span class="chip chip-H">H</span>
+                    @else
+                        <span class="chip chip-A">A</span>
+                    @endif
+                </td>
+            @endfor
+            <td class="center" style="font-weight:700;color:#15803D;">{{ $hadirAsistensi }}/3</td>
+        </tr>
+    @empty
+        <tr><td colspan="6" style="text-align:center;color:#9CA3AF;">Belum ada data absensi asistensi.</td></tr>
+    @endforelse
     </tbody>
 </table>
 

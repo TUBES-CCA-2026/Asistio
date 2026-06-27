@@ -184,7 +184,7 @@ class LaboranController extends Controller
     public function mahasiswa(): View {
         return view('laboran.mahasiswa.index', [
             // load relasi many-to-many
-            'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(20),
+            'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(10),
         ]);
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
@@ -213,12 +213,11 @@ class LaboranController extends Controller
     }
 
     // ── Pengentrian Nilai & Absensi per Mahasiswa ──────────────────────────
-    public function mahasiswaNilai(Mahasiswa $mahasiswa): View {
+    public function mahasiswaNilai(Mahasiswa $mahasiswa, Praktikum $praktikum): View {
         $pid = $praktikum->id;
         return view('laboran.mahasiswa.nilai', [
             'mahasiswa'      => $mahasiswa->load('praktikum.mataKuliah'),
             'praktikum'      => $praktikum,
-            'mahasiswa'      => $mahasiswa->load('praktikum.mataKuliah'),
             'presensiList'   => Presensi::where(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid])->orderBy('pertemuan_ke')->get(),
             'nilaiAsistensi' => NilaiAsistensi::firstOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid]),
             'nilaiUjian'     => NilaiUjian::firstOrCreate(['mahasiswa_id'=>$mahasiswa->id,'praktikum_id'=>$pid]),
