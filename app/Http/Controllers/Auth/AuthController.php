@@ -55,7 +55,7 @@ class AuthController extends Controller
         // Login dari device lain akan menimpa nilai ini, sehingga sesi lama otomatis tidak valid.
         Auth::user()->update(['current_session_id' => $request->session()->getId()]);
 
-        return redirect()->intended($this->redirectPath());
+        return redirect($this->redirectPath());
     }
 
     public function logout(Request $request): RedirectResponse
