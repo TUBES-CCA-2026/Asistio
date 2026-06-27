@@ -9,12 +9,12 @@
 <div class="page-toolbar">
     <a href="{{ route('laboran.mahasiswa') }}" class="btn btn-outline">← Kembali ke Daftar</a>
     <div class="badge-group">
-        <span class="badge badge-primary">{{ $mahasiswa->mataKuliah?->kode_mk }}</span>
-        <span>{{ $mahasiswa->mataKuliah?->nama_mk }}</span>
+        <span class="badge badge-primary">{{ $praktikum->mataKuliah?->kode_mk }}</span>
+        <span>{{ $praktikum->mataKuliah?->nama_mk }} — {{ $praktikum->nama_kelas }}</span>
     </div>
 </div>
 
-<form method="POST" action="{{ route('laboran.mahasiswa.nilai.update', $mahasiswa) }}">
+<form method="POST" action="{{ route('laboran.mahasiswa.nilai.update', [$mahasiswa, $praktikum]) }}">
 @csrf
 
 <div class="grid grid-2" style="align-items:start;">
