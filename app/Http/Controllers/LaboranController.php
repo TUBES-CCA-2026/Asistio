@@ -184,7 +184,7 @@ class LaboranController extends Controller
     public function mahasiswa(): View {
         return view('laboran.mahasiswa.index', [
             // load relasi many-to-many
-            'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(20),
+            'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(10),
         ]);
     }
     public function mahasiswaStore(Request $request): RedirectResponse {

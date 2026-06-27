@@ -61,4 +61,4 @@
 <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\tes1\resources\views/layouts/app.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\ACER\Asistio\resources\views/layouts/app.blade.php ENDPATH**/ ?>

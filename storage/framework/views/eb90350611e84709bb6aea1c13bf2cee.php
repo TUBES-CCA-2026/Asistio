@@ -16,4 +16,4 @@
     <script src="<?php echo e(asset('js/app.js')); ?>" defer></script>
 </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\tes1\resources\views/layouts/auth.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\ACER\Asistio\resources\views/layouts/auth.blade.php ENDPATH**/ ?>
