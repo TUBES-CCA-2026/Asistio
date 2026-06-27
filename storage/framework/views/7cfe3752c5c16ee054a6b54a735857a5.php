@@ -57,7 +57,12 @@
     <?php endif; ?>
     </tbody>
 </table></div>
-<?php if($mahasiswaAll->hasPages()): ?><div class="card-footer"><?php echo e($mahasiswaAll->links()); ?></div><?php endif; ?>
+<?php if($mahasiswaAll->hasPages()): ?>
+    <div class="card-footer">
+        <?php echo e($mahasiswaAll->links()); ?>
+
+    </div>
+<?php endif; ?>
 </div>
 <div id="modalTambah" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Tambah Mahasiswa</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
