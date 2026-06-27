@@ -161,6 +161,47 @@
     </tbody>
 </table>
 
+<h2 class="section-title">Rekap Absensi Asistensi</h2>
+<table class="data">
+    <thead>
+        <tr>
+            <th style="width:14%;">NIM</th>
+            <th style="width:26%;">Nama</th>
+            <th style="width:15%;">Asistensi 1</th>
+            <th style="width:15%;">Asistensi 2</th>
+            <th style="width:15%;">Asistensi 3</th>
+            <th style="width:15%;">Jumlah Hadir</th>
+        </tr>
+    </thead>
+    <tbody>
+    @forelse($mahasiswaList as $m)
+        @php
+            $pa = $presensiAsistensiAll[$m->id] ?? collect();
+            $hadirAsistensi = $pa->where('hadir', true)->count();
+        @endphp
+        <tr>
+            <td class="nim">{{ $m->nim_mahasiswa }}</td>
+            <td class="nama">{{ $m->nama_mahasiswa }}</td>
+            @for($k = 1; $k <= 3; $k++)
+                @php $pas = $pa[$k] ?? null; @endphp
+                <td class="center">
+                    @if(!$pas)
+                        <span class="chip chip-empty">–</span>
+                    @elseif($pas->hadir)
+                        <span class="chip chip-H">H</span>
+                    @else
+                        <span class="chip chip-A">A</span>
+                    @endif
+                </td>
+            @endfor
+            <td class="center" style="font-weight:700;color:#15803D;">{{ $hadirAsistensi }}/3</td>
+        </tr>
+    @empty
+        <tr><td colspan="6" style="text-align:center;color:#9CA3AF;">Belum ada data absensi asistensi.</td></tr>
+    @endforelse
+    </tbody>
+</table>
+
 <p class="footer-note">Dokumen ini dibuat otomatis oleh sistem Asistio.</p>
 
 </body>

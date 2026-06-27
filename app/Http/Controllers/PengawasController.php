@@ -1,6 +1,6 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{Praktikum,Presensi};
+use App\Models\{Praktikum,Presensi,PresensiAsistensi};
 use App\Support\SimpleXlsxWriter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
@@ -21,8 +21,8 @@ class PengawasController extends Controller
     /** Rekap data per kelas praktikum */
     public function rekap(Praktikum $praktikum): View {
         $this->authorizeKelas($praktikum);
-        [$mahasiswaList, $presensiAll] = $this->dataRekap($praktikum);
-        return view('pengawas.rekap', compact('praktikum','mahasiswaList','presensiAll'));
+        [$mahasiswaList, $presensiAll, $presensiAsistensiAll] = $this->dataRekap($praktikum);
+        return view('pengawas.rekap', compact('praktikum','mahasiswaList','presensiAll','presensiAsistensiAll'));
     }
 
     /**
@@ -41,18 +41,21 @@ class PengawasController extends Controller
             ->orderBy('nama_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
-        return [$mahasiswaList, $presensiAll];
+        // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi
+        $presensiAsistensiAll = PresensiAsistensi::where('praktikum_id', $praktikum->id)
+            ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
+        return [$mahasiswaList, $presensiAll, $presensiAsistensiAll];
     }
 
     /** Export rekap nilai & presensi kelas dalam bentuk PDF */
     public function rekapPdf(Praktikum $praktikum): Response {
         $this->authorizeKelas($praktikum);
         $praktikum->load(['mataKuliah','dosen','ruangan']);
-        [$mahasiswaList, $presensiAll] = $this->dataRekap($praktikum);
+        [$mahasiswaList, $presensiAll, $presensiAsistensiAll] = $this->dataRekap($praktikum);
 
         $namaFile = 'rekap-' . str($praktikum->nama_kelas)->slug() . '-' . str($praktikum->mataKuliah?->kode_mk)->slug() . '.pdf';
 
-        $pdf = Pdf::loadView('pengawas.rekap-pdf', compact('praktikum','mahasiswaList','presensiAll'))
+        $pdf = Pdf::loadView('pengawas.rekap-pdf', compact('praktikum','mahasiswaList','presensiAll','presensiAsistensiAll'))
             ->setPaper('a4', 'landscape');
 
         return $pdf->download($namaFile);
@@ -62,7 +65,7 @@ class PengawasController extends Controller
     public function rekapExcel(Praktikum $praktikum): Response {
         $this->authorizeKelas($praktikum);
         $praktikum->load(['mataKuliah','dosen','ruangan']);
-        [$mahasiswaList, $presensiAll] = $this->dataRekap($praktikum);
+        [$mahasiswaList, $presensiAll, $presensiAsistensiAll] = $this->dataRekap($praktikum);
 
         $xlsx = new SimpleXlsxWriter();
 
@@ -98,6 +101,29 @@ class PengawasController extends Controller
             $rowsPresensi[] = $row;
         }
         $xlsx->addSheet('Rekap Presensi', $headerPresensi, $rowsPresensi);
+
+        // Sheet Rekap Absensi Asistensi
+        $headerAsistensi = ['NIM', 'Nama', 'Asistensi 1', 'Asistensi 2', 'Asistensi 3', 'Jumlah Hadir'];
+        $rowsAsistensi = [];
+        foreach ($mahasiswaList as $m) {
+            $pa  = $presensiAsistensiAll[$m->id] ?? collect();
+            $row = [$m->nim_mahasiswa, $m->nama_mahasiswa];
+            $jumlahHadir = 0;
+            for ($k = 1; $k <= 3; $k++) {
+                $pas = $pa[$k] ?? null;
+                if (!$pas) {
+                    $row[] = '—';
+                } elseif ($pas->hadir) {
+                    $row[] = 'H';
+                    $jumlahHadir++;
+                } else {
+                    $row[] = 'A';
+                }
+            }
+            $row[] = $jumlahHadir;
+            $rowsAsistensi[] = $row;
+        }
+        $xlsx->addSheet('Rekap Asistensi', $headerAsistensi, $rowsAsistensi);
 
         $namaFile = 'rekap-' . str($praktikum->nama_kelas)->slug() . '-' . str($praktikum->mataKuliah?->kode_mk)->slug() . '.xlsx';
 
