@@ -16,81 +16,87 @@
                 @csrf @method('PATCH')
                 {{-- ── HARI ──────────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Hari</label>
+                    <label class="form-label required">Hari</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariHari" class="form-control"
+                        <input type="text" id="cariHari" class="form-control {{ $errors->has('hari') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih hari..."
                             autocomplete="off"
-                            value="{{ $kelas->hari ?? '' }}">
+                            value="{{ old('hari', $kelas->hari ?? '') }}">
                         <input type="hidden" name="hari" id="hidHari"
-                            value="{{ $kelas->hari ?? '' }}">
+                            value="{{ old('hari', $kelas->hari ?? '') }}">
                         <div class="search-results" id="previewHari"></div>
                     </div>
+                    @error('hari')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── JAM MULAI ───────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Jam Mulai</label>
+                    <label class="form-label required">Jam Mulai</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariJamMulai" class="form-control"
+                        <input type="text" id="cariJamMulai" class="form-control {{ $errors->has('jam_mulai') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih jam mulai..."
                             autocomplete="off"
-                            value="{{ $kelas->jam_mulai ?? '' }}">
+                            value="{{ old('jam_mulai', $kelas->jam_mulai ?? '') }}">
                         <input type="hidden" name="jam_mulai" id="hidJamMulai"
-                            value="{{ $kelas->jam_mulai ?? '' }}">
+                            value="{{ old('jam_mulai', $kelas->jam_mulai ?? '') }}">
                         <div class="search-results" id="previewJamMulai"></div>
                     </div>
+                    @error('jam_mulai')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── JAM SELESAI ─────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Jam Selesai</label>
+                    <label class="form-label required">Jam Selesai</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariJamSelesai" class="form-control"
+                        <input type="text" id="cariJamSelesai" class="form-control {{ $errors->has('jam_selesai') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih jam selesai..."
                             autocomplete="off"
-                            value="{{ $kelas->jam_selesai ?? '' }}">
+                            value="{{ old('jam_selesai', $kelas->jam_selesai ?? '') }}">
                         <input type="hidden" name="jam_selesai" id="hidJamSelesai"
-                            value="{{ $kelas->jam_selesai ?? '' }}">
+                            value="{{ old('jam_selesai', $kelas->jam_selesai ?? '') }}">
                         <div class="search-results" id="previewJamSelesai"></div>
                     </div>
+                    @error('jam_selesai')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── RUANGAN ─────────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Ruangan</label>
+                    <label class="form-label required">Ruangan</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariRuangan" class="form-control"
+                        <input type="text" id="cariRuangan" class="form-control {{ $errors->has('ruangan_id') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
-                            value="{{ $kelas->ruangan ? $kelas->ruangan->nama_ruangan : '' }}">
+                            value="{{ old('ruangan_id') ? $ruanganAll->find(old('ruangan_id'))?->nama_ruangan : ($kelas->ruangan?->nama_ruangan ?? '') }}">
                         <input type="hidden" name="ruangan_id" id="hidRuangan"
-                            value="{{ $kelas->ruangan_id ?? '' }}">
+                            value="{{ old('ruangan_id', $kelas->ruangan_id ?? '') }}">
                         <div class="search-results" id="previewRuangan"></div>
                     </div>
+                    @error('ruangan_id')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── DOSEN ──────────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Dosen</label>
+                    <label class="form-label required">Dosen</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariDosen" class="form-control"
+                        <input type="text" id="cariDosen" class="form-control {{ $errors->has('dosen_id') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
-                            value="{{ $kelas->dosen ? $kelas->dosen->nidn . ' — ' . $kelas->dosen->nama_dosen : '' }}">
+                            value="{{ old('dosen_id') ? ($dosenAll->find(old('dosen_id')) ? $dosenAll->find(old('dosen_id'))->nidn . ' — ' . $dosenAll->find(old('dosen_id'))->nama_dosen : '') : ($kelas->dosen ? $kelas->dosen->nidn . ' — ' . $kelas->dosen->nama_dosen : '') }}">
                         <input type="hidden" name="dosen_id" id="hidDosen"
-                            value="{{ $kelas->dosen_id ?? '' }}">
+                            value="{{ old('dosen_id', $kelas->dosen_id ?? '') }}">
                         <div class="search-results" id="previewDosen"></div>
                     </div>
+                    @error('dosen_id')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── ASISTEN 1 ──────────────────────────────────────── --}}
                 <div class="form-group">
-                    <label class="form-label">Asisten 1</label>
+                    <label class="form-label required">Asisten 1</label>
                     <div class="search-combobox">
-                        <input type="text" id="cariA1" class="form-control"
+                        <input type="text" id="cariA1" class="form-control {{ $errors->has('asisten_id') ? 'is-invalid' : '' }}"
                             placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
-                            value="{{ $kelas->asisten ? $kelas->asisten->nim . ' — ' . $kelas->asisten->nama_asisten : '' }}">
+                            value="{{ old('asisten_id') ? ($asistenAll->find(old('asisten_id')) ? $asistenAll->find(old('asisten_id'))->nim . ' — ' . $asistenAll->find(old('asisten_id'))->nama_asisten : '') : ($kelas->asisten ? $kelas->asisten->nim . ' — ' . $kelas->asisten->nama_asisten : '') }}">
                         <input type="hidden" name="asisten_id" id="hidA1"
-                            value="{{ $kelas->asisten_id ?? '' }}">
+                            value="{{ old('asisten_id', $kelas->asisten_id ?? '') }}">
                         <div class="search-results" id="previewA1"></div>
                     </div>
+                    @error('asisten_id')<div class="form-error">{{ $message }}</div>@enderror
                 </div>
                 {{-- ── ASISTEN 2 ──────────────────────────────────────── --}}
                 <div class="form-group">
@@ -214,4 +220,21 @@
         </tbody>
     </table></div>
 </div>
+@push('scripts')
+<script>
+// Restore label teks combobox jadwal saat validasi gagal (old input)
+document.addEventListener('DOMContentLoaded', function () {
+    const hidHari       = document.getElementById('hidHari');
+    const cariHari      = document.getElementById('cariHari');
+    const hidMulai      = document.getElementById('hidJamMulai');
+    const cariMulai     = document.getElementById('cariJamMulai');
+    const hidSelesai    = document.getElementById('hidJamSelesai');
+    const cariSelesai   = document.getElementById('cariJamSelesai');
+
+    if (hidHari?.value    && !cariHari?.value)    cariHari.value    = hidHari.value;
+    if (hidMulai?.value   && !cariMulai?.value)   cariMulai.value   = hidMulai.value;
+    if (hidSelesai?.value && !cariSelesai?.value) cariSelesai.value = hidSelesai.value;
+});
+</script>
+@endpush
 @endsection

@@ -125,13 +125,23 @@ class LaboranController extends Controller
         $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
 
         $v = $request->validate([
-            'hari'        => ['nullable', 'in:' . implode(',', $hariValid)],
-            'jam_mulai'   => ['nullable', 'in:' . implode(',', $mulaiValid)],
-            'jam_selesai' => ['nullable', 'in:' . implode(',', $selesaiValid)],
-            'ruangan_id'  => ['nullable','exists:ruangan,id'],
-            'dosen_id'    => ['nullable','exists:dosen,id'],
-            'asisten_id'  => ['nullable','exists:asisten,id'],
+            'hari'        => ['required', 'in:' . implode(',', $hariValid)],
+            'jam_mulai'   => ['required', 'in:' . implode(',', $mulaiValid)],
+            'jam_selesai' => ['required', 'in:' . implode(',', $selesaiValid)],
+            'ruangan_id'  => ['required','exists:ruangan,id'],
+            'dosen_id'    => ['required','exists:dosen,id'],
+            'asisten_id'  => ['required','exists:asisten,id'],
             'asisten2_id' => ['nullable','exists:asisten,id'],
+        ], [
+            'hari.required'        => 'Hari wajib dipilih.',
+            'hari.in'              => 'Hari tidak valid.',
+            'jam_mulai.required'   => 'Jam mulai wajib dipilih.',
+            'jam_mulai.in'         => 'Jam mulai tidak valid.',
+            'jam_selesai.required' => 'Jam selesai wajib dipilih.',
+            'jam_selesai.in'       => 'Jam selesai tidak valid.',
+            'ruangan_id.required'  => 'Ruangan wajib dipilih.',
+            'dosen_id.required'    => 'Dosen wajib dipilih.',
+            'asisten_id.required'  => 'Asisten 1 wajib dipilih.',
         ]);
 
         // Susun ulang kolom jadwal string untuk kompatibilitas tampilan lama

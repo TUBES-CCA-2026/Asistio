@@ -1626,3 +1626,13 @@ img {
     cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
 }
 .selected-preview-clear:hover { color: var(--status-a); }
+
+/* ── Validasi error ─────────────────────────────── */
+.form-error {
+    font-size: 12px;
+    color: var(--danger, #e53e3e);
+    margin-top: 4px;
+}
+.form-control.is-invalid {
+    border-color: var(--danger, #e53e3e);
+}
