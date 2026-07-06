@@ -117,4 +117,84 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+
+    // ── SEARCH + DROPDOWN SYNC — Tambah Praktikan ke Kelas ──────────
+    const cariMhs   = document.getElementById('cariMhs');
+    const previewMhs = document.getElementById('previewMhs');
+    const selectMhs = document.getElementById('selectMhs');
+
+    if (cariMhs && selectMhs && previewMhs) {
+        const semuaOpt = Array.from(selectMhs.options).filter(o => o.value);
+
+        // Tampilkan preview hasil pencarian
+        function posisikanPreview() {
+            const rect = cariMhs.getBoundingClientRect();
+            previewMhs.style.top   = (rect.bottom + 4) + 'px';
+            previewMhs.style.left  = rect.left + 'px';
+            previewMhs.style.width = rect.width + 'px';
+        }
+
+        function tampilkanPreview(q) {
+            previewMhs.innerHTML = '';
+            if (!q) { previewMhs.classList.remove('open'); return; }
+
+            const cocok = semuaOpt.filter(o =>
+                o.dataset.cari.includes(q.toLowerCase())
+            ).slice(0, 30);
+
+            if (cocok.length === 0) {
+                previewMhs.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+            } else {
+                cocok.forEach(opt => {
+                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
+                    const nama = namaParts.join(' — ');
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML =
+                        '<span class="search-result-nim">' + nim + '</span>' +
+                        '<span class="search-result-nama">' + nama + '</span>';
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        // Klik preview → update dropdown + isi textfield
+                        selectMhs.value = opt.value;
+                        cariMhs.value   = opt.dataset.label;
+                        previewMhs.classList.remove('open');
+                    });
+                    previewMhs.appendChild(item);
+                });
+            }
+            posisikanPreview();
+            previewMhs.classList.add('open');
+        }
+
+        // Ketik di textfield → tampilkan preview
+        cariMhs.addEventListener('input', function () {
+            tampilkanPreview(this.value.trim());
+        });
+        cariMhs.addEventListener('focus', function () {
+            if (this.value.trim()) tampilkanPreview(this.value.trim());
+        });
+        cariMhs.addEventListener('blur', function () {
+            setTimeout(() => previewMhs.classList.remove('open'), 150);
+        });
+
+        // Pilih dari dropdown → isi textfield secara otomatis
+        selectMhs.addEventListener('change', function () {
+            const opt = this.selectedOptions[0];
+            cariMhs.value = opt?.dataset.label || '';
+            previewMhs.classList.remove('open');
+        });
+
+        // Klik di luar → tutup preview
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox') && e.target !== selectMhs) {
+                previewMhs.classList.remove('open');
+            }
+        });
+
+        // Tutup preview saat scroll agar posisi tidak basi
+        window.addEventListener('scroll', function () {
+            previewMhs.classList.remove('open');
+        }, true);
+    }
 });

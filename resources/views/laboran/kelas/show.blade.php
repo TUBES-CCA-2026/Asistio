@@ -41,17 +41,30 @@
         <div class="card-header"><span class="card-title">Tambah Praktikan ke Kelas Ini</span></div>
         <div class="card-body">
             @if($mahasiswaBelumKelas->isEmpty())
-                <p style="font-size:13px;color:var(--text-muted);">Semua mahasiswa sudah memiliki kelas. Tambah mahasiswa baru lewat menu <strong>Mahasiswa</strong>, lalu kembali ke sini untuk memasukkannya ke kelas ini.</p>
+                <p style="font-size:13px;color:var(--text-muted);">Semua mahasiswa sudah terdaftar di kelas ini atau kelas lain. Tambah mahasiswa baru lewat menu <strong>Mahasiswa</strong>.</p>
             @else
-                <form method="POST" action="{{ route('laboran.kelas.mahasiswa.add',$kelas) }}" style="display:flex;gap:8px;">
+                <form method="POST" action="{{ route('laboran.kelas.mahasiswa.add',$kelas) }}">
                     @csrf
-                    <select name="mahasiswa_id" class="form-select" required>
-                        <option value="">Tambah Mahasiswa...</option>
-                        @foreach($mahasiswaBelumKelas as $m)
-                        <option value="{{ $m->id }}">{{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}</option>
-                        @endforeach
-                    </select>
-                    <button class="btn btn-primary" style="white-space:nowrap;">+ Tambah</button>
+                    {{-- Search field + live preview --}}
+                    <div class="search-combobox" style="margin-bottom:8px;">
+                        <input type="text" id="cariMhs" class="form-control"
+                            placeholder="Cari NIM atau nama mahasiswa..." autocomplete="off">
+                        <div class="search-results" id="previewMhs"></div>
+                    </div>
+                    {{-- Dropdown (selalu tampil, berubah saat klik preview / bisa dipilih langsung) --}}
+                    <div style="display:flex;gap:8px;">
+                        <select name="mahasiswa_id" id="selectMhs" class="form-select" required>
+                            <option value="">— Pilih mahasiswa —</option>
+                            @foreach($mahasiswaBelumKelas as $m)
+                            <option value="{{ $m->id }}"
+                                data-cari="{{ $m->nim_mahasiswa }} {{ strtolower($m->nama_mahasiswa) }}"
+                                data-label="{{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}">
+                                {{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button class="btn btn-primary" style="white-space:nowrap;">+ Tambah</button>
+                    </div>
                 </form>
             @endif
         </div>

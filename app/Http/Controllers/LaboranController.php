@@ -74,13 +74,14 @@ class LaboranController extends Controller
 
     /** Dashboard 1 kelas: kelola asisten1/2 + kelola praktikan di dalamnya */
     public function kelasShow(Praktikum $praktikum): View {
-        $sudahDiSini = $praktikum->mahasiswa()->pluck('mahasiswa.id');
+        $sudahDiSini       = $praktikum->mahasiswa()->pluck('mahasiswa.id');
+        $mahasiswaBelumKelas = Mahasiswa::whereNotIn('id', $sudahDiSini)
+                                ->orderBy('nama_mahasiswa')->get();
         return view('laboran.kelas.show', [
             'kelas'               => $praktikum->load(['mataKuliah','dosen','ruangan','asisten','asisten2']),
             'asistenAll'          => Asisten::orderBy('nama_asisten')->get(),
             'mahasiswaDiKelas'    => $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get(),
-            'mahasiswaBelumKelas' => Mahasiswa::whereNotIn('id', $sudahDiSini)
-                                            ->orderBy('nama_mahasiswa')->get(),
+            'mahasiswaBelumKelas' => $mahasiswaBelumKelas,
         ]);
     }
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
