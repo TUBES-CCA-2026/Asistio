@@ -65,11 +65,22 @@
 <div id="modalTambah" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Tambah Mahasiswa</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.store') }}">@csrf
-    <div class="grid grid-2">
-        <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" required></div>
-        <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" required></div>
+    <div class="form-group">
+        <label class="form-label required">NIM</label>
+        <input name="nim_mahasiswa" class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
+            placeholder="angka saja"
+            pattern="\d+" inputmode="numeric"
+            value="{{ old('_form') === 'tambah' ? old('nim_mahasiswa') : '' }}" required>
+        @if(old('_form') === 'tambah') @error('nim_mahasiswa')<div class="form-error">{{ $message }}</div>@enderror @endif
+    </div>
+    <div class="form-group">
+        <label class="form-label required">Nama</label>
+        <input name="nama_mahasiswa" class="form-control {{ $errors->has('nama_mahasiswa') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
+            value="{{ old('_form') === 'tambah' ? old('nama_mahasiswa') : '' }}" required>
+        @if(old('_form') === 'tambah') @error('nama_mahasiswa')<div class="form-error">{{ $message }}</div>@enderror @endif
     </div>
     <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px;">Kelas belum perlu dipilih sekarang — bisa ditentukan nanti lewat menu <strong>Kelas Praktikum → Edit</strong>.</p>
+    <input type="hidden" name="_form" value="tambah">
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Tambah</button></div>
     </form></div>
 </div></div>
@@ -77,10 +88,39 @@
 <div id="modalEditMhs{{ $m->id }}" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Edit Data — {{ $m->nama_mahasiswa }}</span><button data-modal-close="modalEditMhs{{ $m->id }}" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.update',$m) }}">@csrf @method('PATCH')
-    <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" value="{{ $m->nim_mahasiswa }}" required></div>
-    <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" value="{{ $m->nama_mahasiswa }}" required></div>
+    <div class="form-group">
+        <label class="form-label required">NIM</label>
+        <input name="nim_mahasiswa" class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'edit-mhs-'.$m->id ? 'is-invalid' : '' }}"
+            placeholder="angka saja"
+            pattern="\d+" inputmode="numeric"
+            value="{{ old('_form') === 'edit-mhs-'.$m->id ? old('nim_mahasiswa') : $m->nim_mahasiswa }}" required>
+        @if(old('_form') === 'edit-mhs-'.$m->id) @error('nim_mahasiswa')<div class="form-error">{{ $message }}</div>@enderror @endif
+    </div>
+    <div class="form-group">
+        <label class="form-label required">Nama</label>
+        <input name="nama_mahasiswa" class="form-control {{ $errors->has('nama_mahasiswa') && old('_form') === 'edit-mhs-'.$m->id ? 'is-invalid' : '' }}"
+            value="{{ old('_form') === 'edit-mhs-'.$m->id ? old('nama_mahasiswa') : $m->nama_mahasiswa }}" required>
+        @if(old('_form') === 'edit-mhs-'.$m->id) @error('nama_mahasiswa')<div class="form-error">{{ $message }}</div>@enderror @endif
+    </div>
+    <input type="hidden" name="_form" value="edit-mhs-{{ $m->id }}">
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalEditMhs{{ $m->id }}" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
     </form></div>
 </div></div>
 @endforeach
+@if($errors->any() && old('_form'))
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = '{{ old("_form") }}';
+    let modalId = null;
+    if (form === 'tambah') modalId = 'modalTambah';
+    else if (form.startsWith('edit-mhs-')) modalId = 'modalEditMhs' + form.replace('edit-mhs-', '');
+    if (modalId) {
+        document.getElementById(modalId)?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+});
+</script>
+@endpush
+@endif
 @endsection

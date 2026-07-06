@@ -244,10 +244,12 @@ class LaboranController extends Controller
     }
     public function dosenStore(Request $request): RedirectResponse {
         $v = $request->validate([
-            'nama_dosen' => ['required'],
-            'nidn'       => ['nullable','unique:dosen,nidn'],
+            'nama_dosen' => ['required','string'],
+            'nidn'       => ['nullable','regex:/^\d+$/','max:20','unique:dosen,nidn'],
             'username'   => ['required','unique:users,username'],
             'password'   => ['required','min:6'],
+        ], [
+            'nidn.regex' => 'NIDN hanya boleh berisi angka.',
         ]);
         DB::beginTransaction();
         try {
@@ -260,8 +262,9 @@ class LaboranController extends Controller
     public function dosenUpdate(Request $request, Dosen $dosen): RedirectResponse {
         $v = $request->validate([
             'nama_dosen' => ['required','string'],
-            'nidn'       => ['nullable',"unique:dosen,nidn,{$dosen->id}",'max:20'],
+            'nidn'       => ['nullable','regex:/^\d+$/','max:20',"unique:dosen,nidn,{$dosen->id}"],
         ], [
+            'nidn.regex'  => 'NIDN hanya boleh berisi angka.',
             'nidn.unique' => 'NIDN sudah dipakai dosen lain.',
         ]);
         $dosen->update($v);
@@ -289,9 +292,12 @@ class LaboranController extends Controller
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
         $v = $request->validate([
-            'nim_mahasiswa'  => ['required','unique:mahasiswa,nim_mahasiswa'],
+            'nim_mahasiswa'  => ['required','regex:/^\d+$/','unique:mahasiswa,nim_mahasiswa'],
             'nama_mahasiswa' => ['required','string'],
+        ], [
+            'nim_mahasiswa.regex' => 'NIM hanya boleh berisi angka.',
         ]);
+        unset($v['_form']);
         Mahasiswa::create($v);
         return back()->with('success','Mahasiswa ditambahkan. Tentukan kelasnya lewat menu Kelas Praktikum → Edit.');
     }
@@ -302,8 +308,10 @@ class LaboranController extends Controller
     }
     public function mahasiswaUpdate(Request $request, Mahasiswa $mahasiswa): RedirectResponse {
         $v = $request->validate([
-            'nim_mahasiswa'  => ['required', "unique:mahasiswa,nim_mahasiswa,{$mahasiswa->id}"],
-            'nama_mahasiswa' => ['required', 'string'],
+            'nim_mahasiswa'  => ['required','regex:/^\d+$/',"unique:mahasiswa,nim_mahasiswa,{$mahasiswa->id}"],
+            'nama_mahasiswa' => ['required','string'],
+        ], [
+            'nim_mahasiswa.regex' => 'NIM hanya boleh berisi angka.',
         ]);
         $mahasiswa->update($v);
         return redirect()->route('laboran.mahasiswa')->with('success', 'Data mahasiswa diperbarui.');
