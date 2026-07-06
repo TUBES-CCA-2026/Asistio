@@ -86,3 +86,9 @@ Route::prefix('dosen')->middleware(['auth','role:dosen'])->name('dosen.')->group
     Route::get('/ganti-password',  [DosenController::class,'gantiPassword'])->name('ganti-password');
     Route::post('/ganti-password', [DosenController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
 });
+
+// ── Laboran — Ganti Password ───────────────────────────────────────────────
+Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')->group(function () {
+    Route::get('/ganti-password',  [LaboranController::class,'gantiPassword'])->name('ganti-password');
+    Route::post('/ganti-password', [LaboranController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
+});
