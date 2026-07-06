@@ -17,93 +17,82 @@
                 {{-- ── RUANGAN ─────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Ruangan</label>
-                    <div class="search-combobox" style="margin-bottom:8px;">
+                    <div class="search-combobox">
                         <input type="text" id="cariRuangan" class="form-control"
-                            placeholder="Cari nama ruangan..."
+                            placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
                             value="{{ $kelas->ruangan ? $kelas->ruangan->nama_ruangan : '' }}">
+                        <input type="hidden" name="ruangan_id" id="hidRuangan"
+                            value="{{ $kelas->ruangan_id ?? '' }}">
                         <div class="search-results" id="previewRuangan"></div>
                     </div>
-                    <select name="ruangan_id" id="selectRuangan" class="form-select">
-                        <option value="">— Tidak ada —</option>
-                        @foreach($ruanganAll as $r)
-                        <option value="{{ $r->id }}"
-                            {{ $kelas->ruangan_id == $r->id ? 'selected' : '' }}
-                            data-cari="{{ strtolower($r->nama_ruangan) }}"
-                            data-label="{{ $r->nama_ruangan }}">
-                            {{ $r->nama_ruangan }}
-                        </option>
-                        @endforeach
-                    </select>
                 </div>
                 {{-- ── DOSEN ──────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Dosen</label>
-                    <div class="search-combobox" style="margin-bottom:8px;">
+                    <div class="search-combobox">
                         <input type="text" id="cariDosen" class="form-control"
-                            placeholder="Cari NIDN atau nama dosen..."
+                            placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
                             value="{{ $kelas->dosen ? $kelas->dosen->nidn . ' — ' . $kelas->dosen->nama_dosen : '' }}">
+                        <input type="hidden" name="dosen_id" id="hidDosen"
+                            value="{{ $kelas->dosen_id ?? '' }}">
                         <div class="search-results" id="previewDosen"></div>
                     </div>
-                    <select name="dosen_id" id="selectDosen" class="form-select">
-                        <option value="">— Tidak ada —</option>
-                        @foreach($dosenAll as $d)
-                        <option value="{{ $d->id }}"
-                            {{ $kelas->dosen_id == $d->id ? 'selected' : '' }}
-                            data-cari="{{ $d->nidn }} {{ strtolower($d->nama_dosen) }}"
-                            data-label="{{ $d->nidn }} — {{ $d->nama_dosen }}">
-                            {{ $d->nidn }} — {{ $d->nama_dosen }}
-                        </option>
-                        @endforeach
-                    </select>
                 </div>
-                {{-- ── ASISTEN 1 ─────────────────────────────────────────── --}}
+                {{-- ── ASISTEN 1 ──────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Asisten 1</label>
-                    <div class="search-combobox" style="margin-bottom:8px;">
+                    <div class="search-combobox">
                         <input type="text" id="cariA1" class="form-control"
-                            placeholder="Cari NIM atau nama asisten 1..."
+                            placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
                             value="{{ $kelas->asisten ? $kelas->asisten->nim . ' — ' . $kelas->asisten->nama_asisten : '' }}">
+                        <input type="hidden" name="asisten_id" id="hidA1"
+                            value="{{ $kelas->asisten_id ?? '' }}">
                         <div class="search-results" id="previewA1"></div>
                     </div>
-                    <select name="asisten_id" id="selectA1" class="form-select">
-                        <option value="">— Tidak ada —</option>
-                        @foreach($asistenAll as $a)
-                        <option value="{{ $a->id }}"
-                            {{ $kelas->asisten_id == $a->id ? 'selected' : '' }}
-                            data-cari="{{ $a->nim }} {{ strtolower($a->nama_asisten) }}"
-                            data-label="{{ $a->nim }} — {{ $a->nama_asisten }}">
-                            {{ $a->nim }} — {{ $a->nama_asisten }}
-                        </option>
-                        @endforeach
-                    </select>
                 </div>
-
-                {{-- ── ASISTEN 2 ─────────────────────────────────────────── --}}
+                {{-- ── ASISTEN 2 ──────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Asisten 2</label>
-                    <div class="search-combobox" style="margin-bottom:8px;">
+                    <div class="search-combobox">
                         <input type="text" id="cariA2" class="form-control"
-                            placeholder="Cari NIM atau nama asisten 2..."
+                            placeholder="Klik untuk pilih atau ketik untuk cari..."
                             autocomplete="off"
                             value="{{ $kelas->asisten2 ? $kelas->asisten2->nim . ' — ' . $kelas->asisten2->nama_asisten : '' }}">
+                        <input type="hidden" name="asisten2_id" id="hidA2"
+                            value="{{ $kelas->asisten2_id ?? '' }}">
                         <div class="search-results" id="previewA2"></div>
                     </div>
-                    <select name="asisten2_id" id="selectA2" class="form-select">
-                        <option value="">— Tidak ada —</option>
-                        @foreach($asistenAll as $a)
-                        <option value="{{ $a->id }}"
-                            {{ $kelas->asisten2_id == $a->id ? 'selected' : '' }}
-                            data-cari="{{ $a->nim }} {{ strtolower($a->nama_asisten) }}"
-                            data-label="{{ $a->nim }} — {{ $a->nama_asisten }}">
-                            {{ $a->nim }} — {{ $a->nama_asisten }}
-                        </option>
-                        @endforeach
-                    </select>
                 </div>
-                <button class="btn btn-primary btn-block">Simpan Asisten</button>
+                <button class="btn btn-primary btn-block">Simpan</button>
+
+                {{-- Data store tersembunyi — hanya dibaca JS, tidak tampil ke user --}}
+                <select id="__dataRuangan" hidden>
+                    @foreach($ruanganAll as $r)
+                    <option value="{{ $r->id }}"
+                        data-cari="{{ strtolower($r->nama_ruangan) }}"
+                        data-label="{{ $r->nama_ruangan }}">
+                    </option>
+                    @endforeach
+                </select>
+                <select id="__dataDosen" hidden>
+                    @foreach($dosenAll as $d)
+                    <option value="{{ $d->id }}"
+                        data-cari="{{ $d->nidn }} {{ strtolower($d->nama_dosen) }}"
+                        data-label="{{ $d->nidn }} — {{ $d->nama_dosen }}">
+                    </option>
+                    @endforeach
+                </select>
+                <select id="__dataAsisten" hidden>
+                    @foreach($asistenAll as $a)
+                    <option value="{{ $a->id }}"
+                        data-cari="{{ $a->nim }} {{ strtolower($a->nama_asisten) }}"
+                        data-label="{{ $a->nim }} — {{ $a->nama_asisten }}">
+                    </option>
+                    @endforeach
+                </select>
             </form>
         </div>
     </div>
@@ -116,26 +105,24 @@
             @else
                 <form method="POST" action="{{ route('laboran.kelas.mahasiswa.add',$kelas) }}">
                     @csrf
-                    {{-- Search field + live preview --}}
                     <div class="search-combobox" style="margin-bottom:8px;">
                         <input type="text" id="cariMhs" class="form-control"
-                            placeholder="Cari NIM atau nama mahasiswa..." autocomplete="off">
+                            placeholder="Klik untuk pilih atau ketik untuk cari..."
+                            autocomplete="off">
+                        <input type="hidden" name="mahasiswa_id" id="hidMhs">
                         <div class="search-results" id="previewMhs"></div>
                     </div>
-                    {{-- Dropdown (selalu tampil, berubah saat klik preview / bisa dipilih langsung) --}}
-                    <div style="display:flex;gap:8px;">
-                        <select name="mahasiswa_id" id="selectMhs" class="form-select" required>
-                            <option value="">— Pilih mahasiswa —</option>
-                            @foreach($mahasiswaBelumKelas as $m)
-                            <option value="{{ $m->id }}"
-                                data-cari="{{ $m->nim_mahasiswa }} {{ strtolower($m->nama_mahasiswa) }}"
-                                data-label="{{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}">
-                                {{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button class="btn btn-primary" style="white-space:nowrap;">+ Tambah</button>
-                    </div>
+                    <button class="btn btn-primary btn-block">+ Tambah Praktikan</button>
+
+                    {{-- Data store tersembunyi — hanya dibaca JS --}}
+                    <select id="__dataMhs" hidden>
+                        @foreach($mahasiswaBelumKelas as $m)
+                        <option value="{{ $m->id }}"
+                            data-cari="{{ $m->nim_mahasiswa }} {{ strtolower($m->nama_mahasiswa) }}"
+                            data-label="{{ $m->nim_mahasiswa }} — {{ $m->nama_mahasiswa }}">
+                        </option>
+                        @endforeach
+                    </select>
                 </form>
             @endif
         </div>

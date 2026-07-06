@@ -198,232 +198,164 @@ document.addEventListener('DOMContentLoaded', function () {
         }, true);
     }
 
-    // ── SEARCH + DROPDOWN SYNC — Ruangan ────────────────────────────
-    const cariRuangan    = document.getElementById('cariRuangan');
-    const previewRuangan = document.getElementById('previewRuangan');
-    const selectRuangan  = document.getElementById('selectRuangan');
+    // ── SMART COMBOBOX — helper reusable ─────────────────────────────
+    // data  : array of { value, label, cari, kolom1?, kolom2? }
+    // inputEl, hiddenEl, previewEl : elemen DOM
+    // clearable : jika true, backspace/hapus semua teks → reset hidden ke ''
+    function buatCombobox({ data, inputEl, hiddenEl, previewEl, clearable = true }) {
+        if (!inputEl || !hiddenEl || !previewEl) return;
 
-    if (cariRuangan && selectRuangan && previewRuangan) {
-        const optsRuangan = Array.from(selectRuangan.options).filter(o => o.value);
-
-        function posisiRuangan() {
-            const r = cariRuangan.getBoundingClientRect();
-            previewRuangan.style.top   = (r.bottom + 4) + 'px';
-            previewRuangan.style.left  = r.left + 'px';
-            previewRuangan.style.width = r.width + 'px';
+        function posisi() {
+            const r = inputEl.getBoundingClientRect();
+            previewEl.style.top   = (r.bottom + 4) + 'px';
+            previewEl.style.left  = r.left + 'px';
+            previewEl.style.width = r.width + 'px';
         }
 
-        function tampilRuangan(q) {
-            previewRuangan.innerHTML = '';
-            if (!q) { previewRuangan.classList.remove('open'); return; }
-            const cocok = optsRuangan.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
-            if (cocok.length === 0) {
-                previewRuangan.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+        // Bersihkan query dari tanda " — " sebelum dipakai filter
+        function bersihkan(teks) {
+            return teks.replace(/\s*—\s*/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function tampil(q) {
+            previewEl.innerHTML = '';
+            const qBersih = bersihkan(q);
+            const list = qBersih
+                ? data.filter(d => d.cari.includes(qBersih))
+                : data;
+
+            const slice = list.slice(0, 50);
+
+            if (slice.length === 0) {
+                previewEl.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
             } else {
-                cocok.forEach(opt => {
+                slice.forEach(d => {
                     const item = document.createElement('div');
                     item.className = 'search-result-item';
-                    item.innerHTML = '<span class="search-result-nama">' + opt.dataset.label + '</span>';
+                    if (d.kolom1) {
+                        item.innerHTML =
+                            '<span class="search-result-nim">'  + d.kolom1 + '</span>' +
+                            '<span class="search-result-nama">' + d.kolom2 + '</span>';
+                    } else {
+                        item.innerHTML = '<span class="search-result-nama">' + d.label + '</span>';
+                    }
                     item.addEventListener('mousedown', function (e) {
                         e.preventDefault();
-                        selectRuangan.value = opt.value;
-                        cariRuangan.value   = opt.dataset.label;
-                        previewRuangan.classList.remove('open');
+                        hiddenEl.value = d.value;
+                        inputEl.value  = d.label;
+                        previewEl.classList.remove('open');
                     });
-                    previewRuangan.appendChild(item);
+                    previewEl.appendChild(item);
                 });
             }
-            posisiRuangan();
-            previewRuangan.classList.add('open');
+            posisi();
+            previewEl.classList.add('open');
         }
 
-        cariRuangan.addEventListener('input', function () { tampilRuangan(this.value.trim()); });
-        cariRuangan.addEventListener('focus', function () { if (this.value.trim()) tampilRuangan(this.value.trim()); });
-        cariRuangan.addEventListener('blur',  function () { setTimeout(() => previewRuangan.classList.remove('open'), 150); });
-        selectRuangan.addEventListener('change', function () {
-            const opt = this.selectedOptions[0];
-            cariRuangan.value = opt?.dataset.label || '';
-            previewRuangan.classList.remove('open');
+        // Ketik → filter pakai teks yang sudah dibersihkan
+        inputEl.addEventListener('input', function () {
+            if (clearable && this.value === '') hiddenEl.value = '';
+            tampil(this.value);
         });
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox') && e.target !== selectRuangan) {
-                previewRuangan.classList.remove('open');
+
+        // Fokus → jika field sudah terisi dengan pilihan valid, jangan tampil apa-apa
+        // Baru tampil saat user menghapus 1 huruf (event input di atas yang handle)
+        inputEl.addEventListener('focus', function () {
+            const sudahDipilih = hiddenEl.value !== '' &&
+                data.find(d => d.label === this.value.trim());
+            if (!sudahDipilih) {
+                tampil('');
             }
         });
-        window.addEventListener('scroll', function () { previewRuangan.classList.remove('open'); }, true);
+
+        inputEl.addEventListener('blur', function () {
+            if (clearable) {
+                const cocok = data.find(d => d.label === this.value.trim());
+                if (!cocok) {
+                    this.value     = '';
+                    hiddenEl.value = '';
+                }
+            }
+            setTimeout(() => previewEl.classList.remove('open'), 200);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox')) {
+                previewEl.classList.remove('open');
+            }
+        });
+
+        // Cegah scroll halaman saat cursor ada di dalam daftar preview
+        previewEl.addEventListener('wheel', function (e) {
+            const atTop    = previewEl.scrollTop === 0;
+            const atBottom = previewEl.scrollTop + previewEl.offsetHeight >= previewEl.scrollHeight;
+            if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+                e.preventDefault();
+            }
+            e.stopPropagation();
+        }, { passive: false });
+
+        // Tutup hanya jika scroll terjadi di luar combobox
+        window.addEventListener('scroll', function (e) {
+            if (!previewEl.contains(e.target) && e.target !== previewEl) {
+                previewEl.classList.remove('open');
+            }
+        }, true);
     }
 
-    // ── SEARCH + DROPDOWN SYNC — Dosen ──────────────────────────────
-    const cariDosen    = document.getElementById('cariDosen');
-    const previewDosen = document.getElementById('previewDosen');
-    const selectDosen  = document.getElementById('selectDosen');
+    // ── MAHASISWA (tambah praktikan) ─────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariMhs'),
+        hiddenEl  : document.getElementById('hidMhs'),
+        previewEl : document.getElementById('previewMhs'),
+        data      : Array.from(document.querySelectorAll('#__dataMhs option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
 
-    if (cariDosen && selectDosen && previewDosen) {
-        const optsDosen = Array.from(selectDosen.options).filter(o => o.value);
+    // ── RUANGAN ──────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariRuangan'),
+        hiddenEl  : document.getElementById('hidRuangan'),
+        previewEl : document.getElementById('previewRuangan'),
+        data      : Array.from(document.querySelectorAll('#__dataRuangan option')).filter(o => o.value).map(o => ({
+            value : o.value,
+            label : o.dataset.label,
+            cari  : o.dataset.cari,
+        })),
+    });
 
-        function posisiDosen() {
-            const r = cariDosen.getBoundingClientRect();
-            previewDosen.style.top   = (r.bottom + 4) + 'px';
-            previewDosen.style.left  = r.left + 'px';
-            previewDosen.style.width = r.width + 'px';
-        }
+    // ── DOSEN ────────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariDosen'),
+        hiddenEl  : document.getElementById('hidDosen'),
+        previewEl : document.getElementById('previewDosen'),
+        data      : Array.from(document.querySelectorAll('#__dataDosen option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
 
-        function tampilDosen(q) {
-            previewDosen.innerHTML = '';
-            if (!q) { previewDosen.classList.remove('open'); return; }
-            const cocok = optsDosen.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
-            if (cocok.length === 0) {
-                previewDosen.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
-            } else {
-                cocok.forEach(opt => {
-                    const [nidn, ...namaParts] = opt.dataset.label.split(' — ');
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.innerHTML =
-                        '<span class="search-result-nim">'  + nidn + '</span>' +
-                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
-                    item.addEventListener('mousedown', function (e) {
-                        e.preventDefault();
-                        selectDosen.value = opt.value;
-                        cariDosen.value   = opt.dataset.label;
-                        previewDosen.classList.remove('open');
-                    });
-                    previewDosen.appendChild(item);
-                });
-            }
-            posisiDosen();
-            previewDosen.classList.add('open');
-        }
+    // ── ASISTEN 1 ────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariA1'),
+        hiddenEl  : document.getElementById('hidA1'),
+        previewEl : document.getElementById('previewA1'),
+        data      : Array.from(document.querySelectorAll('#__dataAsisten option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
 
-        cariDosen.addEventListener('input', function () { tampilDosen(this.value.trim()); });
-        cariDosen.addEventListener('focus', function () { if (this.value.trim()) tampilDosen(this.value.trim()); });
-        cariDosen.addEventListener('blur',  function () { setTimeout(() => previewDosen.classList.remove('open'), 150); });
-        selectDosen.addEventListener('change', function () {
-            const opt = this.selectedOptions[0];
-            cariDosen.value = opt?.dataset.label || '';
-            previewDosen.classList.remove('open');
-        });
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox') && e.target !== selectDosen) {
-                previewDosen.classList.remove('open');
-            }   
-        });
-        window.addEventListener('scroll', function () { previewDosen.classList.remove('open'); }, true);
-    }
-
-    // ── SEARCH + DROPDOWN SYNC — Asisten 1 ──────────────────────────
-    const cariA1    = document.getElementById('cariA1');
-    const previewA1 = document.getElementById('previewA1');
-    const selectA1  = document.getElementById('selectA1');
-
-    if (cariA1 && selectA1 && previewA1) {
-        const optsA1 = Array.from(selectA1.options).filter(o => o.value);
-
-        function posisiA1() {
-            const r = cariA1.getBoundingClientRect();
-            previewA1.style.top   = (r.bottom + 4) + 'px';
-            previewA1.style.left  = r.left + 'px';
-            previewA1.style.width = r.width + 'px';
-        }
-
-        function tampilA1(q) {
-            previewA1.innerHTML = '';
-            if (!q) { previewA1.classList.remove('open'); return; }
-            const cocok = optsA1.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
-            if (cocok.length === 0) {
-                previewA1.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
-            } else {
-                cocok.forEach(opt => {
-                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.innerHTML =
-                        '<span class="search-result-nim">' + nim + '</span>' +
-                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
-                    item.addEventListener('mousedown', function (e) {
-                        e.preventDefault();
-                        selectA1.value = opt.value;
-                        cariA1.value   = opt.dataset.label;
-                        previewA1.classList.remove('open');
-                    });
-                    previewA1.appendChild(item);
-                });
-            }
-            posisiA1();
-            previewA1.classList.add('open');
-        }
-
-        cariA1.addEventListener('input', function () { tampilA1(this.value.trim()); });
-        cariA1.addEventListener('focus', function () { if (this.value.trim()) tampilA1(this.value.trim()); });
-        cariA1.addEventListener('blur',  function () { setTimeout(() => previewA1.classList.remove('open'), 150); });
-        selectA1.addEventListener('change', function () {
-            const opt = this.selectedOptions[0];
-            cariA1.value = opt?.dataset.label || '';
-            previewA1.classList.remove('open');
-        });
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox') && e.target !== selectA1) {
-                previewA1.classList.remove('open');
-            }
-        });
-        window.addEventListener('scroll', function () { previewA1.classList.remove('open'); }, true);
-    }
-
-    // ── SEARCH + DROPDOWN SYNC — Asisten 2 ──────────────────────────
-    const cariA2    = document.getElementById('cariA2');
-    const previewA2 = document.getElementById('previewA2');
-    const selectA2  = document.getElementById('selectA2');
-
-    if (cariA2 && selectA2 && previewA2) {
-        const optsA2 = Array.from(selectA2.options).filter(o => o.value);
-
-        function posisiA2() {
-            const r = cariA2.getBoundingClientRect();
-            previewA2.style.top   = (r.bottom + 4) + 'px';
-            previewA2.style.left  = r.left + 'px';
-            previewA2.style.width = r.width + 'px';
-        }
-
-        function tampilA2(q) {
-            previewA2.innerHTML = '';
-            if (!q) { previewA2.classList.remove('open'); return; }
-            const cocok = optsA2.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
-            if (cocok.length === 0) {
-                previewA2.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
-            } else {
-                cocok.forEach(opt => {
-                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.innerHTML =
-                        '<span class="search-result-nim">' + nim + '</span>' +
-                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
-                    item.addEventListener('mousedown', function (e) {
-                        e.preventDefault();
-                        selectA2.value = opt.value;
-                        cariA2.value   = opt.dataset.label;
-                        previewA2.classList.remove('open');
-                    });
-                    previewA2.appendChild(item);
-                });
-            }
-            posisiA2();
-            previewA2.classList.add('open');
-        }
-
-        cariA2.addEventListener('input', function () { tampilA2(this.value.trim()); });
-        cariA2.addEventListener('focus', function () { if (this.value.trim()) tampilA2(this.value.trim()); });
-        cariA2.addEventListener('blur',  function () { setTimeout(() => previewA2.classList.remove('open'), 150); });
-        selectA2.addEventListener('change', function () {
-            const opt = this.selectedOptions[0];
-            cariA2.value = opt?.dataset.label || '';
-            previewA2.classList.remove('open');
-        });
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox') && e.target !== selectA2) {
-                previewA2.classList.remove('open');
-            }
-        });
-        window.addEventListener('scroll', function () { previewA2.classList.remove('open'); }, true);
-    }
+    // ── ASISTEN 2 ────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariA2'),
+        hiddenEl  : document.getElementById('hidA2'),
+        previewEl : document.getElementById('previewA2'),
+        data      : Array.from(document.querySelectorAll('#__dataAsisten option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
 });
