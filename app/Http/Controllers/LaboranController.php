@@ -100,6 +100,7 @@ class LaboranController extends Controller
             'kelas'               => $praktikum->load(['mataKuliah','dosen','ruangan','asisten','asisten2']),
             'asistenAll'          => Asisten::orderBy('nama_asisten')->get(),
             'dosenAll'            => Dosen::orderBy('nama_dosen')->get(),
+            'ruanganAll'          => Ruangan::orderBy('nama_ruangan')->get(),
             'mahasiswaDiKelas'    => $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get(),
             'mahasiswaBelumKelas' => $mahasiswaBelumKelas,
         ]);
@@ -107,12 +108,13 @@ class LaboranController extends Controller
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
     public function kelasUpdate(Request $request, Praktikum $praktikum): RedirectResponse {
         $v = $request->validate([
+            'ruangan_id'  => ['nullable','exists:ruangan,id'],
             'dosen_id'    => ['nullable','exists:dosen,id'],
             'asisten_id'  => ['nullable','exists:asisten,id'],
             'asisten2_id' => ['nullable','exists:asisten,id'],
         ]);
         $praktikum->update($v);
-        return back()->with('success','Dosen & asisten kelas diperbarui.');
+        return back()->with('success','Ruangan, dosen & asisten kelas diperbarui.');
     }
     /** Masukkan mahasiswa yang belum punya kelas ke kelas ini */
     public function kelasTambahMahasiswa(Request $request, Praktikum $praktikum): RedirectResponse {

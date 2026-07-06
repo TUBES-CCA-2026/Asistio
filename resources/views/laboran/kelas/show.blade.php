@@ -14,6 +14,28 @@
             </p>
             <form method="POST" action="{{ route('laboran.kelas.update',$kelas) }}">
                 @csrf @method('PATCH')
+                {{-- ── RUANGAN ─────────────────────────────────────────── --}}
+                <div class="form-group">
+                    <label class="form-label">Ruangan</label>
+                    <div class="search-combobox" style="margin-bottom:8px;">
+                        <input type="text" id="cariRuangan" class="form-control"
+                            placeholder="Cari nama ruangan..."
+                            autocomplete="off"
+                            value="{{ $kelas->ruangan ? $kelas->ruangan->nama_ruangan : '' }}">
+                        <div class="search-results" id="previewRuangan"></div>
+                    </div>
+                    <select name="ruangan_id" id="selectRuangan" class="form-select">
+                        <option value="">— Tidak ada —</option>
+                        @foreach($ruanganAll as $r)
+                        <option value="{{ $r->id }}"
+                            {{ $kelas->ruangan_id == $r->id ? 'selected' : '' }}
+                            data-cari="{{ strtolower($r->nama_ruangan) }}"
+                            data-label="{{ $r->nama_ruangan }}">
+                            {{ $r->nama_ruangan }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
                 {{-- ── DOSEN ──────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Dosen</label>

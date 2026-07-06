@@ -198,6 +198,61 @@ document.addEventListener('DOMContentLoaded', function () {
         }, true);
     }
 
+    // ── SEARCH + DROPDOWN SYNC — Ruangan ────────────────────────────
+    const cariRuangan    = document.getElementById('cariRuangan');
+    const previewRuangan = document.getElementById('previewRuangan');
+    const selectRuangan  = document.getElementById('selectRuangan');
+
+    if (cariRuangan && selectRuangan && previewRuangan) {
+        const optsRuangan = Array.from(selectRuangan.options).filter(o => o.value);
+
+        function posisiRuangan() {
+            const r = cariRuangan.getBoundingClientRect();
+            previewRuangan.style.top   = (r.bottom + 4) + 'px';
+            previewRuangan.style.left  = r.left + 'px';
+            previewRuangan.style.width = r.width + 'px';
+        }
+
+        function tampilRuangan(q) {
+            previewRuangan.innerHTML = '';
+            if (!q) { previewRuangan.classList.remove('open'); return; }
+            const cocok = optsRuangan.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
+            if (cocok.length === 0) {
+                previewRuangan.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+            } else {
+                cocok.forEach(opt => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = '<span class="search-result-nama">' + opt.dataset.label + '</span>';
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        selectRuangan.value = opt.value;
+                        cariRuangan.value   = opt.dataset.label;
+                        previewRuangan.classList.remove('open');
+                    });
+                    previewRuangan.appendChild(item);
+                });
+            }
+            posisiRuangan();
+            previewRuangan.classList.add('open');
+        }
+
+        cariRuangan.addEventListener('input', function () { tampilRuangan(this.value.trim()); });
+        cariRuangan.addEventListener('focus', function () { if (this.value.trim()) tampilRuangan(this.value.trim()); });
+        cariRuangan.addEventListener('blur',  function () { setTimeout(() => previewRuangan.classList.remove('open'), 150); });
+        selectRuangan.addEventListener('change', function () {
+            const opt = this.selectedOptions[0];
+            cariRuangan.value = opt?.dataset.label || '';
+            previewRuangan.classList.remove('open');
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox') && e.target !== selectRuangan) {
+                previewRuangan.classList.remove('open');
+            }
+        });
+        window.addEventListener('scroll', function () { previewRuangan.classList.remove('open'); }, true);
+    }
+
     // ── SEARCH + DROPDOWN SYNC — Dosen ──────────────────────────────
     const cariDosen    = document.getElementById('cariDosen');
     const previewDosen = document.getElementById('previewDosen');
