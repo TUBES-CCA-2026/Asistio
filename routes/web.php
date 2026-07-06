@@ -20,10 +20,12 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     // Mata Kuliah
     Route::get('/mata-kuliah',                [LaboranController::class,'mataKuliah'])->name('mata-kuliah');
     Route::post('/mata-kuliah',               [LaboranController::class,'mataKuliahStore'])->name('mata-kuliah.store');
+    Route::patch('/mata-kuliah/{mataKuliah}', [LaboranController::class,'mataKuliahUpdate'])->name('mata-kuliah.update');
     Route::delete('/mata-kuliah/{mataKuliah}',[LaboranController::class,'mataKuliahDestroy'])->name('mata-kuliah.destroy');
     // Ruangan
     Route::get('/ruangan',                    [LaboranController::class,'ruangan'])->name('ruangan');
     Route::post('/ruangan',                   [LaboranController::class,'ruanganStore'])->name('ruangan.store');
+    Route::patch('/ruangan/{ruangan}',        [LaboranController::class,'ruanganUpdate'])->name('ruangan.update');
     Route::delete('/ruangan/{ruangan}',       [LaboranController::class,'ruanganDestroy'])->name('ruangan.destroy');
     // Kelas Praktikum
     Route::get('/kelas',                      [LaboranController::class,'kelas'])->name('kelas');

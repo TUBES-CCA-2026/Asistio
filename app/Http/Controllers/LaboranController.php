@@ -28,6 +28,16 @@ class LaboranController extends Controller
         MataKuliah::create($request->only('kode_mk','nama_mk'));
         return back()->with('success','Mata kuliah ditambahkan.');
     }
+    public function mataKuliahUpdate(Request $request, MataKuliah $mataKuliah): RedirectResponse {
+        $request->validate([
+            'kode_mk' => ['required','max:20',"unique:mata_kuliah,kode_mk,{$mataKuliah->id}"],
+            'nama_mk' => ['required','string'],
+        ], [
+            'kode_mk.unique' => 'Kode MK sudah dipakai mata kuliah lain.',
+        ]);
+        $mataKuliah->update($request->only('kode_mk','nama_mk'));
+        return back()->with('success','Mata kuliah berhasil diperbarui.');
+    }
     public function mataKuliahDestroy(MataKuliah $mataKuliah): RedirectResponse {
         $mataKuliah->delete(); return back()->with('success','Mata kuliah dihapus.');
     }
@@ -40,6 +50,15 @@ class LaboranController extends Controller
         $request->validate(['nama_ruangan'=>['required','unique:ruangan,nama_ruangan']]);
         Ruangan::create($request->only('nama_ruangan'));
         return back()->with('success','Ruangan ditambahkan.');
+    }
+    public function ruanganUpdate(Request $request, Ruangan $ruangan): RedirectResponse {
+        $request->validate([
+            'nama_ruangan' => ['required','string',"unique:ruangan,nama_ruangan,{$ruangan->id}"],
+        ], [
+            'nama_ruangan.unique' => 'Nama ruangan sudah dipakai ruangan lain.',
+        ]);
+        $ruangan->update($request->only('nama_ruangan'));
+        return back()->with('success','Ruangan berhasil diperbarui.');
     }
     public function ruanganDestroy(Ruangan $ruangan): RedirectResponse {
         $ruangan->delete(); return back()->with('success','Ruangan dihapus.');
