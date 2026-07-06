@@ -7,13 +7,35 @@
 
 <div class="grid grid-2" style="gap:16px;align-items:start;">
     <div class="card">
-        <div class="card-header"><span class="card-title">Asisten Kelas</span></div>
+        <div class="card-header"><span class="card-title">Dosen & Asisten Kelas</span></div>
         <div class="card-body">
             <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;">
                 Tambahkan Asisten 2, ganti asisten yang bertugas, atau kosongkan kembali — cukup pilih lalu simpan.
             </p>
             <form method="POST" action="{{ route('laboran.kelas.update',$kelas) }}">
                 @csrf @method('PATCH')
+                {{-- ── DOSEN ──────────────────────────────────────────── --}}
+                <div class="form-group">
+                    <label class="form-label">Dosen</label>
+                    <div class="search-combobox" style="margin-bottom:8px;">
+                        <input type="text" id="cariDosen" class="form-control"
+                            placeholder="Cari NIDN atau nama dosen..."
+                            autocomplete="off"
+                            value="{{ $kelas->dosen ? $kelas->dosen->nidn . ' — ' . $kelas->dosen->nama_dosen : '' }}">
+                        <div class="search-results" id="previewDosen"></div>
+                    </div>
+                    <select name="dosen_id" id="selectDosen" class="form-select">
+                        <option value="">— Tidak ada —</option>
+                        @foreach($dosenAll as $d)
+                        <option value="{{ $d->id }}"
+                            {{ $kelas->dosen_id == $d->id ? 'selected' : '' }}
+                            data-cari="{{ $d->nidn }} {{ strtolower($d->nama_dosen) }}"
+                            data-label="{{ $d->nidn }} — {{ $d->nama_dosen }}">
+                            {{ $d->nidn }} — {{ $d->nama_dosen }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
                 {{-- ── ASISTEN 1 ─────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Asisten 1</label>

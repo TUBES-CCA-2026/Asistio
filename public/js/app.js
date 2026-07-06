@@ -198,6 +198,64 @@ document.addEventListener('DOMContentLoaded', function () {
         }, true);
     }
 
+    // ── SEARCH + DROPDOWN SYNC — Dosen ──────────────────────────────
+    const cariDosen    = document.getElementById('cariDosen');
+    const previewDosen = document.getElementById('previewDosen');
+    const selectDosen  = document.getElementById('selectDosen');
+
+    if (cariDosen && selectDosen && previewDosen) {
+        const optsDosen = Array.from(selectDosen.options).filter(o => o.value);
+
+        function posisiDosen() {
+            const r = cariDosen.getBoundingClientRect();
+            previewDosen.style.top   = (r.bottom + 4) + 'px';
+            previewDosen.style.left  = r.left + 'px';
+            previewDosen.style.width = r.width + 'px';
+        }
+
+        function tampilDosen(q) {
+            previewDosen.innerHTML = '';
+            if (!q) { previewDosen.classList.remove('open'); return; }
+            const cocok = optsDosen.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
+            if (cocok.length === 0) {
+                previewDosen.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+            } else {
+                cocok.forEach(opt => {
+                    const [nidn, ...namaParts] = opt.dataset.label.split(' — ');
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML =
+                        '<span class="search-result-nim">'  + nidn + '</span>' +
+                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        selectDosen.value = opt.value;
+                        cariDosen.value   = opt.dataset.label;
+                        previewDosen.classList.remove('open');
+                    });
+                    previewDosen.appendChild(item);
+                });
+            }
+            posisiDosen();
+            previewDosen.classList.add('open');
+        }
+
+        cariDosen.addEventListener('input', function () { tampilDosen(this.value.trim()); });
+        cariDosen.addEventListener('focus', function () { if (this.value.trim()) tampilDosen(this.value.trim()); });
+        cariDosen.addEventListener('blur',  function () { setTimeout(() => previewDosen.classList.remove('open'), 150); });
+        selectDosen.addEventListener('change', function () {
+            const opt = this.selectedOptions[0];
+            cariDosen.value = opt?.dataset.label || '';
+            previewDosen.classList.remove('open');
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox') && e.target !== selectDosen) {
+                previewDosen.classList.remove('open');
+            }   
+        });
+        window.addEventListener('scroll', function () { previewDosen.classList.remove('open'); }, true);
+    }
+
     // ── SEARCH + DROPDOWN SYNC — Asisten 1 ──────────────────────────
     const cariA1    = document.getElementById('cariA1');
     const previewA1 = document.getElementById('previewA1');
