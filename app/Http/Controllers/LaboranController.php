@@ -75,15 +75,28 @@ class LaboranController extends Controller
         ]);
     }
     public function kelasStore(Request $request): RedirectResponse {
+        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+        $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
+        $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
+
         $v = $request->validate([
             'mata_kuliah_id' => ['required','exists:mata_kuliah,id'],
             'nama_kelas'     => ['required','string','max:50'],
-            'jadwal'         => ['nullable','string','max:100'],
+            'hari'           => ['nullable', 'in:' . implode(',', $hariValid)],
+            'jam_mulai'      => ['nullable', 'in:' . implode(',', $mulaiValid)],
+            'jam_selesai'    => ['nullable', 'in:' . implode(',', $selesaiValid)],
             'ruangan_id'     => ['nullable','exists:ruangan,id'],
             'dosen_id'       => ['nullable','exists:dosen,id'],
             'asisten_id'     => ['nullable','exists:asisten,id'],
             'asisten2_id'    => ['nullable','exists:asisten,id'],
         ]);
+
+        if (!empty($v['hari']) && !empty($v['jam_mulai']) && !empty($v['jam_selesai'])) {
+            $v['jadwal'] = $v['hari'] . ', ' . $v['jam_mulai'] . '–' . $v['jam_selesai'];
+        } elseif (!empty($v['hari'])) {
+            $v['jadwal'] = $v['hari'];
+        }
+
         Praktikum::create($v);
         return back()->with('success','Kelas ditambahkan.');
     }
@@ -107,14 +120,31 @@ class LaboranController extends Controller
     }
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
     public function kelasUpdate(Request $request, Praktikum $praktikum): RedirectResponse {
+        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+        $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
+        $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
+
         $v = $request->validate([
+            'hari'        => ['nullable', 'in:' . implode(',', $hariValid)],
+            'jam_mulai'   => ['nullable', 'in:' . implode(',', $mulaiValid)],
+            'jam_selesai' => ['nullable', 'in:' . implode(',', $selesaiValid)],
             'ruangan_id'  => ['nullable','exists:ruangan,id'],
             'dosen_id'    => ['nullable','exists:dosen,id'],
             'asisten_id'  => ['nullable','exists:asisten,id'],
             'asisten2_id' => ['nullable','exists:asisten,id'],
         ]);
+
+        // Susun ulang kolom jadwal string untuk kompatibilitas tampilan lama
+        if (!empty($v['hari']) && !empty($v['jam_mulai']) && !empty($v['jam_selesai'])) {
+            $v['jadwal'] = $v['hari'] . ', ' . $v['jam_mulai'] . '–' . $v['jam_selesai'];
+        } elseif (!empty($v['hari'])) {
+            $v['jadwal'] = $v['hari'];
+        } else {
+            $v['jadwal'] = null;
+        }
+
         $praktikum->update($v);
-        return back()->with('success','Ruangan, dosen & asisten kelas diperbarui.');
+        return back()->with('success','Jadwal, ruangan, dosen & asisten kelas diperbarui.');
     }
     /** Masukkan mahasiswa yang belum punya kelas ke kelas ini */
     public function kelasTambahMahasiswa(Request $request, Praktikum $praktikum): RedirectResponse {

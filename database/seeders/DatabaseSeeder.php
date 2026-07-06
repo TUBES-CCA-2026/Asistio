@@ -127,36 +127,36 @@ class DatabaseSeeder extends Seeder
 
         $kelasConfig = [
             // ── Basis Data (4 kelas: A1-A4) — Dosen1
-            ['mk'=>$mkBD,  'nama'=>'A1','jadwal'=>'Senin 07:00-09:00',   'ruangan'=>$r1,'dosen'=>$d['dosen1'],'ast1'=>$a['asisten1'], 'ast2'=>$a['bintang']],
-            ['mk'=>$mkBD,  'nama'=>'A2','jadwal'=>'Senin 09:00-11:00',   'ruangan'=>$r2,'dosen'=>$d['dosen1'],'ast1'=>$a['asisten2'], 'ast2'=>$a['agys']],
-            ['mk'=>$mkBD,  'nama'=>'A3','jadwal'=>'Selasa 07:00-09:00',  'ruangan'=>$r3,'dosen'=>$d['dosen1'],'ast1'=>$a['valdi'],    'ast2'=>null],
-            ['mk'=>$mkBD,  'nama'=>'A4','jadwal'=>'Selasa 09:00-11:00',  'ruangan'=>$r4,'dosen'=>$d['dosen1'],'ast1'=>$a['fahmi'],    'ast2'=>null],
+            ['mk'=>$mkBD,  'nama'=>'A1','hari'=>'Senin',  'mulai'=>'07:00','selesai'=>'09:30', 'ruangan'=>$r1,'dosen'=>$d['dosen1'],'ast1'=>$a['asisten1'], 'ast2'=>$a['bintang']],
+            ['mk'=>$mkBD,  'nama'=>'A2','hari'=>'Senin',  'mulai'=>'09:40','selesai'=>'12:10', 'ruangan'=>$r2,'dosen'=>$d['dosen1'],'ast1'=>$a['asisten2'], 'ast2'=>$a['agys']],
+            ['mk'=>$mkBD,  'nama'=>'A3','hari'=>'Selasa', 'mulai'=>'07:00','selesai'=>'09:30', 'ruangan'=>$r3,'dosen'=>$d['dosen1'],'ast1'=>$a['valdi'],    'ast2'=>null],
+            ['mk'=>$mkBD,  'nama'=>'A4','hari'=>'Selasa', 'mulai'=>'09:40','selesai'=>'12:10', 'ruangan'=>$r4,'dosen'=>$d['dosen1'],'ast1'=>$a['fahmi'],    'ast2'=>null],
 
             // ── Basis Data 2 (2 kelas: B1-B2) — Dosen2
-            ['mk'=>$mkBD2, 'nama'=>'B1','jadwal'=>'Rabu 07:00-09:00',    'ruangan'=>$r1,'dosen'=>$d['dosen2'],'ast1'=>$a['rayhan'],   'ast2'=>$a['rendi']],
-            ['mk'=>$mkBD2, 'nama'=>'B2','jadwal'=>'Rabu 09:00-11:00',    'ruangan'=>$r2,'dosen'=>$d['dosen2'],'ast1'=>$a['nabil'],    'ast2'=>null],
+            ['mk'=>$mkBD2, 'nama'=>'B1','hari'=>'Rabu',   'mulai'=>'07:00','selesai'=>'09:30', 'ruangan'=>$r1,'dosen'=>$d['dosen2'],'ast1'=>$a['rayhan'],   'ast2'=>$a['rendi']],
+            ['mk'=>$mkBD2, 'nama'=>'B2','hari'=>'Rabu',   'mulai'=>'09:40','selesai'=>'12:10', 'ruangan'=>$r2,'dosen'=>$d['dosen2'],'ast1'=>$a['nabil'],    'ast2'=>null],
 
             // ── Jaringan Komputer (2 kelas: A1-A2) — Dosen3
-            ['mk'=>$mkJKO, 'nama'=>'A1','jadwal'=>'Kamis 07:00-09:00',   'ruangan'=>$r3,'dosen'=>$d['dosen3'],'ast1'=>$a['ariq'],     'ast2'=>$a['nendra']],
-            ['mk'=>$mkJKO, 'nama'=>'A2','jadwal'=>'Kamis 09:00-11:00',   'ruangan'=>$r7,'dosen'=>$d['dosen3'],'ast1'=>$a['rahmat'],   'ast2'=>null],
+            ['mk'=>$mkJKO, 'nama'=>'A1','hari'=>'Kamis',  'mulai'=>'07:00','selesai'=>'09:30', 'ruangan'=>$r3,'dosen'=>$d['dosen3'],'ast1'=>$a['ariq'],     'ast2'=>$a['nendra']],
+            ['mk'=>$mkJKO, 'nama'=>'A2','hari'=>'Kamis',  'mulai'=>'09:40','selesai'=>'12:10', 'ruangan'=>$r7,'dosen'=>$d['dosen3'],'ast1'=>$a['rahmat'],   'ast2'=>null],
 
             // ── Pemrograman Web (2 kelas: A1-A2) — Dosen2
-            ['mk'=>$mkPW,  'nama'=>'A1','jadwal'=>'Jumat 07:00-09:00',   'ruangan'=>$r5,'dosen'=>$d['dosen2'],'ast1'=>$a['fadyl'],    'ast2'=>$a['saad']],
-            ['mk'=>$mkPW,  'nama'=>'A2','jadwal'=>'Jumat 09:00-11:00',   'ruangan'=>$r6,'dosen'=>$d['dosen2'],'ast1'=>$a['karima'],   'ast2'=>null],
+            ['mk'=>$mkPW,  'nama'=>'A1','hari'=>'Jumat',  'mulai'=>'07:00','selesai'=>'09:30', 'ruangan'=>$r5,'dosen'=>$d['dosen2'],'ast1'=>$a['fadyl'],    'ast2'=>$a['saad']],
+            ['mk'=>$mkPW,  'nama'=>'A2','hari'=>'Jumat',  'mulai'=>'09:40','selesai'=>'12:10', 'ruangan'=>$r6,'dosen'=>$d['dosen2'],'ast1'=>$a['karima'],   'ast2'=>null],
 
             // ── PBO (2 kelas: A1-A2) — Dosen4
-            ['mk'=>$mkPBO, 'nama'=>'A1','jadwal'=>'Senin 13:00-15:00',   'ruangan'=>$r4,'dosen'=>$d['dosen4'],'ast1'=>$a['mekar'],    'ast2'=>$a['nurul']],
-            ['mk'=>$mkPBO, 'nama'=>'A2','jadwal'=>'Selasa 13:00-15:00',  'ruangan'=>$r5,'dosen'=>$d['dosen4'],'ast1'=>$a['qamri'],    'ast2'=>null],
+            ['mk'=>$mkPBO, 'nama'=>'A1','hari'=>'Senin',  'mulai'=>'13:00','selesai'=>'15:30', 'ruangan'=>$r4,'dosen'=>$d['dosen4'],'ast1'=>$a['mekar'],    'ast2'=>$a['nurul']],
+            ['mk'=>$mkPBO, 'nama'=>'A2','hari'=>'Selasa', 'mulai'=>'13:00','selesai'=>'15:30', 'ruangan'=>$r5,'dosen'=>$d['dosen4'],'ast1'=>$a['qamri'],    'ast2'=>null],
 
             // ── Struktur Data (2 kelas: A1-A2) — Dosen5
-            ['mk'=>$mkSTR, 'nama'=>'A1','jadwal'=>'Rabu 13:00-15:00',    'ruangan'=>$r6,'dosen'=>$d['dosen5'],'ast1'=>$a['rahma'],    'ast2'=>$a['fadia']],
-            ['mk'=>$mkSTR, 'nama'=>'A2','jadwal'=>'Kamis 13:00-15:00',   'ruangan'=>$r7,'dosen'=>$d['dosen5'],'ast1'=>$a['alisa'],    'ast2'=>null],
+            ['mk'=>$mkSTR, 'nama'=>'A1','hari'=>'Rabu',   'mulai'=>'13:00','selesai'=>'15:30', 'ruangan'=>$r6,'dosen'=>$d['dosen5'],'ast1'=>$a['rahma'],    'ast2'=>$a['fadia']],
+            ['mk'=>$mkSTR, 'nama'=>'A2','hari'=>'Kamis',  'mulai'=>'13:00','selesai'=>'15:30', 'ruangan'=>$r7,'dosen'=>$d['dosen5'],'ast1'=>$a['alisa'],    'ast2'=>null],
 
             // ── Algoritma & Pemrograman (1 kelas: A1) — Dosen4
-            ['mk'=>$mkALPRO,'nama'=>'A1','jadwal'=>'Jumat 13:00-15:00',  'ruangan'=>$r1,'dosen'=>$d['dosen4'],'ast1'=>$a['tiara'],    'ast2'=>$a['najiya']],
+            ['mk'=>$mkALPRO,'nama'=>'A1','hari'=>'Jumat', 'mulai'=>'13:00','selesai'=>'15:30', 'ruangan'=>$r1,'dosen'=>$d['dosen4'],'ast1'=>$a['tiara'],    'ast2'=>$a['najiya']],
 
             // ── Elektronika Dasar (1 kelas: A1) — Dosen3
-            ['mk'=>$mkELDAS,'nama'=>'A1','jadwal'=>'Senin 15:00-17:00',  'ruangan'=>$r7,'dosen'=>$d['dosen3'],'ast1'=>$a['kharisma'],'ast2'=>null],
+            ['mk'=>$mkELDAS,'nama'=>'A1','hari'=>'Senin', 'mulai'=>'15:40','selesai'=>'18:10', 'ruangan'=>$r7,'dosen'=>$d['dosen3'],'ast1'=>$a['kharisma'],'ast2'=>null],
         ];
 
         $kelasList = [];
@@ -164,7 +164,10 @@ class DatabaseSeeder extends Seeder
             $kelas = Praktikum::firstOrCreate(
                 ['mata_kuliah_id' => $cfg['mk']->id, 'nama_kelas' => $cfg['nama']],
                 [
-                    'jadwal'      => $cfg['jadwal'],
+                    'hari'        => $cfg['hari'],
+                    'jam_mulai'   => $cfg['mulai'],
+                    'jam_selesai' => $cfg['selesai'],
+                    'jadwal'      => $cfg['hari'] . ', ' . $cfg['mulai'] . '–' . $cfg['selesai'],
                     'ruangan_id'  => $cfg['ruangan']->id,
                     'dosen_id'    => $cfg['dosen']->id,
                     'asisten_id'  => $cfg['ast1']->id,

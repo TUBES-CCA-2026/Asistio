@@ -33,7 +33,30 @@
     <div class="grid grid-2">
         <div class="form-group"><label class="form-label required">Mata Kuliah</label><select name="mata_kuliah_id" class="form-select" required><option value="">Pilih...</option>@foreach($mataKuliah as $mk)<option value="{{ $mk->id }}">{{ $mk->kode_mk }} — {{ $mk->nama_mk }}</option>@endforeach</select></div>
         <div class="form-group"><label class="form-label required">Kelas / Frekuensi</label><input name="nama_kelas" class="form-control" required placeholder="cth: Kelas A"></div>
-        <div class="form-group"><label class="form-label">Jadwal</label><input name="jadwal" class="form-control" placeholder="cth: Senin, 08:00–10:00"></div>
+        <div class="form-group"><label class="form-label">Hari</label>
+            <select name="hari" class="form-select">
+                <option value="">Pilih hari...</option>
+                @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $h)
+                <option value="{{ $h }}">{{ $h }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group"><label class="form-label">Jam Mulai</label>
+            <select name="jam_mulai" class="form-select">
+                <option value="">Pilih jam mulai...</option>
+                @foreach(['07:00','09:40','10:30','13:00','14:30','15:40'] as $j)
+                <option value="{{ $j }}">{{ $j }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group"><label class="form-label">Jam Selesai</label>
+            <select name="jam_selesai" class="form-select">
+                <option value="">Pilih jam selesai...</option>
+                @foreach(['09:30','10:20','12:10','14:20','15:30','18:10','18:20'] as $j)
+                <option value="{{ $j }}">{{ $j }}</option>
+                @endforeach
+            </select>
+        </div>
         <div class="form-group"><label class="form-label">Ruangan</label><select name="ruangan_id" class="form-select"><option value="">Pilih...</option>@foreach($ruanganAll as $r)<option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>@endforeach</select></div>
         <div class="form-group"><label class="form-label">Dosen</label><select name="dosen_id" class="form-select"><option value="">Pilih...</option>@foreach($dosenAll as $d)<option value="{{ $d->id }}">{{ $d->nama_dosen }}</option>@endforeach</select></div>
         <div class="form-group"><label class="form-label">Asisten 1</label><select name="asisten_id" class="form-select"><option value="">Pilih...</option>@foreach($asistenAll as $a)<option value="{{ $a->id }}">{{ $a->nama_asisten }}</option>@endforeach</select></div>

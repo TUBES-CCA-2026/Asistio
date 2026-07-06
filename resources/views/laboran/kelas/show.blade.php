@@ -14,6 +14,45 @@
             </p>
             <form method="POST" action="{{ route('laboran.kelas.update',$kelas) }}">
                 @csrf @method('PATCH')
+                {{-- ── HARI ──────────────────────────────────────────── --}}
+                <div class="form-group">
+                    <label class="form-label">Hari</label>
+                    <div class="search-combobox">
+                        <input type="text" id="cariHari" class="form-control"
+                            placeholder="Klik untuk pilih hari..."
+                            autocomplete="off"
+                            value="{{ $kelas->hari ?? '' }}">
+                        <input type="hidden" name="hari" id="hidHari"
+                            value="{{ $kelas->hari ?? '' }}">
+                        <div class="search-results" id="previewHari"></div>
+                    </div>
+                </div>
+                {{-- ── JAM MULAI ───────────────────────────────────────── --}}
+                <div class="form-group">
+                    <label class="form-label">Jam Mulai</label>
+                    <div class="search-combobox">
+                        <input type="text" id="cariJamMulai" class="form-control"
+                            placeholder="Klik untuk pilih jam mulai..."
+                            autocomplete="off"
+                            value="{{ $kelas->jam_mulai ?? '' }}">
+                        <input type="hidden" name="jam_mulai" id="hidJamMulai"
+                            value="{{ $kelas->jam_mulai ?? '' }}">
+                        <div class="search-results" id="previewJamMulai"></div>
+                    </div>
+                </div>
+                {{-- ── JAM SELESAI ─────────────────────────────────────── --}}
+                <div class="form-group">
+                    <label class="form-label">Jam Selesai</label>
+                    <div class="search-combobox">
+                        <input type="text" id="cariJamSelesai" class="form-control"
+                            placeholder="Klik untuk pilih jam selesai..."
+                            autocomplete="off"
+                            value="{{ $kelas->jam_selesai ?? '' }}">
+                        <input type="hidden" name="jam_selesai" id="hidJamSelesai"
+                            value="{{ $kelas->jam_selesai ?? '' }}">
+                        <div class="search-results" id="previewJamSelesai"></div>
+                    </div>
+                </div>
                 {{-- ── RUANGAN ─────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Ruangan</label>
@@ -68,7 +107,31 @@
                 </div>
                 <button class="btn btn-primary btn-block">Simpan</button>
 
-                {{-- Data store tersembunyi — hanya dibaca JS, tidak tampil ke user --}}
+                {{-- Data jadwal tersembunyi — hanya dibaca JS --}}
+                <select id="__dataHari" hidden>
+                    @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $h)
+                    <option value="{{ $h }}"
+                        data-cari="{{ strtolower($h) }}"
+                        data-label="{{ $h }}">
+                    </option>
+                    @endforeach
+                </select>
+                <select id="__dataJamMulai" hidden>
+                    @foreach(['07:00','09:40','10:30','13:00','14:30','15:40'] as $j)
+                    <option value="{{ $j }}"
+                        data-cari="{{ $j }}"
+                        data-label="{{ $j }}">
+                    </option>
+                    @endforeach
+                </select>
+                <select id="__dataJamSelesai" hidden>
+                    @foreach(['09:30','10:20','12:10','14:20','15:30','18:10','18:20'] as $j)
+                    <option value="{{ $j }}"
+                        data-cari="{{ $j }}"
+                        data-label="{{ $j }}">
+                    </option>
+                    @endforeach
+                </select>
                 <select id="__dataRuangan" hidden>
                     @foreach($ruanganAll as $r)
                     <option value="{{ $r->id }}"

@@ -358,4 +358,40 @@ document.addEventListener('DOMContentLoaded', function () {
             return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
         }),
     });
+
+    // ── HARI ─────────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariHari'),
+        hiddenEl  : document.getElementById('hidHari'),
+        previewEl : document.getElementById('previewHari'),
+        data      : Array.from(document.querySelectorAll('#__dataHari option')).filter(o => o.value).map(o => ({
+            value : o.value,
+            label : o.dataset.label,
+            cari  : o.dataset.cari,
+        })),
+    });
+
+    // ── JAM MULAI ────────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariJamMulai'),
+        hiddenEl  : document.getElementById('hidJamMulai'),
+        previewEl : document.getElementById('previewJamMulai'),
+        data      : Array.from(document.querySelectorAll('#__dataJamMulai option')).filter(o => o.value).map(o => ({
+            value : o.value,
+            label : o.dataset.label,
+            cari  : o.dataset.cari,
+        })),
+    });
+
+    // ── JAM SELESAI ──────────────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariJamSelesai'),
+        hiddenEl  : document.getElementById('hidJamSelesai'),
+        previewEl : document.getElementById('previewJamSelesai'),
+        data      : Array.from(document.querySelectorAll('#__dataJamSelesai option')).filter(o => o.value).map(o => ({
+            value : o.value,
+            label : o.dataset.label,
+            cari  : o.dataset.cari,
+        })),
+    });
 });
