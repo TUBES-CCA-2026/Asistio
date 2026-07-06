@@ -205,6 +205,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function buatCombobox({ data, inputEl, hiddenEl, previewEl, clearable = true }) {
         if (!inputEl || !hiddenEl || !previewEl) return;
 
+        let focusedIdx = -1; // indeks item yang sedang di-highlight arrow key
+
         function posisi() {
             const r = inputEl.getBoundingClientRect();
             previewEl.style.top   = (r.bottom + 4) + 'px';
@@ -212,13 +214,24 @@ document.addEventListener('DOMContentLoaded', function () {
             previewEl.style.width = r.width + 'px';
         }
 
-        // Bersihkan query dari tanda " — " sebelum dipakai filter
         function bersihkan(teks) {
             return teks.replace(/\s*—\s*/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
         }
 
+        // Pindah highlight ke item tertentu & scroll supaya kelihatan
+        function highlight(idx) {
+            const items = previewEl.querySelectorAll('.search-result-item');
+            items.forEach(el => el.classList.remove('keyboard-focus'));
+            if (idx >= 0 && idx < items.length) {
+                items[idx].classList.add('keyboard-focus');
+                items[idx].scrollIntoView({ block: 'nearest' });
+            }
+            focusedIdx = idx;
+        }
+
         function tampil(q) {
             previewEl.innerHTML = '';
+            focusedIdx = -1;
             const qBersih = bersihkan(q);
             const list = qBersih
                 ? data.filter(d => d.cari.includes(qBersih))
@@ -243,6 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         e.preventDefault();
                         hiddenEl.value = d.value;
                         inputEl.value  = d.label;
+                        focusedIdx = -1;
                         previewEl.classList.remove('open');
                     });
                     previewEl.appendChild(item);
@@ -252,14 +266,38 @@ document.addEventListener('DOMContentLoaded', function () {
             previewEl.classList.add('open');
         }
 
-        // Ketik → filter pakai teks yang sudah dibersihkan
+        // Arrow key, Enter, Escape — tangani di sini
+        inputEl.addEventListener('keydown', function (e) {
+            const isOpen = previewEl.classList.contains('open');
+            const items  = previewEl.querySelectorAll('.search-result-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!isOpen) { tampil(this.value); return; }
+                highlight(Math.min(focusedIdx + 1, items.length - 1));
+
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!isOpen) return;
+                highlight(Math.max(focusedIdx - 1, 0));
+
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (isOpen && focusedIdx >= 0 && items[focusedIdx]) {
+                    items[focusedIdx].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                }
+
+            } else if (e.key === 'Escape') {
+                previewEl.classList.remove('open');
+                focusedIdx = -1;
+            }
+        });
+
         inputEl.addEventListener('input', function () {
             if (clearable && this.value === '') hiddenEl.value = '';
             tampil(this.value);
         });
 
-        // Fokus → jika field sudah terisi dengan pilihan valid, jangan tampil apa-apa
-        // Baru tampil saat user menghapus 1 huruf (event input di atas yang handle)
         inputEl.addEventListener('focus', function () {
             const sudahDipilih = hiddenEl.value !== '' &&
                 data.find(d => d.label === this.value.trim());
@@ -276,16 +314,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     hiddenEl.value = '';
                 }
             }
-            setTimeout(() => previewEl.classList.remove('open'), 200);
+            setTimeout(() => { previewEl.classList.remove('open'); focusedIdx = -1; }, 200);
         });
 
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.search-combobox')) {
                 previewEl.classList.remove('open');
+                focusedIdx = -1;
             }
         });
 
-        // Cegah scroll halaman saat cursor ada di dalam daftar preview
         previewEl.addEventListener('wheel', function (e) {
             const atTop    = previewEl.scrollTop === 0;
             const atBottom = previewEl.scrollTop + previewEl.offsetHeight >= previewEl.scrollHeight;
@@ -295,10 +333,10 @@ document.addEventListener('DOMContentLoaded', function () {
             e.stopPropagation();
         }, { passive: false });
 
-        // Tutup hanya jika scroll terjadi di luar combobox
         window.addEventListener('scroll', function (e) {
             if (!previewEl.contains(e.target) && e.target !== previewEl) {
                 previewEl.classList.remove('open');
+                focusedIdx = -1;
             }
         }, true);
     }
