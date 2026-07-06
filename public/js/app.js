@@ -197,4 +197,120 @@ document.addEventListener('DOMContentLoaded', function () {
             previewMhs.classList.remove('open');
         }, true);
     }
+
+    // ── SEARCH + DROPDOWN SYNC — Asisten 1 ──────────────────────────
+    const cariA1    = document.getElementById('cariA1');
+    const previewA1 = document.getElementById('previewA1');
+    const selectA1  = document.getElementById('selectA1');
+
+    if (cariA1 && selectA1 && previewA1) {
+        const optsA1 = Array.from(selectA1.options).filter(o => o.value);
+
+        function posisiA1() {
+            const r = cariA1.getBoundingClientRect();
+            previewA1.style.top   = (r.bottom + 4) + 'px';
+            previewA1.style.left  = r.left + 'px';
+            previewA1.style.width = r.width + 'px';
+        }
+
+        function tampilA1(q) {
+            previewA1.innerHTML = '';
+            if (!q) { previewA1.classList.remove('open'); return; }
+            const cocok = optsA1.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
+            if (cocok.length === 0) {
+                previewA1.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+            } else {
+                cocok.forEach(opt => {
+                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML =
+                        '<span class="search-result-nim">' + nim + '</span>' +
+                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        selectA1.value = opt.value;
+                        cariA1.value   = opt.dataset.label;
+                        previewA1.classList.remove('open');
+                    });
+                    previewA1.appendChild(item);
+                });
+            }
+            posisiA1();
+            previewA1.classList.add('open');
+        }
+
+        cariA1.addEventListener('input', function () { tampilA1(this.value.trim()); });
+        cariA1.addEventListener('focus', function () { if (this.value.trim()) tampilA1(this.value.trim()); });
+        cariA1.addEventListener('blur',  function () { setTimeout(() => previewA1.classList.remove('open'), 150); });
+        selectA1.addEventListener('change', function () {
+            const opt = this.selectedOptions[0];
+            cariA1.value = opt?.dataset.label || '';
+            previewA1.classList.remove('open');
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox') && e.target !== selectA1) {
+                previewA1.classList.remove('open');
+            }
+        });
+        window.addEventListener('scroll', function () { previewA1.classList.remove('open'); }, true);
+    }
+
+    // ── SEARCH + DROPDOWN SYNC — Asisten 2 ──────────────────────────
+    const cariA2    = document.getElementById('cariA2');
+    const previewA2 = document.getElementById('previewA2');
+    const selectA2  = document.getElementById('selectA2');
+
+    if (cariA2 && selectA2 && previewA2) {
+        const optsA2 = Array.from(selectA2.options).filter(o => o.value);
+
+        function posisiA2() {
+            const r = cariA2.getBoundingClientRect();
+            previewA2.style.top   = (r.bottom + 4) + 'px';
+            previewA2.style.left  = r.left + 'px';
+            previewA2.style.width = r.width + 'px';
+        }
+
+        function tampilA2(q) {
+            previewA2.innerHTML = '';
+            if (!q) { previewA2.classList.remove('open'); return; }
+            const cocok = optsA2.filter(o => o.dataset.cari.includes(q.toLowerCase())).slice(0, 30);
+            if (cocok.length === 0) {
+                previewA2.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
+            } else {
+                cocok.forEach(opt => {
+                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML =
+                        '<span class="search-result-nim">' + nim + '</span>' +
+                        '<span class="search-result-nama">' + namaParts.join(' — ') + '</span>';
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        selectA2.value = opt.value;
+                        cariA2.value   = opt.dataset.label;
+                        previewA2.classList.remove('open');
+                    });
+                    previewA2.appendChild(item);
+                });
+            }
+            posisiA2();
+            previewA2.classList.add('open');
+        }
+
+        cariA2.addEventListener('input', function () { tampilA2(this.value.trim()); });
+        cariA2.addEventListener('focus', function () { if (this.value.trim()) tampilA2(this.value.trim()); });
+        cariA2.addEventListener('blur',  function () { setTimeout(() => previewA2.classList.remove('open'), 150); });
+        selectA2.addEventListener('change', function () {
+            const opt = this.selectedOptions[0];
+            cariA2.value = opt?.dataset.label || '';
+            previewA2.classList.remove('open');
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-combobox') && e.target !== selectA2) {
+                previewA2.classList.remove('open');
+            }
+        });
+        window.addEventListener('scroll', function () { previewA2.classList.remove('open'); }, true);
+    }
 });

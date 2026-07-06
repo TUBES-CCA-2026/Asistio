@@ -14,21 +14,48 @@
             </p>
             <form method="POST" action="{{ route('laboran.kelas.update',$kelas) }}">
                 @csrf @method('PATCH')
+                {{-- ── ASISTEN 1 ─────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Asisten 1</label>
-                    <select name="asisten_id" class="form-select">
+                    <div class="search-combobox" style="margin-bottom:8px;">
+                        <input type="text" id="cariA1" class="form-control"
+                            placeholder="Cari NIM atau nama asisten 1..."
+                            autocomplete="off"
+                            value="{{ $kelas->asisten ? $kelas->asisten->nim . ' — ' . $kelas->asisten->nama_asisten : '' }}">
+                        <div class="search-results" id="previewA1"></div>
+                    </div>
+                    <select name="asisten_id" id="selectA1" class="form-select">
                         <option value="">— Tidak ada —</option>
                         @foreach($asistenAll as $a)
-                        <option value="{{ $a->id }}" {{ $kelas->asisten_id == $a->id ? 'selected' : '' }}>{{ $a->nama_asisten }}</option>
+                        <option value="{{ $a->id }}"
+                            {{ $kelas->asisten_id == $a->id ? 'selected' : '' }}
+                            data-cari="{{ $a->nim }} {{ strtolower($a->nama_asisten) }}"
+                            data-label="{{ $a->nim }} — {{ $a->nama_asisten }}">
+                            {{ $a->nim }} — {{ $a->nama_asisten }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
+
+                {{-- ── ASISTEN 2 ─────────────────────────────────────────── --}}
                 <div class="form-group">
                     <label class="form-label">Asisten 2</label>
-                    <select name="asisten2_id" class="form-select">
+                    <div class="search-combobox" style="margin-bottom:8px;">
+                        <input type="text" id="cariA2" class="form-control"
+                            placeholder="Cari NIM atau nama asisten 2..."
+                            autocomplete="off"
+                            value="{{ $kelas->asisten2 ? $kelas->asisten2->nim . ' — ' . $kelas->asisten2->nama_asisten : '' }}">
+                        <div class="search-results" id="previewA2"></div>
+                    </div>
+                    <select name="asisten2_id" id="selectA2" class="form-select">
                         <option value="">— Tidak ada —</option>
                         @foreach($asistenAll as $a)
-                        <option value="{{ $a->id }}" {{ $kelas->asisten2_id == $a->id ? 'selected' : '' }}>{{ $a->nama_asisten }}</option>
+                        <option value="{{ $a->id }}"
+                            {{ $kelas->asisten2_id == $a->id ? 'selected' : '' }}
+                            data-cari="{{ $a->nim }} {{ strtolower($a->nama_asisten) }}"
+                            data-label="{{ $a->nim }} — {{ $a->nama_asisten }}">
+                            {{ $a->nim }} — {{ $a->nama_asisten }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
