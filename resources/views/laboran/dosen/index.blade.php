@@ -25,6 +25,7 @@
             <div class="dropdown">
                 <button type="button" class="dropdown-toggle" data-dropdown-toggle="dd{{ $d->id }}" title="Opsi lain">&#8942;</button>
                 <div id="dd{{ $d->id }}" class="dropdown-menu">
+                    <button type="button" class="dropdown-item" data-modal-open="modalEditDosen{{ $d->id }}">Edit Data</button>
                     <button type="button" class="dropdown-item" data-modal-open="modalReset{{ $d->id }}">Ganti Password</button>
                 </div>
             </div>
@@ -49,6 +50,16 @@
 </div></div>
 
 {{-- Modal Reset Password per Dosen --}}
+@foreach($dosenAll as $d)
+<div id="modalEditDosen{{ $d->id }}" class="modal-overlay"><div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Data — {{ $d->nama_dosen }}</span><button data-modal-close="modalEditDosen{{ $d->id }}" class="modal-close">✕</button></div>
+    <div class="modal-body"><form method="POST" action="{{ route('laboran.dosen.update',$d) }}">@csrf @method('PATCH')
+    <div class="form-group"><label class="form-label required">Nama Dosen</label><input name="nama_dosen" class="form-control" value="{{ $d->nama_dosen }}" required></div>
+    <div class="form-group"><label class="form-label">NIDN</label><input name="nidn" class="form-control" value="{{ $d->nidn }}" placeholder="opsional"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalEditDosen{{ $d->id }}" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
+    </form></div>
+</div></div>
+@endforeach
 @foreach($dosenAll as $d)
 <div id="modalReset{{ $d->id }}" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Reset Password — {{ $d->nama_dosen }}</span><button data-modal-close="modalReset{{ $d->id }}" class="modal-close">✕</button></div>

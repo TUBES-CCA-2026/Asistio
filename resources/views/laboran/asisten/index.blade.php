@@ -18,6 +18,7 @@
             <div class="dropdown">
                 <button type="button" class="dropdown-toggle" data-dropdown-toggle="dd{{ $a->id }}" title="Opsi lain">&#8942;</button>
                 <div id="dd{{ $a->id }}" class="dropdown-menu">
+                    <button type="button" class="dropdown-item" data-modal-open="modalEditAsisten{{ $a->id }}">Edit Data</button>
                     <button type="button" class="dropdown-item" data-modal-open="modalReset{{ $a->id }}">Ganti Password</button>
                 </div>
             </div>
@@ -38,6 +39,16 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
     </form></div>
 </div></div>
+@foreach($asistenAll as $a)
+<div id="modalEditAsisten{{ $a->id }}" class="modal-overlay"><div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Data — {{ $a->nama_asisten }}</span><button data-modal-close="modalEditAsisten{{ $a->id }}" class="modal-close">✕</button></div>
+    <div class="modal-body"><form method="POST" action="{{ route('laboran.asisten.update',$a) }}">@csrf @method('PATCH')
+    <div class="form-group"><label class="form-label required">Nama Asisten</label><input name="nama_asisten" class="form-control" value="{{ $a->nama_asisten }}" required></div>
+    <div class="form-group"><label class="form-label required">NIM</label><input name="nim" class="form-control" value="{{ $a->nim }}" required></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalEditAsisten{{ $a->id }}" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
+    </form></div>
+</div></div>
+@endforeach
 @foreach($asistenAll as $a)
 <div id="modalReset{{ $a->id }}" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Reset Password — {{ $a->nama_asisten }}</span><button data-modal-close="modalReset{{ $a->id }}" class="modal-close">✕</button></div>

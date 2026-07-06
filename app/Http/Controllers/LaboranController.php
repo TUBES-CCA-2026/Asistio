@@ -130,6 +130,16 @@ class LaboranController extends Controller
             DB::commit(); return back()->with('success','Asisten ditambahkan.');
         } catch(\Exception $e) { DB::rollBack(); return back()->with('error',$e->getMessage()); }
     }
+    public function asistenUpdate(Request $request, Asisten $asisten): RedirectResponse {
+        $v = $request->validate([
+            'nama_asisten' => ['required','string'],
+            'nim'          => ['required',"unique:asisten,nim,{$asisten->id}"],
+        ], [
+            'nim.unique' => 'NIM sudah dipakai asisten lain.',
+        ]);
+        $asisten->update($v);
+        return back()->with('success', "Data {$asisten->nama_asisten} berhasil diperbarui.");
+    }
     public function asistenDestroy(Asisten $asisten): RedirectResponse {
         $asisten->user?->delete(); $asisten->delete();
         return back()->with('success','Asisten dihapus.');
@@ -167,6 +177,16 @@ class LaboranController extends Controller
             Dosen::create(['nama_dosen'=>$v['nama_dosen'],'nidn'=>$v['nidn']??null,'user_id'=>$user->id]);
             DB::commit(); return back()->with('success','Dosen ditambahkan.');
         } catch(\Exception $e) { DB::rollBack(); return back()->with('error',$e->getMessage()); }
+    }
+    public function dosenUpdate(Request $request, Dosen $dosen): RedirectResponse {
+        $v = $request->validate([
+            'nama_dosen' => ['required','string'],
+            'nidn'       => ['nullable',"unique:dosen,nidn,{$dosen->id}",'max:20'],
+        ], [
+            'nidn.unique' => 'NIDN sudah dipakai dosen lain.',
+        ]);
+        $dosen->update($v);
+        return back()->with('success', "Data {$dosen->nama_dosen} berhasil diperbarui.");
     }
     public function dosenDestroy(Dosen $dosen): RedirectResponse {
         $dosen->user?->delete(); $dosen->delete();

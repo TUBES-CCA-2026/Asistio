@@ -36,11 +36,13 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
     Route::post('/asisten',                   [LaboranController::class,'asistenStore'])->name('asisten.store');
+    Route::patch('/asisten/{asisten}',        [LaboranController::class,'asistenUpdate'])->name('asisten.update');
     Route::patch('/asisten/{asisten}/reset-password', [LaboranController::class,'asistenResetPassword'])->name('asisten.reset-password');
     Route::delete('/asisten/{asisten}',       [LaboranController::class,'asistenDestroy'])->name('asisten.destroy');
     // Dosen
     Route::get('/dosen',                      [LaboranController::class,'dosen'])->name('dosen');
     Route::post('/dosen',                     [LaboranController::class,'dosenStore'])->name('dosen.store');
+    Route::patch('/dosen/{dosen}',            [LaboranController::class,'dosenUpdate'])->name('dosen.update');
     Route::patch('/dosen/{dosen}/reset-password', [LaboranController::class,'dosenResetPassword'])->name('dosen.reset-password');
     Route::delete('/dosen/{dosen}',           [LaboranController::class,'dosenDestroy'])->name('dosen.destroy');
     // Mahasiswa

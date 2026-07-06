@@ -43,7 +43,7 @@
                         Nilai & Absensi
                     </span>
                 @endforelse
-                <a href="{{ route('laboran.mahasiswa.edit', $m) }}" class="btn btn-sm btn-outline">Edit</a>
+                <button type="button" class="btn btn-sm btn-outline" data-modal-open="modalEditMhs{{ $m->id }}">Edit</button>
                 <form method="POST" action="{{ route('laboran.mahasiswa.destroy', $m) }}" style="margin:0;">
                     @csrf @method('DELETE')
                     <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus mahasiswa ini?')">Hapus</button>
@@ -73,4 +73,14 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Tambah</button></div>
     </form></div>
 </div></div>
+@foreach($mahasiswaAll as $m)
+<div id="modalEditMhs{{ $m->id }}" class="modal-overlay"><div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Data — {{ $m->nama_mahasiswa }}</span><button data-modal-close="modalEditMhs{{ $m->id }}" class="modal-close">✕</button></div>
+    <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.update',$m) }}">@csrf @method('PATCH')
+    <div class="form-group"><label class="form-label required">NIM</label><input name="nim_mahasiswa" class="form-control" value="{{ $m->nim_mahasiswa }}" required></div>
+    <div class="form-group"><label class="form-label required">Nama</label><input name="nama_mahasiswa" class="form-control" value="{{ $m->nama_mahasiswa }}" required></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalEditMhs{{ $m->id }}" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
+    </form></div>
+</div></div>
+@endforeach
 @endsection
