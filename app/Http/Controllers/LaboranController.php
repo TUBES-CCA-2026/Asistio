@@ -192,7 +192,13 @@ class LaboranController extends Controller
  
     // ── Asisten ────────────────────────────────────────────────────────────
     public function asisten(): View {
-        return view('laboran.asisten.index', ['asistenAll' => Asisten::with('user')->latest()->get()]);
+        return view('laboran.asisten.index', [
+            'asistenAll' => Asisten::with([
+                'user',
+                'praktikum.mataKuliah',
+                'praktikumSebagaiAsisten2.mataKuliah',
+            ])->latest()->get(),
+        ]);
     }
     public function asistenStore(Request $request): RedirectResponse {
         $v = $request->validate([
