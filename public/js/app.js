@@ -117,87 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-
-    // ── SEARCH + DROPDOWN SYNC — Tambah Praktikan ke Kelas ──────────
-    const cariMhs   = document.getElementById('cariMhs');
-    const previewMhs = document.getElementById('previewMhs');
-    const selectMhs = document.getElementById('selectMhs');
-
-    if (cariMhs && selectMhs && previewMhs) {
-        const semuaOpt = Array.from(selectMhs.options).filter(o => o.value);
-
-        // Tampilkan preview hasil pencarian
-        function posisikanPreview() {
-            const rect = cariMhs.getBoundingClientRect();
-            previewMhs.style.top   = (rect.bottom + 4) + 'px';
-            previewMhs.style.left  = rect.left + 'px';
-            previewMhs.style.width = rect.width + 'px';
-        }
-
-        function tampilkanPreview(q) {
-            previewMhs.innerHTML = '';
-            if (!q) { previewMhs.classList.remove('open'); return; }
-
-            const cocok = semuaOpt.filter(o =>
-                o.dataset.cari.includes(q.toLowerCase())
-            ).slice(0, 30);
-
-            if (cocok.length === 0) {
-                previewMhs.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
-            } else {
-                cocok.forEach(opt => {
-                    const [nim, ...namaParts] = opt.dataset.label.split(' — ');
-                    const nama = namaParts.join(' — ');
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.innerHTML =
-                        '<span class="search-result-nim">' + nim + '</span>' +
-                        '<span class="search-result-nama">' + nama + '</span>';
-                    item.addEventListener('mousedown', function (e) {
-                        e.preventDefault();
-                        // Klik preview → update dropdown + isi textfield
-                        selectMhs.value = opt.value;
-                        cariMhs.value   = opt.dataset.label;
-                        previewMhs.classList.remove('open');
-                    });
-                    previewMhs.appendChild(item);
-                });
-            }
-            posisikanPreview();
-            previewMhs.classList.add('open');
-        }
-
-        // Ketik di textfield → tampilkan preview
-        cariMhs.addEventListener('input', function () {
-            tampilkanPreview(this.value.trim());
-        });
-        cariMhs.addEventListener('focus', function () {
-            if (this.value.trim()) tampilkanPreview(this.value.trim());
-        });
-        cariMhs.addEventListener('blur', function () {
-            setTimeout(() => previewMhs.classList.remove('open'), 150);
-        });
-
-        // Pilih dari dropdown → isi textfield secara otomatis
-        selectMhs.addEventListener('change', function () {
-            const opt = this.selectedOptions[0];
-            cariMhs.value = opt?.dataset.label || '';
-            previewMhs.classList.remove('open');
-        });
-
-        // Klik di luar → tutup preview
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox') && e.target !== selectMhs) {
-                previewMhs.classList.remove('open');
-            }
-        });
-
-        // Tutup preview saat scroll agar posisi tidak basi
-        window.addEventListener('scroll', function () {
-            previewMhs.classList.remove('open');
-        }, true);
-    }
-
     // ── SMART COMBOBOX — helper reusable ─────────────────────────────
     // data  : array of { value, label, cari, kolom1?, kolom2? }
     // inputEl, hiddenEl, previewEl : elemen DOM
@@ -431,5 +350,89 @@ document.addEventListener('DOMContentLoaded', function () {
             label : o.dataset.label,
             cari  : o.dataset.cari,
         })),
+    });
+
+    // ── TAMBAH KELAS — Mata Kuliah ───────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTMK'),
+        hiddenEl  : document.getElementById('hidTMK'),
+        previewEl : document.getElementById('previewTMK'),
+        data      : Array.from(document.querySelectorAll('#__dataTMK option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
+
+    // ── TAMBAH KELAS — Hari ──────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTHari'),
+        hiddenEl  : document.getElementById('hidTHari'),
+        previewEl : document.getElementById('previewTHari'),
+        data      : Array.from(document.querySelectorAll('#__dataTHari option')).filter(o => o.value).map(o => ({
+            value: o.value, label: o.dataset.label, cari: o.dataset.cari,
+        })),
+    });
+
+    // ── TAMBAH KELAS — Jam Mulai ─────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTJamMulai'),
+        hiddenEl  : document.getElementById('hidTJamMulai'),
+        previewEl : document.getElementById('previewTJamMulai'),
+        data      : Array.from(document.querySelectorAll('#__dataTJamMulai option')).filter(o => o.value).map(o => ({
+            value: o.value, label: o.dataset.label, cari: o.dataset.cari,
+        })),
+    });
+
+    // ── TAMBAH KELAS — Jam Selesai ───────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTJamSelesai'),
+        hiddenEl  : document.getElementById('hidTJamSelesai'),
+        previewEl : document.getElementById('previewTJamSelesai'),
+        data      : Array.from(document.querySelectorAll('#__dataTJamSelesai option')).filter(o => o.value).map(o => ({
+            value: o.value, label: o.dataset.label, cari: o.dataset.cari,
+        })),
+    });
+
+    // ── TAMBAH KELAS — Ruangan ───────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTRuangan'),
+        hiddenEl  : document.getElementById('hidTRuangan'),
+        previewEl : document.getElementById('previewTRuangan'),
+        data      : Array.from(document.querySelectorAll('#__dataTRuangan option')).filter(o => o.value).map(o => ({
+            value: o.value, label: o.dataset.label, cari: o.dataset.cari,
+        })),
+    });
+
+    // ── TAMBAH KELAS — Dosen ─────────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTDosen'),
+        hiddenEl  : document.getElementById('hidTDosen'),
+        previewEl : document.getElementById('previewTDosen'),
+        data      : Array.from(document.querySelectorAll('#__dataTDosen option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
+
+    // ── TAMBAH KELAS — Asisten 1 ─────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTA1'),
+        hiddenEl  : document.getElementById('hidTA1'),
+        previewEl : document.getElementById('previewTA1'),
+        data      : Array.from(document.querySelectorAll('#__dataTAsisten option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
+    });
+
+    // ── TAMBAH KELAS — Asisten 2 ─────────────────────────────────────
+    buatCombobox({
+        inputEl   : document.getElementById('cariTA2'),
+        hiddenEl  : document.getElementById('hidTA2'),
+        previewEl : document.getElementById('previewTA2'),
+        data      : Array.from(document.querySelectorAll('#__dataTAsisten option')).filter(o => o.value).map(o => {
+            const [kolom1, ...rest] = o.dataset.label.split(' — ');
+            return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
+        }),
     });
 });
