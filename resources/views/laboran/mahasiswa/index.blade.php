@@ -67,7 +67,8 @@
     <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.store') }}">@csrf
     <div class="form-group">
         <label class="form-label required">NIM</label>
-        <input name="nim_mahasiswa" class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
+        <input name="nim_mahasiswa" data-nim-input
+            class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
             placeholder="angka saja"
             pattern="\d+" inputmode="numeric"
             value="{{ old('_form') === 'tambah' ? old('nim_mahasiswa') : '' }}" required>
@@ -90,7 +91,8 @@
     <div class="modal-body"><form method="POST" action="{{ route('laboran.mahasiswa.update',$m) }}">@csrf @method('PATCH')
     <div class="form-group">
         <label class="form-label required">NIM</label>
-        <input name="nim_mahasiswa" class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'edit-mhs-'.$m->id ? 'is-invalid' : '' }}"
+        <input name="nim_mahasiswa" data-nim-input
+            class="form-control {{ $errors->has('nim_mahasiswa') && old('_form') === 'edit-mhs-'.$m->id ? 'is-invalid' : '' }}"
             placeholder="angka saja"
             pattern="\d+" inputmode="numeric"
             value="{{ old('_form') === 'edit-mhs-'.$m->id ? old('nim_mahasiswa') : $m->nim_mahasiswa }}" required>

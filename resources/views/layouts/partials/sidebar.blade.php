@@ -14,26 +14,26 @@
                 <span>Dashboard</span>
             </a>
             <div class="nav-section-label">Data Master</div>
-            <a href="{{ route('laboran.mata-kuliah') }}" class="nav-item {{ request()->routeIs('laboran.mata-kuliah*') ? 'active' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
-                <span>Mata Kuliah</span>
-            </a>
             <a href="{{ route('laboran.kelas') }}" class="nav-item {{ request()->routeIs('laboran.kelas*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 <span>Kelas Praktikum</span>
+            </a>
+            <a href="{{ route('laboran.mata-kuliah') }}" class="nav-item {{ request()->routeIs('laboran.mata-kuliah*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                <span>Mata Kuliah</span>
             </a>
             <a href="{{ route('laboran.ruangan') }}" class="nav-item {{ request()->routeIs('laboran.ruangan*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Ruangan</span>
             </a>
             <div class="nav-section-label">Kelola Pengguna</div>
-            <a href="{{ route('laboran.asisten') }}" class="nav-item {{ request()->routeIs('laboran.asisten*') ? 'active' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                <span>Asisten</span>
-            </a>
             <a href="{{ route('laboran.dosen') }}" class="nav-item {{ request()->routeIs('laboran.dosen*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
                 <span>Dosen</span>
+            </a>
+            <a href="{{ route('laboran.asisten') }}" class="nav-item {{ request()->routeIs('laboran.asisten*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <span>Asisten</span>
             </a>
             <a href="{{ route('laboran.mahasiswa') }}" class="nav-item {{ request()->routeIs('laboran.mahasiswa*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>

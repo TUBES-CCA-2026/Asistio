@@ -49,7 +49,8 @@
     </div>
     <div class="form-group">
         <label class="form-label">NIDN</label>
-        <input name="nidn" class="form-control {{ $errors->has('nidn') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
+        <input name="nidn" data-nim-input
+            class="form-control {{ $errors->has('nidn') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
             placeholder="opsional (angka saja)"
             pattern="\d*" inputmode="numeric"
             value="{{ old('_form') === 'tambah' ? old('nidn') : '' }}">
@@ -83,7 +84,8 @@
     </div>
     <div class="form-group">
         <label class="form-label">NIDN</label>
-        <input name="nidn" class="form-control {{ $errors->has('nidn') && old('_form') === 'edit-dosen-'.$d->id ? 'is-invalid' : '' }}"
+        <input name="nidn" data-nim-input
+            class="form-control {{ $errors->has('nidn') && old('_form') === 'edit-dosen-'.$d->id ? 'is-invalid' : '' }}"
             placeholder="opsional (angka saja)"
             pattern="\d*" inputmode="numeric"
             value="{{ old('_form') === 'edit-dosen-'.$d->id ? old('nidn') : $d->nidn }}">
