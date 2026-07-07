@@ -6,8 +6,19 @@
     <button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Mata Kuliah</button>
 </div>
 <div class="card">
-    <div class="table-wrapper"><table class="table">
-        <thead><tr><th>Kode MK</th><th>Nama Mata Kuliah</th><th style="text-align:center;">Aksi</th></tr></thead>
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari mata kuliah...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+        <thead><tr>
+            <th data-col="0">Kode MK</th>
+            <th data-col="1">Nama Mata Kuliah</th>
+            <th style="text-align:center;">Aksi</th>
+        </tr></thead>
         <tbody>
         @forelse($mataKuliahAll as $mk)
         <tr>

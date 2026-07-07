@@ -3,8 +3,22 @@
 @section('page-title','Manajemen Dosen')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Dosen</button></div>
-<div class="card"><div class="table-wrapper"><table class="table">
-    <thead><tr><th>Nama Dosen</th><th>NIDN</th><th>Kelas Diampu</th><th>Username</th><th>Aksi</th></tr></thead>
+<div class="card">
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari nama atau NIDN dosen...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+    <thead><tr>
+        <th data-col="0">Nama Dosen</th>
+        <th data-col="1">NIDN</th>
+        <th>Kelas Diampu</th>
+        <th data-col="3">Username</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($dosenAll as $d)
     <tr>

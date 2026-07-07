@@ -3,8 +3,21 @@
 @section('page-title','Manajemen Mahasiswa')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Mahasiswa</button></div>
-<div class="card"><div class="table-wrapper"><table class="table">
-    <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas yang Diikuti</th><th>Aksi</th></tr></thead>
+<div class="card">
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari NIM atau nama mahasiswa...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+    <thead><tr>
+        <th data-col="0">NIM</th>
+        <th data-col="1">Nama Mahasiswa</th>
+        <th>Kelas yang Diikuti</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($mahasiswaAll as $m)
     @php $adaAlpa = $m->praktikum->contains(fn($p) => $m->melebihiBatasAlpaDiKelas($p->id)); @endphp

@@ -3,8 +3,25 @@
 @section('page-title','Kelas Praktikum')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Kelas</button></div>
-<div class="card"><div class="table-wrapper"><table class="table">
-    <thead><tr><th>Kelas</th><th>Mata Kuliah</th><th>Jadwal</th><th>Ruangan</th><th>Dosen</th><th>Asisten 1</th><th>Asisten 2</th><th>Aksi</th></tr></thead>
+<div class="card">
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari kelas, mata kuliah, dosen...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+    <thead><tr>
+        <th data-col="0">Kelas</th>
+        <th data-col="1">Mata Kuliah</th>
+        <th data-col="2">Jadwal</th>
+        <th data-col="3">Ruangan</th>
+        <th data-col="4">Dosen</th>
+        <th data-col="5">Asisten 1</th>
+        <th data-col="6">Asisten 2</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($kelasAll as $k)
     <tr>

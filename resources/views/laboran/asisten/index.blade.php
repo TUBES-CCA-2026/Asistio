@@ -3,8 +3,21 @@
 @section('page-title','Manajemen Asisten')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Asisten</button></div>
-<div class="card"><div class="table-wrapper"><table class="table">
-    <thead><tr><th>Nama Asisten</th><th>NIM</th><th>Username</th><th>Aksi</th></tr></thead>
+<div class="card">
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari nama atau NIM asisten...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+    <thead><tr>
+        <th data-col="0">Nama Asisten</th>
+        <th data-col="1">NIM</th>
+        <th data-col="2">Username</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($asistenAll as $a)
     <tr>

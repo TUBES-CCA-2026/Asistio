@@ -436,6 +436,81 @@ document.addEventListener('DOMContentLoaded', function () {
         }),
     });
 
+    // ── TABLE SEARCH & SORT ───────────────────────────────────────────
+    document.querySelectorAll('table[data-table]').forEach(function (table) {
+        const tbody      = table.querySelector('tbody');
+        const allRows    = () => Array.from(tbody.querySelectorAll('tr:not(.row-empty)'));
+        const searchInput = table.closest('.card')?.querySelector('.table-search');
+        const countEl    = table.closest('.card')?.querySelector('.table-count');
+        let sortCol = -1, sortDir = 1;
+
+        // ── Inject sort icons ke semua th[data-col] ──
+        table.querySelectorAll('th[data-col]').forEach(function (th) {
+            th.innerHTML = th.innerHTML + '<span class="sort-icon" aria-hidden="true">⇅</span>';
+        });
+
+        function updateCount() {
+            if (!countEl) return;
+            const visible = allRows().filter(r => !r.classList.contains('row-hidden')).length;
+            const total   = allRows().length;
+            countEl.textContent = visible === total
+                ? total + ' data'
+                : visible + ' dari ' + total + ' data';
+        }
+
+        function applySearch(q) {
+            const kata = q.trim().toLowerCase();
+            allRows().forEach(function (tr) {
+                const teks = tr.textContent.toLowerCase();
+                tr.classList.toggle('row-hidden', kata !== '' && !teks.includes(kata));
+            });
+            updateCount();
+        }
+
+        function applySort(colIdx, dir) {
+            const rows = allRows();
+            rows.sort(function (a, b) {
+                const ta = (a.cells[colIdx]?.dataset.val ?? a.cells[colIdx]?.textContent ?? '').trim().toLowerCase();
+                const tb = (b.cells[colIdx]?.dataset.val ?? b.cells[colIdx]?.textContent ?? '').trim().toLowerCase();
+                const na = parseFloat(ta.replace(/[^\d.]/g, ''));
+                const nb = parseFloat(tb.replace(/[^\d.]/g, ''));
+                if (!isNaN(na) && !isNaN(nb)) return (na - nb) * dir;
+                return ta.localeCompare(tb, 'id') * dir;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+            updateCount();
+        }
+
+        // Klik header → sort
+        table.querySelectorAll('th[data-col]').forEach(function (th) {
+            th.addEventListener('click', function () {
+                const col = parseInt(th.getAttribute('data-col'));
+                if (sortCol === col) {
+                    sortDir *= -1;
+                } else {
+                    sortCol = col;
+                    sortDir = 1;
+                }
+                table.querySelectorAll('th[data-col]').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                    h.querySelector('.sort-icon').textContent = '⇅';
+                });
+                th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+                th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
+                applySort(col, sortDir);
+            });
+        });
+
+        // Ketik di search → filter
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                applySearch(this.value);
+            });
+        }
+
+        updateCount();
+    });
+
     // ── VALIDASI NIM ASISTEN — hanya angka, strip karakter lain saat ketik ──
     document.querySelectorAll('[data-nim-input], #inputNimTambah').forEach(function (el) {
         el.addEventListener('input', function () {

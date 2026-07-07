@@ -3,12 +3,24 @@
 @section('page-title','Ruangan Lab')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Ruangan</button></div>
-<div class="card"><div class="table-wrapper"><table class="table">
-    <thead><tr><th>#</th><th>Nama Ruangan</th><th>Aksi</th></tr></thead>
+<div class="card">
+    <div class="table-toolbar">
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" class="table-search" placeholder="Cari ruangan...">
+        </div>
+        <span class="table-count"></span>
+    </div>
+    <div class="table-wrapper"><table class="table" data-table>
+    <thead><tr>
+        <th data-col="0">No</th>
+        <th data-col="1">Nama Ruangan</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($ruanganAll as $i => $r)
     <tr>
-        <td>{{ $i+1 }}</td>
+        <td data-val="{{ $i+1 }}">{{ $i+1 }}</td>
         <td class="fw-500">{{ $r->nama_ruangan }}</td>
         <td>
             <div class="action-group">
