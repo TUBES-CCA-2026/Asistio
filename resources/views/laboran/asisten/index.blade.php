@@ -33,7 +33,16 @@
     <div class="modal-header"><span class="modal-title">Tambah Asisten</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.asisten.store') }}">@csrf
     <div class="form-group"><label class="form-label required">Nama Asisten</label><input name="nama_asisten" class="form-control" required></div>
-    <div class="form-group"><label class="form-label required">NIM</label><input name="nim" class="form-control" required></div>
+    <div class="form-group">
+        <label class="form-label required">NIM</label>
+        <input name="nim" id="inputNimTambah"
+            class="form-control {{ $errors->has('nim') && old('_form') === 'tambah' ? 'is-invalid' : '' }}"
+            value="{{ old('_form') === 'tambah' ? old('nim') : '' }}"
+            inputmode="numeric" autocomplete="off" required>
+        @if($errors->has('nim') && old('_form') === 'tambah')
+            <div class="form-error">{{ $errors->first('nim') }}</div>
+        @endif
+    </div>
     <div class="form-group"><label class="form-label required">Username (untuk login)</label><input name="username" class="form-control" required></div>
     <div class="form-group"><label class="form-label required">Password</label><input type="password" name="password" class="form-control" required minlength="6"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
@@ -44,7 +53,16 @@
     <div class="modal-header"><span class="modal-title">Edit Data — {{ $a->nama_asisten }}</span><button data-modal-close="modalEditAsisten{{ $a->id }}" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.asisten.update',$a) }}">@csrf @method('PATCH')
     <div class="form-group"><label class="form-label required">Nama Asisten</label><input name="nama_asisten" class="form-control" value="{{ $a->nama_asisten }}" required></div>
-    <div class="form-group"><label class="form-label required">NIM</label><input name="nim" class="form-control" value="{{ $a->nim }}" required></div>
+    <div class="form-group">
+        <label class="form-label required">NIM</label>
+        <input name="nim" data-nim-input="edit"
+            class="form-control {{ $errors->has('nim') && old('_form') === 'edit-asisten-'.$a->id ? 'is-invalid' : '' }}"
+            value="{{ old('_form') === 'edit-asisten-'.$a->id ? old('nim') : $a->nim }}"
+            inputmode="numeric" autocomplete="off" required>
+        @if($errors->has('nim') && old('_form') === 'edit-asisten-'.$a->id)
+            <div class="form-error">{{ $errors->first('nim') }}</div>
+        @endif
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalEditAsisten{{ $a->id }}" class="btn btn-outline">Batal</button><button class="btn btn-primary">Simpan</button></div>
     </form></div>
 </div></div>

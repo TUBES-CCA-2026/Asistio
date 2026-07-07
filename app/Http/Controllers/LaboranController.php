@@ -197,7 +197,7 @@ class LaboranController extends Controller
     public function asistenStore(Request $request): RedirectResponse {
         $v = $request->validate([
             'nama_asisten' => ['required'],
-            'nim'          => ['required','unique:asisten,nim'],
+            'nim'          => ['required','regex:/^\d+$/','unique:asisten,nim'],
             'username'     => ['required','unique:users,username'],
             'password'     => ['required','min:6'],
         ]);
@@ -212,8 +212,9 @@ class LaboranController extends Controller
     public function asistenUpdate(Request $request, Asisten $asisten): RedirectResponse {
         $v = $request->validate([
             'nama_asisten' => ['required','string'],
-            'nim'          => ['required',"unique:asisten,nim,{$asisten->id}"],
+            'nim'          => ['required','regex:/^\d+$/',"unique:asisten,nim,{$asisten->id}"],
         ], [
+            'nim.regex'  => 'NIM hanya boleh berisi angka.',
             'nim.unique' => 'NIM sudah dipakai asisten lain.',
         ]);
         $asisten->update($v);

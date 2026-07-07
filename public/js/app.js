@@ -435,4 +435,30 @@ document.addEventListener('DOMContentLoaded', function () {
             return { value: o.value, label: o.dataset.label, cari: o.dataset.cari, kolom1, kolom2: rest.join(' — ') };
         }),
     });
+
+    // ── VALIDASI NIM ASISTEN — hanya angka, strip karakter lain saat ketik ──
+    document.querySelectorAll('[data-nim-input], #inputNimTambah').forEach(function (el) {
+        el.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const cleaned = this.value.replace(/\D/g, '');
+            if (this.value !== cleaned) {
+                this.value = cleaned;
+                // Kembalikan posisi kursor supaya tidak lompat ke akhir
+                this.setSelectionRange(pos - 1, pos - 1);
+            }
+        });
+        el.addEventListener('keydown', function (e) {
+            // Izinkan: angka, backspace, delete, tab, enter, arrow keys, ctrl+a/c/v/x
+            const allowed = [
+                'Backspace','Delete','Tab','Enter',
+                'ArrowLeft','ArrowRight','ArrowUp','ArrowDown',
+                'Home','End',
+            ];
+            const isCtrl  = e.ctrlKey || e.metaKey;
+            const isDigit = /^\d$/.test(e.key);
+            if (!isDigit && !allowed.includes(e.key) && !isCtrl) {
+                e.preventDefault();
+            }
+        });
+    });
 });
