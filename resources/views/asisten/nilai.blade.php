@@ -6,7 +6,9 @@
 <div class="page-toolbar"><a href="{{ route('asisten.dashboard') }}" class="btn btn-outline">← Kembali</a></div>
 <div class="card"><div class="table-wrapper" style="overflow-x:auto;">
     <table class="table" style="min-width:1900px;">
-        <thead><tr>
+        <thead>
+        {{-- Baris 1: label kolom biasa --}}
+        <tr>
             <th>Mahasiswa</th>
             @for($i = 1; $i <= 14; $i++)
             <th style="text-align:center;">P{{ $i }}</th>
@@ -14,7 +16,28 @@
             <th style="text-align:center;">Asist 1</th><th style="text-align:center;">Asist 2</th><th style="text-align:center;">Asist 3</th>
             <th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th>
             <th style="text-align:center;">NA</th><th style="text-align:center;">Aksi</th>
-        </tr></thead>
+        </tr>
+        {{-- Baris 2: tombol reset per pertemuan --}}
+        <tr>
+            <th></th>
+            @for($i = 1; $i <= 14; $i++)
+            <th style="text-align:center;padding:4px 2px;">
+                <form method="POST"
+                      action="{{ route('asisten.nilai.reset-pertemuan', [$praktikum, $i]) }}"
+                      onsubmit="return confirm('Reset semua nilai P{{ $i }} menjadi 0?')">
+                    @csrf
+                    <button type="submit"
+                            class="btn btn-sm btn-danger"
+                            style="font-size:10px;padding:2px 6px;line-height:1.4;">
+                        Reset
+                    </button>
+                </form>
+            </th>
+            @endfor
+            {{-- Kolom Asist 1/2/3, MID, UAS, NA, Aksi tidak punya reset --}}
+            <th colspan="7"></th>
+        </tr>
+        </thead>
         <tbody>
         @forelse($mahasiswaList as $m)
         @php $n = $nilaiMap[$m->id]; @endphp

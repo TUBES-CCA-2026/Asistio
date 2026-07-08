@@ -141,8 +141,28 @@ class AsistenController extends Controller
         return back()->with('success','Nilai disimpan.');
     }
 
+    /** Reset nilai satu kolom pertemuan (p1–p14) untuk semua mahasiswa di kelas */
+    public function nilaiResetPertemuan(Praktikum $praktikum, int $pertemuan): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+        abort_unless($pertemuan >= 1 && $pertemuan <= 14, 422, 'Nomor pertemuan tidak valid.');
+
+        $kolom = 'p' . $pertemuan;
+
+        // Nol-kan kolom pertemuan pada semua mahasiswa yang punya record NilaiEvaluasi
+        NilaiEvaluasi::where('praktikum_id', $praktikum->id)
+            ->update([$kolom => 0]);
+
+        // Hitung ulang rekap semua mahasiswa di kelas ini
+        $praktikum->mahasiswa->each(function ($m) use ($praktikum) {
+            RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id);
+        });
+
+        return back()->with('success', "Nilai pertemuan {$pertemuan} semua mahasiswa direset ke 0.");
+    }
+
     /** Rekap nilai, presensi, dan absensi asistensi per kelas */
-    public function rekap(Praktikum $praktikum): View
+    public function rekap(Praktikum $praktikum): View   
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
  
