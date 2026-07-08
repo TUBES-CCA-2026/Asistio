@@ -459,9 +459,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function applySearch(q) {
-            const kata = q.trim().toLowerCase();
+            const kata = q.trim().toLowerCase().replace(/[-–—]/g, ' ').replace(/\s+/g, ' ');
             allRows().forEach(function (tr) {
-                const teks = tr.textContent.toLowerCase();
+                const teks = tr.textContent.toLowerCase().replace(/[-–—]/g, ' ').replace(/\s+/g, ' ');
                 tr.classList.toggle('row-hidden', kata !== '' && !teks.includes(kata));
             });
             updateCount();
