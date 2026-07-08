@@ -36,6 +36,7 @@ class LaboranController extends Controller
         $kelasTotal          = $totalKelas;
         $kelasTanpaDosen     = Praktikum::whereNull('dosen_id')->count();
         $kelasTanpaAsisten   = Praktikum::whereNull('asisten_id')->count();
+        $kelasTanpaAsisten2  = Praktikum::whereNull('asisten2_id')->count();
         $kelasTanpaRuangan   = Praktikum::whereNull('ruangan_id')->count();
         $kelasTanpaMahasiswa = Praktikum::doesntHave('mahasiswa')->count();
 
@@ -69,7 +70,7 @@ class LaboranController extends Controller
         return view('laboran.dashboard', compact(
             'totalMK','totalMahasiswa','totalAsisten','totalDosen',
             'totalKelas','totalRuangan',
-            'kelasTotal','kelasTanpaDosen','kelasTanpaAsisten',
+            'kelasTotal','kelasTanpaDosen','kelasTanpaAsisten','kelasTanpaAsisten2',
             'kelasTanpaRuangan','kelasTanpaMahasiswa',
             'totalPresensi','totalAlpa','totalHadir','totalIzin','totalSakit',
             'mahasiswaAlpa','asistenTanpaKelas',

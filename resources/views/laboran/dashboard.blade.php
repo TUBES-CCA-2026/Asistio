@@ -39,10 +39,13 @@
     <div class="card">
         <div class="card-header"><span class="card-title">Kelengkapan Kelas</span><a href="{{ route('laboran.kelas') }}" class="btn btn-sm btn-outline">Lihat →</a></div>
         <div style="padding:4px 20px 16px;">
-            @php $pctDosen    = $kelasTotal ? round((($kelasTotal-$kelasTanpaDosen)/$kelasTotal)*100) : 0; @endphp
-            @php $pctAsisten  = $kelasTotal ? round((($kelasTotal-$kelasTanpaAsisten)/$kelasTotal)*100) : 0; @endphp
-            @php $pctRuangan  = $kelasTotal ? round((($kelasTotal-$kelasTanpaRuangan)/$kelasTotal)*100) : 0; @endphp
-            @php $pctMhs      = $kelasTotal ? round((($kelasTotal-$kelasTanpaMahasiswa)/$kelasTotal)*100) : 0; @endphp
+            @php
+                $pctDosen    = $kelasTotal ? round((($kelasTotal-$kelasTanpaDosen)/$kelasTotal)*100) : 0;
+                $pctAsisten  = $kelasTotal ? round((($kelasTotal-$kelasTanpaAsisten)/$kelasTotal)*100) : 0;
+                $pctAsisten2 = $kelasTotal ? round((($kelasTotal-$kelasTanpaAsisten2)/$kelasTotal)*100) : 0;
+                $pctRuangan  = $kelasTotal ? round((($kelasTotal-$kelasTanpaRuangan)/$kelasTotal)*100) : 0;
+                $pctMhs      = $kelasTotal ? round((($kelasTotal-$kelasTanpaMahasiswa)/$kelasTotal)*100) : 0;
+            @endphp
 
             <div class="info-list-item">
                 <span class="info-list-label">Sudah ada Dosen</span>
@@ -51,10 +54,16 @@
             <div class="progress-bar-wrap"><div class="progress-bar-fill {{ $pctDosen==100?'green':($pctDosen>=50?'orange':'red') }}" style="width:{{ $pctDosen }}%"></div></div>
 
             <div class="info-list-item" style="margin-top:8px;">
-                <span class="info-list-label">Sudah ada Asisten</span>
+                <span class="info-list-label">Sudah ada Asisten 1</span>
                 <span class="info-list-value">{{ $kelasTotal-$kelasTanpaAsisten }}/{{ $kelasTotal }}</span>
             </div>
             <div class="progress-bar-wrap"><div class="progress-bar-fill {{ $pctAsisten==100?'green':($pctAsisten>=50?'orange':'red') }}" style="width:{{ $pctAsisten }}%"></div></div>
+
+            <div class="info-list-item" style="margin-top:8px;">
+                <span class="info-list-label">Sudah ada Asisten 2</span>
+                <span class="info-list-value">{{ $kelasTotal-$kelasTanpaAsisten2 }}/{{ $kelasTotal }}</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill {{ $pctAsisten2==100?'green':($pctAsisten2>=50?'orange':'red') }}" style="width:{{ $pctAsisten2 }}%"></div></div>
 
             <div class="info-list-item" style="margin-top:8px;">
                 <span class="info-list-label">Sudah ada Ruangan</span>
@@ -112,8 +121,12 @@
                 <span class="info-list-value" style="color:{{ $kelasTanpaDosen>0?'#EF4444':'#22C55E' }};">{{ $kelasTanpaDosen }}</span>
             </div>
             <div class="info-list-item">
-                <span class="info-list-label">Kelas tanpa Asisten</span>
+                <span class="info-list-label">Kelas tanpa Asisten 1</span>
                 <span class="info-list-value" style="color:{{ $kelasTanpaAsisten>0?'#EF4444':'#22C55E' }};">{{ $kelasTanpaAsisten }}</span>
+            </div>
+            <div class="info-list-item">
+                <span class="info-list-label">Kelas tanpa Asisten 2</span>
+                <span class="info-list-value" style="color:{{ $kelasTanpaAsisten2>0?'#F59E0B':'#22C55E' }};">{{ $kelasTanpaAsisten2 }}</span>
             </div>
             <div class="info-list-item">
                 <span class="info-list-label">Kelas tanpa Ruangan</span>
