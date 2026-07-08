@@ -7,17 +7,34 @@
     <div class="table-toolbar">
         <div class="table-search-wrap">
             <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" class="table-search" placeholder="Cari NIM atau nama mahasiswa...">
+            <input type="text" id="searchMahasiswa"
+                   value="{{ $q }}"
+                   class="table-search" placeholder="Cari NIM atau nama mahasiswa..."
+                   autocomplete="off">
         </div>
-        <span class="table-count"></span>
+        <span class="table-count" style="flex-shrink:0;">
+            {{ $mahasiswaAll->total() }} mahasiswa
+        </span>
     </div>
-    <div class="table-wrapper"><table class="table" data-table>
-    <thead><tr>
-        <th data-col="0">NIM</th>
-        <th data-col="1">Nama Mahasiswa</th>
-        <th>Kelas yang Diikuti</th>
-        <th>Aksi</th>
-    </tr></thead>
+    <script>
+    (function () {
+        const input  = document.getElementById('searchMahasiswa');
+        const base   = '{{ route('laboran.mahasiswa') }}';
+        let timer;
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                const q = input.value.trim();
+                window.location.href = q ? base + '?q=' + encodeURIComponent(q) : base;
+            }, 400);
+        });
+        // Fokus di akhir teks saat halaman load (ada query aktif)
+        input.setSelectionRange(input.value.length, input.value.length);
+        input.focus();
+    })();
+    </script>
+    <div class="table-wrapper"><table class="table">
+    <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas yang Diikuti</th><th>Aksi</th></tr></thead>
     <tbody>
     @forelse($mahasiswaAll as $m)
     @php $adaAlpa = $m->praktikum->contains(fn($p) => $m->melebihiBatasAlpaDiKelas($p->id)); @endphp
@@ -71,7 +88,7 @@
 </table></div>
 @if($mahasiswaAll->hasPages())
     <div class="card-footer">
-        {{ $mahasiswaAll->links() }}
+        {{ $mahasiswaAll->appends(['q' => $q])->links() }}
     </div>
 @endif
 </div>

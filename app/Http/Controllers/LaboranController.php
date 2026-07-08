@@ -291,11 +291,20 @@ class LaboranController extends Controller
     }
 
     // ── Mahasiswa — kini memilih praktikum bukan mata kuliah ───────────────
-    public function mahasiswa(): View {
-        return view('laboran.mahasiswa.index', [
-            // load relasi many-to-many
-            'mahasiswaAll' => Mahasiswa::with('praktikum.mataKuliah')->latest()->paginate(10),
-        ]);
+    public function mahasiswa(Request $request): View {
+        $q = $request->input('q', '');
+        $mahasiswaAll = Mahasiswa::with('praktikum.mataKuliah')
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('nim_mahasiswa', 'like', "%{$q}%")
+                        ->orWhere('nama_mahasiswa', 'like', "%{$q}%");
+                });
+            })
+            ->orderBy('nama_mahasiswa')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q'));
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
         $v = $request->validate([
