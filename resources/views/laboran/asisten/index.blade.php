@@ -15,7 +15,7 @@
     <thead><tr>
         <th data-col="0">Nama Asisten</th>
         <th data-col="1">NIM</th>
-        <th>Kelas Didampingi</th>
+        <th data-col="2">Kelas Didampingi</th>
         <th data-col="3">Username</th>
         <th>Aksi</th>
     </tr></thead>
@@ -24,10 +24,11 @@
     <tr>
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">{{ strtoupper(substr($a->nama_asisten,0,2)) }}</div><span class="fw-600">{{ $a->nama_asisten }}</span></div></td>
         <td style="font-family:monospace;">{{ $a->nim ?? '—' }}</td>
-        <td class="fs-12">
-            @php
-                $kelasDampingi = $a->praktikum->merge($a->praktikumSebagaiAsisten2)->unique('id')->sortBy('nama_kelas');
-            @endphp
+        @php
+            $kelasDampingi = $a->praktikum->merge($a->praktikumSebagaiAsisten2)->unique('id')->sortBy('nama_kelas');
+            $sortVal = $kelasDampingi->map(fn($p) => ($p->mataKuliah?->kode_mk ?? '') . ' ' . $p->nama_kelas)->join(' ');
+        @endphp
+        <td class="fs-12" data-val="{{ $sortVal ?: '—' }}">
             @forelse($kelasDampingi as $p)
                 <span style="display:block;">
                     {{ $p->mataKuliah?->kode_mk }} — {{ $p->nama_kelas }}
