@@ -657,6 +657,64 @@ img {
     color: #3B82F6;
 }
 
+.stat-icon-red {
+    background: #FEF2F2;
+    color: #EF4444;
+}
+
+.stat-icon-purple {
+    background: #F5F3FF;
+    color: #8B5CF6;
+}
+
+.stat-icon-teal {
+    background: #F0FDFA;
+    color: #14B8A6;
+}
+
+.stat-icon-pink {
+    background: #FDF2F8;
+    color: #EC4899;
+}
+
+/* ─── Dashboard info row ─────────────────────────────────────────── */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.info-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 8px;
+}
+.info-list-item:last-child { border-bottom: none; }
+.info-list-label { color: var(--text-muted); flex: 1; }
+.info-list-value { font-weight: 700; color: var(--text); text-align: right; }
+
+.progress-bar-wrap {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--primary);
+    transition: width .4s ease;
+}
+.progress-bar-fill.green  { background: #22C55E; }
+.progress-bar-fill.orange { background: #F59E0B; }
+.progress-bar-fill.red    { background: #EF4444; }
+
 .stat-value {
     font-size: 24px;
     font-weight: 800;

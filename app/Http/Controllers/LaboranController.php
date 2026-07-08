@@ -24,13 +24,57 @@ class LaboranController extends Controller
         return redirect()->route('laboran.dashboard')->with('success','Password berhasil diubah.');
     }
     public function dashboard(): View {
-        return view('laboran.dashboard', [
-            'totalMK'        => MataKuliah::count(),
-            'totalMahasiswa' => Mahasiswa::count(),
-            'totalAsisten'   => Asisten::count(),
-            'totalDosen'     => Dosen::count(),
-            'mataKuliah' => MataKuliah::withCount('praktikum')->latest()->get(),
-        ]);
+        // ── Stat counts ───────────────────────────────────────────────
+        $totalMK         = MataKuliah::count();
+        $totalMahasiswa  = Mahasiswa::count();
+        $totalAsisten    = Asisten::count();
+        $totalDosen      = Dosen::count();
+        $totalKelas      = Praktikum::count();
+        $totalRuangan    = Ruangan::count();
+
+        // ── Kelengkapan kelas ─────────────────────────────────────────
+        $kelasTotal          = $totalKelas;
+        $kelasTanpaDosen     = Praktikum::whereNull('dosen_id')->count();
+        $kelasTanpaAsisten   = Praktikum::whereNull('asisten_id')->count();
+        $kelasTanpaRuangan   = Praktikum::whereNull('ruangan_id')->count();
+        $kelasTanpaMahasiswa = Praktikum::doesntHave('mahasiswa')->count();
+
+        // ── Presensi ──────────────────────────────────────────────────
+        $totalPresensi  = \App\Models\Presensi::count();
+        $totalAlpa      = \App\Models\Presensi::where('status_kehadiran','A')->count();
+        $totalHadir     = \App\Models\Presensi::where('status_kehadiran','H')->count();
+        $totalIzin      = \App\Models\Presensi::where('status_kehadiran','I')->count();
+        $totalSakit     = \App\Models\Presensi::where('status_kehadiran','S')->count();
+        $mahasiswaAlpa  = Mahasiswa::whereHas('presensi', function($q) {
+            $q->where('status_kehadiran','A')
+              ->groupBy('mahasiswa_id','praktikum_id')
+              ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
+        })->count();
+
+        // ── Asisten tanpa kelas ───────────────────────────────────────
+        $asistenTanpaKelas = Asisten::whereDoesntHave('praktikum')
+            ->whereDoesntHave('praktikumSebagaiAsisten2')->count();
+
+        // ── Kelas terbesar ────────────────────────────────────────────
+        $kelasTerbesar = Praktikum::withCount('mahasiswa')
+            ->with('mataKuliah')
+            ->orderByDesc('mahasiswa_count')
+            ->limit(5)->get();
+
+        // ── Tabel mata kuliah ─────────────────────────────────────────
+        $mataKuliah = MataKuliah::withCount(['praktikum','praktikum as mahasiswa_count' => function($q) {
+            $q->join('mahasiswa_praktikum','praktikum.id','=','mahasiswa_praktikum.praktikum_id');
+        }])->latest()->get();
+
+        return view('laboran.dashboard', compact(
+            'totalMK','totalMahasiswa','totalAsisten','totalDosen',
+            'totalKelas','totalRuangan',
+            'kelasTotal','kelasTanpaDosen','kelasTanpaAsisten',
+            'kelasTanpaRuangan','kelasTanpaMahasiswa',
+            'totalPresensi','totalAlpa','totalHadir','totalIzin','totalSakit',
+            'mahasiswaAlpa','asistenTanpaKelas',
+            'kelasTerbesar','mataKuliah'
+        ));
     }
 
     // ── Mata Kuliah ────────────────────────────────────────────────────────
