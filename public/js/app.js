@@ -624,12 +624,47 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function pesanError(val) {
+        if (val === '' || val === '—') return '';
+        var n = parseFloat(val);
+        if (isNaN(n))   return 'Bukan angka';
+        if (n < 0)      return 'Min 0';
+        if (n > 100)    return 'Maks 100';
+        return '';
+    }
+
+    function setErrorTip(el, pesan) {
+        var td = el.parentElement;
+        if (!td) return;
+        // Hapus tooltip lama
+        var tip = td.querySelector('.nilai-error-tip');
+        if (pesan) {
+            el.classList.add('nilai-error');
+            el.classList.remove('nilai-dirty');
+            if (!tip) {
+                tip = document.createElement('div');
+                tip.className = 'nilai-error-tip';
+                td.appendChild(tip);
+            }
+            tip.textContent = pesan;
+        } else {
+            el.classList.remove('nilai-error');
+            if (tip) tip.remove();
+        }
+    }
+
     function updateDirtyHint() {
-        var ada    = document.querySelector('.input-nilai.nilai-dirty');
-        var hint   = document.getElementById('dirtyHint');
-        var revert = document.getElementById('btnRevert');
+        var ada        = document.querySelector('.input-nilai.nilai-dirty');
+        var hint       = document.getElementById('dirtyHint');
+        var revert     = document.getElementById('btnRevert');
+        var errorHint  = document.getElementById('errorHint');
+        var errorCount = document.getElementById('errorHintCount');
+        var errors     = document.querySelectorAll('.input-nilai.nilai-error').length;
+
         if (hint)   hint.classList.toggle('show', !!ada);
         if (revert) revert.classList.toggle('show', !!ada);
+        if (errorHint) errorHint.classList.toggle('show', errors > 0);
+        if (errorCount) errorCount.textContent = errors;
     }
 
     // Tombol batalkan perubahan — kembalikan semua ke nilai asal
@@ -672,46 +707,63 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Saat input: cek dirty langsung
+            // Saat input: cek dirty + error langsung
             el.addEventListener('input', function () {
-                // bersihkan dulu dilakukan oleh listener sebelumnya
                 var sekarang = this.value === '—' ? '' : this.value;
                 var asal     = this.dataset.asalNilai || '';
-                if (sekarang !== asal) {
-                    this.classList.add('nilai-dirty');
-                    this.classList.remove('nilai-kosong');
-                } else {
-                    this.classList.remove('nilai-dirty');
+                var err      = pesanError(this.value);
+
+                setErrorTip(this, err);
+
+                if (!err) {
+                    if (sekarang !== asal) {
+                        this.classList.add('nilai-dirty');
+                        this.classList.remove('nilai-kosong');
+                    } else {
+                        this.classList.remove('nilai-dirty');
+                    }
                 }
                 updateDirtyHint();
             });
 
-            // Saat blur: kalau kosong, tampilkan "—"
+            // Saat blur: validasi + tampilkan "—" jika kosong
             el.addEventListener('blur', function () {
                 var sekarang = this.value.trim();
                 var asal     = this.dataset.asalNilai || '';
-                if (sekarang === '') {
-                    this.value = '—';
-                    if (asal === '') {
-                        this.classList.remove('nilai-dirty');
-                        this.classList.add('nilai-kosong');
-                    } else {
-                        // Dikosongkan padahal asal ada isi → dirty
-                        this.classList.add('nilai-dirty');
-                        this.classList.remove('nilai-kosong');
+                var err      = pesanError(sekarang);
+
+                setErrorTip(this, err);
+
+                if (!err) {
+                    if (sekarang === '') {
+                        this.value = '—';
+                        if (asal === '') {
+                            this.classList.remove('nilai-dirty');
+                            this.classList.add('nilai-kosong');
+                        } else {
+                            this.classList.add('nilai-dirty');
+                            this.classList.remove('nilai-kosong');
+                        }
                     }
                 }
                 updateDirtyHint();
             });
         });
 
-        // Sebelum submit: konversi "—" → "" dan hapus dirty (sudah tersimpan)
+        // Sebelum submit: blokir jika ada error, konversi "—" → ""
         var formNilai = document.querySelector('form[action*="simpan-semua"]');
         if (formNilai) {
-            formNilai.addEventListener('submit', function () {
+            formNilai.addEventListener('submit', function (e) {
+                var errors = document.querySelectorAll('.input-nilai.nilai-error');
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    // Scroll ke error pertama
+                    errors[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    errors[0].focus();
+                    return;
+                }
                 document.querySelectorAll('.input-nilai').forEach(function (el) {
                     if (el.value === '—') el.value = '';
-                    // Dirty akan hilang setelah halaman reload (data baru dari server)
                 });
             });
         }

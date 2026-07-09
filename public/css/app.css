@@ -1786,6 +1786,62 @@ img {
     color: #92400E;
 }
 
+/* Input nilai error — merah */
+.input-nilai.nilai-error {
+    border-color: #EF4444 !important;
+    background-color: #FEF2F2 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, .2) !important;
+    color: #991B1B;
+}
+
+/* Tooltip error muncul di bawah input */
+.nilai-error-tip {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #EF4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: none;
+}
+.nilai-error-tip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-bottom-color: #EF4444;
+}
+
+/* Wrapper td nilai harus relative agar tooltip bisa absolute */
+td.td-nilai {
+    position: relative;
+}
+
+/* Counter error di floating bar */
+.simpan-error-hint {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #991B1B;
+    font-weight: 600;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 999px;
+    padding: 6px 14px;
+}
+.simpan-error-hint.show {
+    display: flex;
+}
+
 /* Indikator dirty + tombol revert di toolbar floating */
 .simpan-dirty-hint {
     display: none;

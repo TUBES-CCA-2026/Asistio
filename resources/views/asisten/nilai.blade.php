@@ -62,7 +62,7 @@
             </td>
             {{-- Nilai Evaluasi P1–P14 --}}
             @for($i = 1; $i <= 14; $i++)
-            <td>
+            <td class="td-nilai">
                 <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
@@ -72,7 +72,7 @@
             @endfor
             {{-- Nilai Asistensi 1–3 --}}
             @foreach([1,2,3] as $i)
-            <td>
+            <td class="td-nilai">
                 <input type="text" name="nilai[{{ $m->id }}][nilai_asistensi{{ $i }}]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
@@ -81,14 +81,14 @@
             </td>
             @endforeach
             {{-- MID & UAS --}}
-            <td>
+            <td class="td-nilai">
                 <input type="text" name="nilai[{{ $m->id }}][nilai_MID]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
                     value="{{ $n['ujian']->nilai_MID ?? '' }}"
                     placeholder="—">
             </td>
-            <td>
+            <td class="td-nilai">
                 <input type="text" name="nilai[{{ $m->id }}][nilai_UAS]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
@@ -112,6 +112,10 @@
 
 {{-- Indikator dirty + Tombol Simpan floating --}}
 <div style="position:fixed;bottom:28px;right:28px;z-index:300;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+    <span id="errorHint" class="simpan-error-hint">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="errorHintCount">0</span> nilai tidak valid
+    </span>
     <span id="dirtyHint" class="simpan-dirty-hint">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Ada perubahan belum disimpan
