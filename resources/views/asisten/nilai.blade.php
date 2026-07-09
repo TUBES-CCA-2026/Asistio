@@ -75,9 +75,9 @@
             {{-- Nilai Evaluasi P1–P14 --}}
             @for($i = 1; $i <= 14; $i++)
             <td>
-                <input type="number" name="nilai[{{ $m->id }}][p{{ $i }}]"
-                    class="form-control form-control-xs"
-                    min="0" max="100" step="0.01"
+                <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}]"
+                    class="form-control form-control-xs input-nilai"
+                    inputmode="decimal"
                     value="{{ $n['evaluasi']->{'p'.$i} ?? '' }}"
                     placeholder="—">
             </td>
@@ -85,23 +85,27 @@
             {{-- Nilai Asistensi 1–3 --}}
             @foreach([1,2,3] as $i)
             <td>
-                <input type="number" name="nilai[{{ $m->id }}][nilai_asistensi{{ $i }}]"
-                    class="form-control form-control-xs"
-                    min="0" max="100" step="0.01"
+                <input type="text" name="nilai[{{ $m->id }}][nilai_asistensi{{ $i }}]"
+                    class="form-control form-control-xs input-nilai"
+                    inputmode="decimal"
                     value="{{ $n['asistensi']->{'nilai_asistensi'.$i} ?? '' }}"
                     placeholder="—">
             </td>
             @endforeach
             {{-- MID & UAS --}}
             <td>
-                <input type="number" name="nilai[{{ $m->id }}][nilai_MID]"
-                    class="form-control form-control-xs"
-                    min="0" max="100" step="0.01"
+                <input type="text" name="nilai[{{ $m->id }}][nilai_MID]"
+                    class="form-control form-control-xs input-nilai"
+                    inputmode="decimal"
                     value="{{ $n['ujian']->nilai_MID ?? '' }}"
                     placeholder="—">
             </td>
             <td>
                 <input type="number" name="nilai[{{ $m->id }}][nilai_UAS]"
+                    class="form-control form-control-xs"
+                    min="0" max="100" step="0.01"
+                    value="{{ $n['ujian']->nilai_UAS ?? '' }}"
+                    placeholder="—"><input type="number" name="nilai[{{ $m->id }}][nilai_UAS]"
                     class="form-control form-control-xs"
                     min="0" max="100" step="0.01"
                     value="{{ $n['ujian']->nilai_UAS ?? '' }}"
@@ -122,13 +126,16 @@
     </table>
 </div></div>
 
-{{-- SATU tombol Simpan untuk semua mahasiswa --}}
-<div style="margin-top:16px;display:flex;justify-content:flex-end;">
-    <button type="submit" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-        Simpan Semua Nilai
-    </button>
-</div>
+{{-- Tombol Simpan floating — selalu terlihat di pojok kanan bawah --}}
+<button type="submit"
+    class="btn btn-primary"
+    style="position:fixed;bottom:28px;right:28px;z-index:300;
+           box-shadow:0 4px 16px rgba(0,0,0,.18);
+           display:flex;align-items:center;gap:8px;
+           padding:12px 20px;font-size:14px;border-radius:999px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+    Simpan Semua Nilai
+</button>
 
 </form>
 @endsection

@@ -536,4 +536,56 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // ── INPUT NILAI — hanya angka + satu titik desimal, blok semua huruf ──
+    document.querySelectorAll('.input-nilai').forEach(function (el) {
+
+        // Bersihkan: hanya boleh digit dan satu titik
+        function bersihkan(val) {
+            // Buang semua karakter bukan digit dan bukan titik
+            let hasil = val.replace(/[^\d.]/g, '');
+            // Kalau ada lebih dari satu titik, ambil hanya sampai titik pertama
+            const parts = hasil.split('.');
+            if (parts.length > 2) {
+                hasil = parts[0] + '.' + parts.slice(1).join('');
+            }
+            return hasil;
+        }
+
+        // Blok karakter terlarang saat mengetik
+        el.addEventListener('keydown', function (e) {
+            const ctrl  = e.ctrlKey || e.metaKey;
+            const navigasi = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+            // Izinkan: angka, titik, navigasi, ctrl+a/c/v/x/z
+            if (navigasi.includes(e.key) || ctrl) return;
+            if (/^\d$/.test(e.key)) return; // angka 0-9
+            if (e.key === '.') {
+                // Tolak titik kedua
+                if (this.value.includes('.')) e.preventDefault();
+                return;
+            }
+            // Blok semua yang lain (huruf, simbol, dll)
+            e.preventDefault();
+        });
+
+        // Bersihkan saat paste (user bisa paste teks sembarang)
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const tempel = (e.clipboardData || window.clipboardData).getData('text');
+            const bersih = bersihkan(this.value.slice(0, this.selectionStart)
+                + tempel
+                + this.value.slice(this.selectionEnd));
+            this.value = bersih;
+        });
+
+        // Bersihkan juga kalau ada karakter aneh yang masuk lewat autofill dll
+        el.addEventListener('input', function () {
+            const pos    = this.selectionStart;
+            const bersih = bersihkan(this.value);
+            if (this.value !== bersih) {
+                this.value = bersih;
+                this.setSelectionRange(pos, pos);
+            }
+        });
+    });
 });
