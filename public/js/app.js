@@ -592,22 +592,56 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── RESET KOLOM NILAI (client-side saja, belum simpan ke DB) ────────
     document.querySelectorAll('[data-reset-field]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            const field = this.getAttribute('data-reset-field');
+            var field = this.getAttribute('data-reset-field');
             document.querySelectorAll('.input-nilai[name*="[' + field + ']"]')
-                .forEach(function (input) { input.value = ''; });
+                .forEach(function (input) {
+                    var asalVal = input.dataset.asalNilai || '';
+                    // Nilai asal bukan nol/kosong → reset ke '' = berubah → dirty
+                    input.value = '';
+                    cekDirtyInput(input);
+                    // Tampilkan "—" visual
+                    input.value = '';
+                    input.classList.remove('nilai-kosong');
+                });
+            updateDirtyHint();
         });
     });
 
     // ── INPUT NILAI — tampilkan "—" saat kosong, hilang saat diklik ─────
+    // ── + DIRTY TRACKING (oranye = belum disimpan) ───────────────────────
+    function cekDirtyInput(el) {
+        var asal    = el.dataset.asalNilai || '';
+        var sekarang = el.value === '—' ? '' : el.value;
+        if (sekarang !== asal) {
+            el.classList.add('nilai-dirty');
+            el.classList.remove('nilai-kosong');
+        } else {
+            el.classList.remove('nilai-dirty');
+            if (sekarang === '') {
+                el.value = '—';
+                el.classList.add('nilai-kosong');
+            }
+        }
+    }
+
+    function updateDirtyHint() {
+        var ada  = document.querySelector('.input-nilai.nilai-dirty');
+        var hint = document.getElementById('dirtyHint');
+        if (hint) hint.classList.toggle('show', !!ada);
+    }
+
     function initNilaiDisplay() {
         document.querySelectorAll('.input-nilai').forEach(function (el) {
-            // Saat blur: kalau kosong, tampilkan "—" sebagai nilai visual
-            el.addEventListener('blur', function () {
-                if (this.value === '' || this.value === null) {
-                    this.value = '—';
-                    this.classList.add('nilai-kosong');
-                }
-            });
+            // Simpan nilai asal dari server ke dataset
+            var asalServer = el.value.trim();
+            el.dataset.asalNilai = asalServer;
+
+            // Tampilkan "—" jika kosong
+            if (asalServer === '') {
+                el.value = '—';
+                el.classList.add('nilai-kosong');
+            }
+
             // Saat focus: hapus "—" supaya bisa langsung ketik
             el.addEventListener('focus', function () {
                 if (this.value === '—') {
@@ -615,23 +649,51 @@ document.addEventListener('DOMContentLoaded', function () {
                     this.classList.remove('nilai-kosong');
                 }
             });
-            // Set tampilan awal saat halaman dimuat
-            if (this === undefined) return;
-            if (el.value === '') {
-                el.value = '—';
-                el.classList.add('nilai-kosong');
-            }
+
+            // Saat input: cek dirty langsung
+            el.addEventListener('input', function () {
+                // bersihkan dulu dilakukan oleh listener sebelumnya
+                var sekarang = this.value === '—' ? '' : this.value;
+                var asal     = this.dataset.asalNilai || '';
+                if (sekarang !== asal) {
+                    this.classList.add('nilai-dirty');
+                    this.classList.remove('nilai-kosong');
+                } else {
+                    this.classList.remove('nilai-dirty');
+                }
+                updateDirtyHint();
+            });
+
+            // Saat blur: kalau kosong, tampilkan "—"
+            el.addEventListener('blur', function () {
+                var sekarang = this.value.trim();
+                var asal     = this.dataset.asalNilai || '';
+                if (sekarang === '') {
+                    this.value = '—';
+                    if (asal === '') {
+                        this.classList.remove('nilai-dirty');
+                        this.classList.add('nilai-kosong');
+                    } else {
+                        // Dikosongkan padahal asal ada isi → dirty
+                        this.classList.add('nilai-dirty');
+                        this.classList.remove('nilai-kosong');
+                    }
+                }
+                updateDirtyHint();
+            });
         });
 
-        // Sebelum form disubmit, konversi kembali "—" → "" supaya controller terima string kosong
-        const formNilai = document.querySelector('form[action*="simpan-semua"]');
+        // Sebelum submit: konversi "—" → "" dan hapus dirty (sudah tersimpan)
+        var formNilai = document.querySelector('form[action*="simpan-semua"]');
         if (formNilai) {
             formNilai.addEventListener('submit', function () {
                 document.querySelectorAll('.input-nilai').forEach(function (el) {
                     if (el.value === '—') el.value = '';
+                    // Dirty akan hilang setelah halaman reload (data baru dari server)
                 });
             });
         }
     }
     initNilaiDisplay();
+    updateDirtyHint();
 });

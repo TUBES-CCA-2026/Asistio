@@ -110,16 +110,21 @@
     </table>
 </div></div>
 
-{{-- Tombol Simpan floating — selalu terlihat di pojok kanan bawah --}}
-<button type="submit"
-    class="btn btn-primary"
-    style="position:fixed;bottom:28px;right:28px;z-index:300;
-           box-shadow:0 4px 16px rgba(0,0,0,.18);
-           display:flex;align-items:center;gap:8px;
-           padding:12px 20px;font-size:14px;border-radius:999px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-    Simpan Semua Nilai
-</button>
+{{-- Indikator dirty + Tombol Simpan floating --}}
+<div style="position:fixed;bottom:28px;right:28px;z-index:300;display:flex;align-items:center;gap:10px;">
+    <span id="dirtyHint" class="simpan-dirty-hint">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Ada perubahan belum disimpan
+    </span>
+    <button type="submit"
+        class="btn btn-primary"
+        style="box-shadow:0 4px 16px rgba(0,0,0,.18);
+               display:flex;align-items:center;gap:8px;
+               padding:12px 20px;font-size:14px;border-radius:999px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Simpan Semua Nilai
+    </button>
+</div>
 
 </form>
 @endsection
