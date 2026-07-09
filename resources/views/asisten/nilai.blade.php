@@ -89,13 +89,9 @@
                     placeholder="—">
             </td>
             <td>
-                <input type="number" name="nilai[{{ $m->id }}][nilai_UAS]"
-                    class="form-control form-control-xs"
-                    min="0" max="100" step="0.01"
-                    value="{{ $n['ujian']->nilai_UAS ?? '' }}"
-                    placeholder="—"><input type="number" name="nilai[{{ $m->id }}][nilai_UAS]"
-                    class="form-control form-control-xs"
-                    min="0" max="100" step="0.01"
+                <input type="text" name="nilai[{{ $m->id }}][nilai_UAS]"
+                    class="form-control form-control-xs input-nilai"
+                    inputmode="decimal"
                     value="{{ $n['ujian']->nilai_UAS ?? '' }}"
                     placeholder="—">
             </td>
