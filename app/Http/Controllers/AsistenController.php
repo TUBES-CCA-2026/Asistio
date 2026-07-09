@@ -141,6 +141,63 @@ class AsistenController extends Controller
         return back()->with('success','Nilai disimpan.');
     }
 
+    /** Simpan nilai SEMUA mahasiswa dalam satu submit */
+    public function nilaiSimpanSemua(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
+        $kolom = array_merge(
+            array_map(fn($i) => "p{$i}", range(1, 14)),
+            ['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3','nilai_MID','nilai_UAS']
+        );
+
+        foreach ($request->input('nilai', []) as $mahasiswaId => $v) {
+            $mahasiswaId = (int) $mahasiswaId;
+            // Pastikan mahasiswa ini memang ada di kelas
+            if (!$praktikum->mahasiswa->contains($mahasiswaId)) continue;
+
+            // Filter hanya field yang diisi
+            $eval = array_filter(array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))), fn($x) => $x !== null && $x !== '');
+            $asst = array_filter(array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])), fn($x) => $x !== null && $x !== '');
+            $ujn  = array_filter(array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])), fn($x) => $x !== null && $x !== '');
+
+            if ($eval) NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $eval);
+            if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
+            if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
+
+            RekapDetailNilai::hitungDanSimpan($mahasiswaId, $praktikum->id);
+        }
+
+        return back()->with('success', 'Nilai semua mahasiswa berhasil disimpan.');
+    }
+
+    /** Reset satu kolom (asist1/2/3, MID, UAS) ke 0 untuk semua mahasiswa di kelas */
+    public function nilaiResetKolom(Praktikum $praktikum, string $kolom): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
+        $kolomValid = ['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3','nilai_MID','nilai_UAS'];
+        abort_unless(in_array($kolom, $kolomValid), 422, 'Kolom tidak valid.');
+
+        $label = [
+            'nilai_asistensi1' => 'Asist 1',
+            'nilai_asistensi2' => 'Asist 2',
+            'nilai_asistensi3' => 'Asist 3',
+            'nilai_MID'        => 'MID',
+            'nilai_UAS'        => 'UAS',
+        ][$kolom];
+
+        if (in_array($kolom, ['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])) {
+            NilaiAsistensi::where('praktikum_id', $praktikum->id)->update([$kolom => 0]);
+        } else {
+            NilaiUjian::where('praktikum_id', $praktikum->id)->update([$kolom => 0]);
+        }
+
+        $praktikum->mahasiswa->each(fn($m) => RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id));
+
+        return back()->with('success', "Kolom {$label} semua mahasiswa direset ke 0.");
+    }
+
     /** Reset nilai satu kolom pertemuan (p1–p14) untuk semua mahasiswa di kelas */
     public function nilaiResetPertemuan(Praktikum $praktikum, int $pertemuan): RedirectResponse
     {
