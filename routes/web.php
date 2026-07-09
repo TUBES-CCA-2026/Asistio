@@ -66,6 +66,7 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     // Nilai per kelas (Praktikum)
     Route::get('/nilai/{praktikum}',                                  [AsistenController::class,'nilai'])->name('nilai');
     Route::post('/nilai/{praktikum}/mahasiswa/{mahasiswa}',           [AsistenController::class,'nilaiSimpan'])->name('nilai.simpan');
+    Route::post('/bobot/{praktikum}',                                 [AsistenController::class,'bobotSimpan'])->name('bobot.simpan');
     Route::post('/nilai/{praktikum}/reset-pertemuan/{pertemuan}',     [AsistenController::class,'nilaiResetPertemuan'])->name('nilai.reset-pertemuan');
     Route::post('/nilai/{praktikum}/simpan-semua',                    [AsistenController::class,'nilaiSimpanSemua'])->name('nilai.simpan-semua');
     Route::post('/nilai/{praktikum}/reset-kolom/{kolom}',             [AsistenController::class,'nilaiResetKolom'])->name('nilai.reset-kolom');

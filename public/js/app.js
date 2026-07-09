@@ -770,4 +770,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     initNilaiDisplay();
     updateDirtyHint();
+// ── LIVE TOTAL BOBOT ─────────────────────────────────────────────
+    document.querySelectorAll('[id^="formBobot"]').forEach(function (form) {
+        var kelasId    = form.id.replace('formBobot','');
+        var totalEl    = document.getElementById('totalBobot' + kelasId);
+        var btnSimpan  = document.getElementById('btnSimpanBobot' + kelasId);
+        var inputs     = form.querySelectorAll('.bobot-input-' + kelasId);
+
+        function hitungTotal() {
+            var total = 0;
+            inputs.forEach(function (el) {
+                total += parseFloat(el.value) || 0;
+            });
+            total = Math.round(total * 100) / 100;
+
+            if (totalEl) {
+                totalEl.textContent = total + '%';
+                var ok = Math.abs(total - 100) < 0.01;
+                totalEl.style.color      = ok ? '#22C55E' : '#EF4444';
+                totalEl.parentElement.style.borderColor = ok ? '#86EFAC' : '#FECACA';
+                totalEl.parentElement.style.background  = ok ? '#F0FDF4' : '#FEF2F2';
+                if (btnSimpan) btnSimpan.disabled = !ok;
+            }
+        }
+
+        inputs.forEach(function (el) {
+            el.addEventListener('input', hitungTotal);
+        });
+        hitungTotal();
+    });
 });

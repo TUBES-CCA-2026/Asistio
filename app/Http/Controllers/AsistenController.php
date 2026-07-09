@@ -109,6 +109,36 @@ class AsistenController extends Controller
         return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa'));
     }
 
+    /** Simpan bobot penilaian untuk satu kelas */
+    public function bobotSimpan(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $v = $request->validate([
+            'bobot_kehadiran' => ['required','numeric','min:0','max:100'],
+            'bobot_praktikum' => ['required','numeric','min:0','max:100'],
+            'bobot_asistensi' => ['required','numeric','min:0','max:100'],
+            'bobot_mid'       => ['required','numeric','min:0','max:100'],
+            'bobot_uas'       => ['required','numeric','min:0','max:100'],
+        ]);
+
+        $total = $v['bobot_kehadiran'] + $v['bobot_praktikum'] + $v['bobot_asistensi']
+               + $v['bobot_mid'] + $v['bobot_uas'];
+
+        if (abs($total - 100) > 0.01) {
+            return back()->withErrors(['bobot' => "Total bobot harus 100%. Saat ini: {$total}%"]);
+        }
+
+        $praktikum->update($v);
+
+        // Hitung ulang rekap semua mahasiswa di kelas ini dengan bobot baru
+        foreach ($praktikum->mahasiswa as $m) {
+            RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id);
+        }
+
+        return back()->with('success', 'Pembobotan disimpan dan nilai akhir dihitung ulang.');
+    }
+
     public function nilaiSimpan(Request $request, Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
