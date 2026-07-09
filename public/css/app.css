@@ -1786,7 +1786,7 @@ img {
     color: #92400E;
 }
 
-/* Indikator dirty di toolbar floating */
+/* Indikator dirty + tombol revert di toolbar floating */
 .simpan-dirty-hint {
     display: none;
     align-items: center;
@@ -1800,5 +1800,26 @@ img {
     padding: 6px 14px;
 }
 .simpan-dirty-hint.show {
+    display: flex;
+}
+.btn-revert {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400E;
+    background: #FEF3C7;
+    border: 1.5px solid #F59E0B;
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all .15s;
+}
+.btn-revert:hover {
+    background: #F59E0B;
+    color: #fff;
+}
+.btn-revert.show {
     display: flex;
 }

@@ -625,9 +625,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateDirtyHint() {
-        var ada  = document.querySelector('.input-nilai.nilai-dirty');
-        var hint = document.getElementById('dirtyHint');
-        if (hint) hint.classList.toggle('show', !!ada);
+        var ada    = document.querySelector('.input-nilai.nilai-dirty');
+        var hint   = document.getElementById('dirtyHint');
+        var revert = document.getElementById('btnRevert');
+        if (hint)   hint.classList.toggle('show', !!ada);
+        if (revert) revert.classList.toggle('show', !!ada);
+    }
+
+    // Tombol batalkan perubahan — kembalikan semua ke nilai asal
+    var btnRevert = document.getElementById('btnRevert');
+    if (btnRevert) {
+        btnRevert.addEventListener('click', function () {
+            if (!confirm('Batalkan semua perubahan dan kembalikan ke nilai terakhir yang tersimpan?')) return;
+            document.querySelectorAll('.input-nilai').forEach(function (el) {
+                var asal = el.dataset.asalNilai || '';
+                el.classList.remove('nilai-dirty');
+                if (asal === '') {
+                    el.value = '—';
+                    el.classList.add('nilai-kosong');
+                } else {
+                    el.value = asal;
+                    el.classList.remove('nilai-kosong');
+                }
+            });
+            updateDirtyHint();
+        });
     }
 
     function initNilaiDisplay() {

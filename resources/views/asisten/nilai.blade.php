@@ -111,11 +111,15 @@
 </div></div>
 
 {{-- Indikator dirty + Tombol Simpan floating --}}
-<div style="position:fixed;bottom:28px;right:28px;z-index:300;display:flex;align-items:center;gap:10px;">
+<div style="position:fixed;bottom:28px;right:28px;z-index:300;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
     <span id="dirtyHint" class="simpan-dirty-hint">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Ada perubahan belum disimpan
     </span>
+    <button type="button" id="btnRevert" class="btn-revert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Batalkan Perubahan
+    </button>
     <button type="submit"
         class="btn btn-primary"
         style="box-shadow:0 4px 16px rgba(0,0,0,.18);
