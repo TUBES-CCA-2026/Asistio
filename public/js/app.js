@@ -588,4 +588,50 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // ── RESET KOLOM NILAI (client-side saja, belum simpan ke DB) ────────
+    document.querySelectorAll('[data-reset-field]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const field = this.getAttribute('data-reset-field');
+            document.querySelectorAll('.input-nilai[name*="[' + field + ']"]')
+                .forEach(function (input) { input.value = ''; });
+        });
+    });
+
+    // ── INPUT NILAI — tampilkan "—" saat kosong, hilang saat diklik ─────
+    function initNilaiDisplay() {
+        document.querySelectorAll('.input-nilai').forEach(function (el) {
+            // Saat blur: kalau kosong, tampilkan "—" sebagai nilai visual
+            el.addEventListener('blur', function () {
+                if (this.value === '' || this.value === null) {
+                    this.value = '—';
+                    this.classList.add('nilai-kosong');
+                }
+            });
+            // Saat focus: hapus "—" supaya bisa langsung ketik
+            el.addEventListener('focus', function () {
+                if (this.value === '—') {
+                    this.value = '';
+                    this.classList.remove('nilai-kosong');
+                }
+            });
+            // Set tampilan awal saat halaman dimuat
+            if (this === undefined) return;
+            if (el.value === '') {
+                el.value = '—';
+                el.classList.add('nilai-kosong');
+            }
+        });
+
+        // Sebelum form disubmit, konversi kembali "—" → "" supaya controller terima string kosong
+        const formNilai = document.querySelector('form[action*="simpan-semua"]');
+        if (formNilai) {
+            formNilai.addEventListener('submit', function () {
+                document.querySelectorAll('.input-nilai').forEach(function (el) {
+                    if (el.value === '—') el.value = '';
+                });
+            });
+        }
+    }
+    initNilaiDisplay();
 });

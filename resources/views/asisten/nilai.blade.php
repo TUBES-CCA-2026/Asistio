@@ -24,41 +24,29 @@
             <th style="text-align:center;">UAS</th>
             <th style="text-align:center;">NA</th>
         </tr>
-        {{-- Baris 2: tombol reset per kolom --}}
+        {{-- Baris 2: tombol reset kolom (hanya ubah nilai di layar, belum simpan ke DB) --}}
         <tr>
             <th></th>
-            {{-- Reset P1–P14 --}}
             @for($i = 1; $i <= 14; $i++)
             <th style="text-align:center;padding:4px 2px;">
-                <form method="POST"
-                      action="{{ route('asisten.nilai.reset-pertemuan', [$praktikum, $i]) }}"
-                      onsubmit="return confirm('Reset semua nilai P{{ $i }} ke 0?')">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-danger"
-                            style="font-size:10px;padding:2px 6px;line-height:1.4;">
-                        Reset
-                    </button>
-                </form>
+                <button type="button"
+                    class="btn btn-sm btn-danger"
+                    style="font-size:10px;padding:2px 6px;line-height:1.4;"
+                    data-reset-field="p{{ $i }}"
+                    title="Set semua nilai P{{ $i }} menjadi 0 (belum tersimpan)">
+                    Reset
+                </button>
             </th>
             @endfor
-            {{-- Reset Asist 1, 2, 3, MID, UAS --}}
-            @foreach([
-                'nilai_asistensi1' => 'Asist 1',
-                'nilai_asistensi2' => 'Asist 2',
-                'nilai_asistensi3' => 'Asist 3',
-                'nilai_MID'        => 'MID',
-                'nilai_UAS'        => 'UAS',
-            ] as $kolom => $label)
+            @foreach(['nilai_asistensi1'=>'Asist 1','nilai_asistensi2'=>'Asist 2','nilai_asistensi3'=>'Asist 3','nilai_MID'=>'MID','nilai_UAS'=>'UAS'] as $kolom => $label)
             <th style="text-align:center;padding:4px 2px;">
-                <form method="POST"
-                      action="{{ route('asisten.nilai.reset-kolom', [$praktikum, $kolom]) }}"
-                      onsubmit="return confirm('Reset semua nilai {{ $label }} ke 0?')">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-danger"
-                            style="font-size:10px;padding:2px 6px;line-height:1.4;">
-                        Reset
-                    </button>
-                </form>
+                <button type="button"
+                    class="btn btn-sm btn-danger"
+                    style="font-size:10px;padding:2px 6px;line-height:1.4;"
+                    data-reset-field="{{ $kolom }}"
+                    title="Set semua nilai {{ $label }} menjadi 0 (belum tersimpan)">
+                    Reset
+                </button>
             </th>
             @endforeach
             <th></th>

@@ -157,9 +157,11 @@ class AsistenController extends Controller
             if (!$praktikum->mahasiswa->contains($mahasiswaId)) continue;
 
             // Filter hanya field yang diisi
-            $eval = array_filter(array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))), fn($x) => $x !== null && $x !== '');
-            $asst = array_filter(array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])), fn($x) => $x !== null && $x !== '');
-            $ujn  = array_filter(array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])), fn($x) => $x !== null && $x !== '');
+            // Konversi string kosong → null (bukan dibuang) supaya field yang dikosongkan ikut tersimpan
+            $toNull = fn($x) => ($x === '' || $x === null) ? null : (float) $x;
+            $eval = array_map($toNull, array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))));
+            $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
+            $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
             if ($eval) NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $eval);
             if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
