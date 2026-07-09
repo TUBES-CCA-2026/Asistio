@@ -54,10 +54,21 @@
         </thead>
         <tbody>
         @forelse($mahasiswaList as $m)
-        @php $n = $nilaiMap[$m->id]; @endphp
-        <tr>
+        @php
+            $n        = $nilaiMap[$m->id];
+            $jmlAlpa  = $alpaMap[$m->id] ?? 0;
+            $adaAlpa  = $jmlAlpa >= $batasAlpa;
+        @endphp
+        <tr class="{{ $adaAlpa ? 'row-alpa-alert' : '' }}">
             <td>
-                <div class="fw-600 fs-13">{{ $m->nama_mahasiswa }}</div>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span class="fw-600 fs-13">{{ $m->nama_mahasiswa }}</span>
+                    @if($adaAlpa)
+                        <span class="badge-alpa-alert" title="{{ $jmlAlpa }}x Alpha — melebihi batas {{ $batasAlpa }}">
+                            ⚠ {{ $jmlAlpa }}x Alpa
+                        </span>
+                    @endif
+                </div>
                 <div class="fs-11 text-muted">{{ $m->nim_mahasiswa }}</div>
             </td>
             {{-- Nilai Evaluasi P1–P14 --}}

@@ -94,7 +94,8 @@ class AsistenController extends Controller
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
 
         $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
-        $nilaiMap = [];
+        $nilaiMap  = [];
+        $alpaMap   = [];
         foreach ($mahasiswaList as $m) {
             $nilaiMap[$m->id] = [
                 'evaluasi'  => NilaiEvaluasi::firstOrCreate(['mahasiswa_id'=>$m->id,'praktikum_id'=>$praktikum->id]),
@@ -102,8 +103,10 @@ class AsistenController extends Controller
                 'ujian'     => NilaiUjian::firstOrCreate(['mahasiswa_id'=>$m->id,'praktikum_id'=>$praktikum->id]),
                 'rekap'     => RekapDetailNilai::where(['mahasiswa_id'=>$m->id,'praktikum_id'=>$praktikum->id])->first(),
             ];
+            $alpaMap[$m->id] = $m->jumlahAlpaDiKelas($praktikum->id);
         }
-        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap'));
+        $batasAlpa = Mahasiswa::BATAS_ALPA;
+        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa'));
     }
 
     public function nilaiSimpan(Request $request, Praktikum $praktikum, Mahasiswa $mahasiswa): RedirectResponse
