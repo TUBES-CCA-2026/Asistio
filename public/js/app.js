@@ -827,4 +827,47 @@ document.addEventListener('DOMContentLoaded', function () {
             if (this.value !== bersih) this.value = bersih;
         });
     });
+
+    // ── ENTER = PINDAH KE MAHASISWA BERIKUTNYA (kolom sama) ──────────
+    document.querySelectorAll('.input-nilai').forEach(function (el) {
+        el.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault(); // cegah form submit
+
+            const td = this.closest('td');
+            const tr = this.closest('tr');
+            if (!td || !tr) return;
+
+            const colIdx = Array.from(tr.parentElement.rows).indexOf(tr) >= 0
+                ? Array.from(tr.cells).indexOf(td)
+                : -1;
+            if (colIdx < 0) return;
+
+            // Cari baris berikutnya yang punya input nilai di kolom yang sama
+            let nextTr = tr.nextElementSibling;
+            while (nextTr) {
+                const nextTd    = nextTr.cells[colIdx];
+                const nextInput = nextTd?.querySelector('.input-nilai');
+                if (nextInput) {
+                    nextInput.focus();
+                    // Kalau sedang menampilkan "—", hapus supaya langsung siap diketik
+                    if (nextInput.value === '—') nextInput.value = '';
+                    nextInput.select();
+                    return;
+                }
+                nextTr = nextTr.nextElementSibling;
+            }
+
+            // Sudah di baris terakhir — balik ke baris pertama kolom yang sama
+            const firstTr = tr.parentElement.querySelector('tr');
+            if (firstTr) {
+                const firstInput = firstTr.cells[colIdx]?.querySelector('.input-nilai');
+                if (firstInput) {
+                    firstInput.focus();
+                    if (firstInput.value === '—') firstInput.value = '';
+                    firstInput.select();
+                }
+            }
+        });
+    });
 });
