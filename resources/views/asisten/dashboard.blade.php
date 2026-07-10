@@ -78,7 +78,7 @@
                                name="{{ $field }}"
                                class="form-control bobot-input-{{ $kelas->id }} input-bobot"
                                inputmode="numeric"
-                               value="{{ old($field, $kelas->$field ?? ($field==='bobot_asistensi'||$field==='bobot_uas'?30:($field==='bobot_kehadiran'?10:20))) }}"
+                               value="{{ old($field, $kelas->$field ?? \App\Models\Praktikum::BOBOT_DEFAULT[$field]) }}"
                                required>
                         <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
                                      color:var(--text-muted);font-size:13px;pointer-events:none;">%</span>

@@ -3,6 +3,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Praktikum extends Model {
     protected $table = 'praktikum';
+    /** Bobot standar (%) untuk kelas baru — ubah di sini dan berlaku di seluruh sistem */
+    public const BOBOT_DEFAULT = [
+        'bobot_kehadiran' => 10,
+        'bobot_praktikum' => 20,
+        'bobot_asistensi' => 30,
+        'bobot_mid'       => 20,
+        'bobot_uas'       => 30,
+    ];
+
+    /** Eloquent pakai ini saat instance baru dibuat sebelum disimpan ke DB */
+    protected $attributes = [
+        'bobot_kehadiran' => 10,
+        'bobot_praktikum' => 20,
+        'bobot_asistensi' => 30,
+        'bobot_mid'       => 20,
+        'bobot_uas'       => 30,
+    ];
     protected $fillable = [
         'bobot_kehadiran','bobot_praktikum','bobot_asistensi','bobot_mid','bobot_uas','mata_kuliah_id','nama_kelas','jadwal','hari','jam_mulai','jam_selesai','ruangan_id','dosen_id','asisten_id','asisten2_id'];
     public function mataKuliah() { return $this->belongsTo(MataKuliah::class); }
