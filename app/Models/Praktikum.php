@@ -4,19 +4,22 @@ use Illuminate\Database\Eloquent\Model;
 class Praktikum extends Model {
     protected $table = 'praktikum';
     /** Bobot standar (%) untuk kelas baru — ubah di sini dan berlaku di seluruh sistem */
+    /**
+     * Bobot standar — jumlah HARUS tepat 100.
+     * Distribusi: Kehadiran 10, Praktikum 20, Asistensi 20, MID 20, UAS 30
+     */
     public const BOBOT_DEFAULT = [
         'bobot_kehadiran' => 10,
         'bobot_praktikum' => 20,
-        'bobot_asistensi' => 30,
+        'bobot_asistensi' => 20,
         'bobot_mid'       => 20,
         'bobot_uas'       => 30,
     ];
 
-    /** Eloquent pakai ini saat instance baru dibuat sebelum disimpan ke DB */
     protected $attributes = [
         'bobot_kehadiran' => 10,
         'bobot_praktikum' => 20,
-        'bobot_asistensi' => 30,
+        'bobot_asistensi' => 20,
         'bobot_mid'       => 20,
         'bobot_uas'       => 30,
     ];

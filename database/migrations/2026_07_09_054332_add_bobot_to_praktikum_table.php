@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('praktikum', function (Blueprint $table) {
             $table->decimal('bobot_kehadiran',  5, 2)->default(10)->after('asisten2_id');
             $table->decimal('bobot_praktikum',  5, 2)->default(20)->after('bobot_kehadiran');
-            $table->decimal('bobot_asistensi',  5, 2)->default(30)->after('bobot_praktikum');
+            $table->decimal('bobot_asistensi',  5, 2)->default(20)->after('bobot_praktikum');
             $table->decimal('bobot_mid',        5, 2)->default(20)->after('bobot_asistensi');
             $table->decimal('bobot_uas',        5, 2)->default(30)->after('bobot_mid');
         });
