@@ -799,4 +799,32 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         hitungTotal();
     });
+
+    // ── INPUT BOBOT — hanya angka dan satu titik desimal ──────────────
+    document.querySelectorAll('.input-bobot').forEach(function (el) {
+        el.addEventListener('keydown', function (e) {
+            const ctrl     = e.ctrlKey || e.metaKey;
+            const navigasi = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+            if (navigasi.includes(e.key) || ctrl) return;
+            if (/^\d$/.test(e.key)) return;
+            if (e.key === '.' && !this.value.includes('.')) return;
+            e.preventDefault();
+        });
+
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const raw    = (e.clipboardData || window.clipboardData).getData('text');
+            const bersih = raw.replace(/[^\d.]/g, '').replace(/^(\d*\.?\d*).*$/, '$1');
+            const before = this.value.slice(0, this.selectionStart);
+            const after  = this.value.slice(this.selectionEnd);
+            const hasil  = (before + bersih + after).replace(/^(\d*\.?\d*).*$/, '$1');
+            this.value   = hasil;
+            this.dispatchEvent(new Event('input'));
+        });
+
+        el.addEventListener('input', function () {
+            const bersih = this.value.replace(/[^\d.]/g, '').replace(/^(\d*\.?\d*).*$/, '$1');
+            if (this.value !== bersih) this.value = bersih;
+        });
+    });
 });

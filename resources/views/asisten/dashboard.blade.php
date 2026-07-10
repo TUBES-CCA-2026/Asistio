@@ -30,7 +30,7 @@
         <a href="{{ route('asisten.nilai', $kelas) }}" class="btn btn-outline btn-sm">Nilai</a>
         <button type="button" class="btn btn-outline btn-sm"
             onclick="document.getElementById('modalBobot{{ $kelas->id }}').classList.add('open');document.body.style.overflow='hidden'">
-            ⚖ Bobot
+            Bobot
         </button>
         <a href="{{ route('asisten.rekap', $kelas) }}" class="btn btn-primary btn-sm">Rekap →</a>
     </div>
@@ -40,7 +40,7 @@
 <div id="modalBobot{{ $kelas->id }}" class="modal-overlay">
     <div class="modal" style="max-width:420px;">
         <div class="modal-header">
-            <span class="modal-title">⚖ Pembobotan — {{ $kelas->nama_kelas }}</span>
+            <span class="modal-title">Pembobotan — {{ $kelas->nama_kelas }}</span>
             <button type="button" class="modal-close"
                 onclick="document.getElementById('modalBobot{{ $kelas->id }}').classList.remove('open');document.body.style.overflow=''">✕</button>
         </div>
@@ -74,10 +74,10 @@
                         <span>{{ $meta['label'] }}</span>
                     </label>
                     <div style="position:relative;">
-                        <input type="number"
+                        <input type="text"
                                name="{{ $field }}"
-                               class="form-control bobot-input-{{ $kelas->id }}"
-                               min="0" max="100" step="0.01"
+                               class="form-control bobot-input-{{ $kelas->id }} input-bobot"
+                               inputmode="numeric"
                                value="{{ old($field, $kelas->$field ?? ($field==='bobot_asistensi'||$field==='bobot_uas'?30:($field==='bobot_kehadiran'?10:20))) }}"
                                required>
                         <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
