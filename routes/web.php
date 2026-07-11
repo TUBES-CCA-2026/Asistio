@@ -95,4 +95,14 @@ Route::prefix('dosen')->middleware(['auth','role:dosen'])->name('dosen.')->group
 Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')->group(function () {
     Route::get('/ganti-password',  [LaboranController::class,'gantiPassword'])->name('ganti-password');
     Route::post('/ganti-password', [LaboranController::class,'gantiPasswordUpdate'])->name('ganti-password.update');
+    
+    // ── Backup & Restore ─────────────────────────────────────────────────
+    Route::prefix('backup')->name('backup.')->group(function () {
+        Route::get('/',                             [\App\Http\Controllers\BackupController::class,'index'])->name('index');
+        Route::post('/buat',                        [\App\Http\Controllers\BackupController::class,'buat'])->name('buat');
+        Route::get('/unduh/{filename}',             [\App\Http\Controllers\BackupController::class,'unduh'])->name('unduh');
+        Route::post('/pulihkan/{filename}',         [\App\Http\Controllers\BackupController::class,'pulihkan'])->name('pulihkan');
+        Route::delete('/hapus/{filename}',          [\App\Http\Controllers\BackupController::class,'hapus'])->name('hapus');
+        Route::post('/upload',                      [\App\Http\Controllers\BackupController::class,'upload'])->name('upload');
+    });
 });
