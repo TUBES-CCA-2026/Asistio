@@ -2,7 +2,40 @@
 @section('title','Mahasiswa')
 @section('page-title','Manajemen Mahasiswa')
 @section('content')
-<div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Mahasiswa</button></div>
+<div class="page-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Mahasiswa</button>
+    <button class="btn btn-outline" data-modal-open="modalImportExcel"
+        style="display:inline-flex;align-items:center;gap:6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4m0 0l4-4m-4 4V4"/>
+        </svg>
+        Import Excel
+    </button>
+    <a href="{{ route('laboran.mahasiswa.template-excel') }}"
+        class="btn btn-outline"
+        style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;" download>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        Template Excel
+    </a>
+</div>
+@if(session('import_errors'))
+<div class="card" style="border-left:4px solid #F59E0B;margin-bottom:12px;">
+    <div style="padding:12px 16px;">
+        <strong style="color:#92400E;">⚠ Beberapa baris dilewati:</strong>
+        <ul style="margin:8px 0 0 16px;padding:0;font-size:13px;color:#78350F;">
+            @foreach(session('import_errors') as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+</div>
+@endif
 <div class="card">
     <div class="table-toolbar">
         <div class="table-search-wrap">
@@ -139,6 +172,112 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-modal-close="modalTambah" class="btn btn-outline">Batal</button><button class="btn btn-primary">Tambah</button></div>
     </form></div>
 </div></div>
+{{-- Modal Import Excel --}}
+<div id="modalImportExcel" class="modal-overlay"><div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+        <span class="modal-title">Import Mahasiswa via Excel</span>
+        <button data-modal-close="modalImportExcel" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+        @if($errors->has('file_excel'))
+            <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#B91C1C;">
+                {{ $errors->first('file_excel') }}
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('laboran.mahasiswa.import') }}"
+              enctype="multipart/form-data" id="formImportExcel">
+            @csrf
+
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1E40AF;line-height:1.6;">
+                <strong>Cara penggunaan:</strong><br>
+                1. Unduh template (tombol "Template Excel" di atas)<br>
+                2. Isi kolom <strong>NIM</strong> dan <strong>Nama Mahasiswa</strong><br>
+                3. Upload file di sini → klik <strong>Import</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">File Excel (.xlsx / .xls)</label>
+                <div id="dropZone" style="border:2px dashed #93C5FD;border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;background:#F8FAFC;transition:border-color .2s,background .2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none"
+                        viewBox="0 0 24 24" stroke="#60A5FA" stroke-width="1.5" style="margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 17v-2m3 2v-4m3 4v-6M3 7l4-4m0 0l4 4M7 3v14M17 3h2a2 2 0 012 2v14a2 2 0 01-2 2h-2"/>
+                    </svg>
+                    <p id="dropLabel" style="margin:0;font-size:13px;color:#6B7280;">Klik atau seret file Excel ke sini</p>
+                    <input type="file" name="file_excel" id="fileExcelInput"
+                        accept=".xlsx,.xls" style="position:absolute;opacity:0;width:0;height:0;" required>
+                </div>
+            </div>
+
+            <p style="font-size:12px;color:var(--text-muted);margin:-8px 0 16px;">
+                Maks. 5 MB · Duplikat NIM akan dilewati otomatis.
+            </p>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="button" data-modal-close="modalImportExcel" class="btn btn-outline">Batal</button>
+                <button type="submit" class="btn btn-primary" id="btnImport">Import</button>
+            </div>
+        </form>
+    </div>
+</div></div>
+
+@push('scripts')
+<script>
+(function () {
+    const zone   = document.getElementById('dropZone');
+    const input  = document.getElementById('fileExcelInput');
+    const label  = document.getElementById('dropLabel');
+    const btnImp = document.getElementById('btnImport');
+    const form   = document.getElementById('formImportExcel');
+    if (!zone) return;
+
+    zone.addEventListener('click', () => input.click());
+
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.style.borderColor = '#2563EB';
+        zone.style.background  = '#EFF6FF';
+    });
+    zone.addEventListener('dragleave', () => {
+        zone.style.borderColor = '#93C5FD';
+        zone.style.background  = '#F8FAFC';
+    });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.style.borderColor = '#93C5FD';
+        zone.style.background  = '#F8FAFC';
+        const file = e.dataTransfer.files[0];
+        if (file) setFile(file);
+    });
+    input.addEventListener('change', () => {
+        if (input.files[0]) setFile(input.files[0]);
+    });
+
+    function setFile(file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        label.innerHTML = '<strong style="color:#1D4ED8;">✓ ' + file.name + '</strong>'
+            + '<br><span style="font-size:11px;color:#6B7280;">' + (file.size/1024).toFixed(1) + ' KB</span>';
+        zone.style.borderColor = '#34D399';
+        zone.style.background  = '#F0FDF4';
+    }
+
+    form.addEventListener('submit', function () {
+        btnImp.disabled    = true;
+        btnImp.textContent = 'Mengimport…';
+    });
+
+    @if($errors->has('file_excel'))
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('modalImportExcel')?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    });
+    @endif
+})();
+</script>
+@endpush
 @foreach($mahasiswaAll as $m)
 <div id="modalEditMhs{{ $m->id }}" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Edit Data — {{ $m->nama_mahasiswa }}</span><button data-modal-close="modalEditMhs{{ $m->id }}" class="modal-close">✕</button></div>

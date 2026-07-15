@@ -53,6 +53,8 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     Route::get('/mahasiswa/{mahasiswa}/edit', [LaboranController::class,'mahasiswaEdit'])->name('mahasiswa.edit');
     Route::patch('/mahasiswa/{mahasiswa}',    [LaboranController::class,'mahasiswaUpdate'])->name('mahasiswa.update');
     Route::delete('/mahasiswa/{mahasiswa}',   [LaboranController::class,'mahasiswaDestroy'])->name('mahasiswa.destroy');
+    Route::post('/mahasiswa/import',        [LaboranController::class,'mahasiswaImport'])->name('mahasiswa.import');
+    Route::get('/mahasiswa/template-excel', [LaboranController::class,'mahasiswaTemplateExcel'])->name('mahasiswa.template-excel');
     Route::get('/mahasiswa/{mahasiswa}/nilai/{praktikum}', [LaboranController::class,'mahasiswaNilai'])->name('mahasiswa.nilai');
     Route::post('/mahasiswa/{mahasiswa}/nilai/{praktikum}',[LaboranController::class,'mahasiswaNilaiUpdate'])->name('mahasiswa.nilai.update');});
 

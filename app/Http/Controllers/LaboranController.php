@@ -385,6 +385,175 @@ class LaboranController extends Controller
         $mahasiswa->delete(); return back()->with('success','Mahasiswa dihapus.');
     }
 
+    // ── Import Mahasiswa via Excel ─────────────────────────────────────────
+    public function mahasiswaImport(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file_excel' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
+        ], [
+            'file_excel.required' => 'File Excel wajib dipilih.',
+            'file_excel.mimes'    => 'File harus berformat .xlsx atau .xls.',
+            'file_excel.max'      => 'Ukuran file maksimal 5 MB.',
+        ]);
+
+        $path = $request->file('file_excel')->getRealPath();
+        $rows = $this->bacaExcel($path);
+
+        if (empty($rows)) {
+            return back()->with('error', 'File Excel kosong atau format tidak dikenali.');
+        }
+
+        $berhasil = 0;
+        $dilewati = 0;
+        $duplikat = 0;
+        $errors   = [];
+
+        foreach ($rows as $index => $row) {
+            $nomorBaris = $index + 2;
+            $nim  = isset($row[0]) ? trim((string) $row[0]) : '';
+            $nama = isset($row[1]) ? trim((string) $row[1]) : '';
+
+            if ($nim === '' && $nama === '') continue;
+
+            if ($nim === '') {
+                $errors[] = "Baris {$nomorBaris}: NIM kosong, dilewati.";
+                $dilewati++; continue;
+            }
+            if ($nama === '') {
+                $errors[] = "Baris {$nomorBaris}: Nama kosong (NIM: {$nim}), dilewati.";
+                $dilewati++; continue;
+            }
+            if (!preg_match('/^\d+$/', $nim)) {
+                $errors[] = "Baris {$nomorBaris}: NIM '{$nim}' harus angka saja, dilewati.";
+                $dilewati++; continue;
+            }
+            if (Mahasiswa::where('nim_mahasiswa', $nim)->exists()) {
+                $duplikat++; continue;
+            }
+
+            Mahasiswa::create(['nim_mahasiswa' => $nim, 'nama_mahasiswa' => $nama]);
+            $berhasil++;
+        }
+
+        $pesan = "{$berhasil} mahasiswa berhasil diimport.";
+        if ($duplikat > 0) $pesan .= " {$duplikat} NIM duplikat dilewati.";
+        if ($dilewati > 0) $pesan .= " {$dilewati} baris tidak valid dilewati.";
+
+        if (!empty($errors)) session()->flash('import_errors', $errors);
+
+        return back()->with($berhasil > 0 ? 'success' : 'error', $pesan);
+    }
+
+    public function mahasiswaTemplateExcel(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = public_path('templates/template_import_mahasiswa.xlsx');
+
+        if (!file_exists($path)) {
+            abort(404, 'File template tidak ditemukan. Pastikan file ada di public/templates/');
+        }
+
+        return response()->download($path, 'template_import_mahasiswa.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function bacaExcel(string $path): array
+    {
+        if (!class_exists('ZipArchive')) return [];
+
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) return [];
+
+        // Shared strings — opsional, tidak semua xlsx punya
+        $sharedStrings = [];
+        $ssXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($ssXml !== false) {
+            $ss = simplexml_load_string($ssXml);
+            if ($ss) {
+                foreach ($ss->si as $si) {
+                    $val = '';
+                    foreach ($si->xpath('.//t') as $t) $val .= (string) $t;
+                    $sharedStrings[] = $val;
+                }
+            }
+        }
+
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        if ($sheetXml === false) return [];
+
+        // Hapus namespace agar xpath/children bisa diakses langsung
+        $sheetXml = preg_replace('/xmlns[^=]*="[^"]*"/', '', $sheetXml);
+        $sheetXml = preg_replace('/\s+/', ' ', $sheetXml);
+
+        $sheet = simplexml_load_string($sheetXml);
+        if (!$sheet) return [];
+
+        $rows        = [];
+        $headerFound = false;
+
+        foreach ($sheet->sheetData->row as $row) {
+            $rowData = [0 => '', 1 => ''];
+
+            foreach ($row->c as $cell) {
+                $ref       = (string) $cell['r'];
+                $colLetter = preg_replace('/[^A-Za-z]/', '', $ref);
+                $colIndex  = $this->kolomKeIndex($colLetter);
+                $type      = (string) $cell['t'];
+
+                // Ambil nilai: coba <v> dulu, lalu <is><t>
+                $value = '';
+                if (isset($cell->v)) {
+                    $value = trim((string) $cell->v);
+                } elseif (isset($cell->is->t)) {
+                    $value = trim((string) $cell->is->t);
+                }
+
+                // Shared string
+                if ($type === 's' && isset($sharedStrings[(int) $value])) {
+                    $value = $sharedStrings[(int) $value];
+                }
+
+                // Inline string (type="inlineStr")
+                if ($type === 'inlineStr' && isset($cell->is)) {
+                    $value = '';
+                    foreach ($cell->is->xpath('.//t') as $t) {
+                        $value .= (string) $t;
+                    }
+                }
+
+                $rowData[$colIndex] = trim($value);
+            }
+
+            $col0 = strtolower($rowData[0]);
+
+            // Temukan baris header NIM di baris manapun
+            if (!$headerFound) {
+                if ($col0 === 'nim') {
+                    $headerFound = true;
+                }
+                continue;
+            }
+
+            // Lewati baris kosong
+            if ($rowData[0] === '' && $rowData[1] === '') continue;
+
+            $rows[] = [$rowData[0], $rowData[1]];
+        }
+
+        return $rows;
+    }
+
+    private function kolomKeIndex(string $col): int
+    {
+        $col   = strtoupper(trim($col));
+        $index = 0;
+        for ($i = 0; $i < strlen($col); $i++) {
+            $index = $index * 26 + (ord($col[$i]) - ord('A') + 1);
+        }
+        return $index - 1;
+    }
+
     // ── Pengentrian Nilai & Absensi per Mahasiswa ──────────────────────────
     public function mahasiswaNilai(Mahasiswa $mahasiswa, Praktikum $praktikum): View {
         $pid = $praktikum->id;
