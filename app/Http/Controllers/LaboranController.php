@@ -337,7 +337,11 @@ class LaboranController extends Controller
 
     // ── Mahasiswa — kini memilih praktikum bukan mata kuliah ───────────────
     public function mahasiswa(Request $request): View {
-        $q = $request->input('q', '');
+        $q    = $request->input('q', '');
+        $sortValid = ['nim_mahasiswa', 'nama_mahasiswa'];
+        $sort = in_array($request->input('sort'), $sortValid) ? $request->input('sort') : null;
+        $dir  = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
         $mahasiswaAll = Mahasiswa::with('praktikum.mataKuliah')
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
@@ -345,11 +349,11 @@ class LaboranController extends Controller
                         ->orWhere('nama_mahasiswa', 'like', "%{$q}%");
                 });
             })
-            ->orderBy('nama_mahasiswa')
+            ->orderBy($sort ?? 'nama_mahasiswa', $sort ? $dir : 'asc')
             ->paginate(20)
             ->withQueryString();
 
-        return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q'));
+        return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q', 'sort', 'dir'));
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
         $v = $request->validate([

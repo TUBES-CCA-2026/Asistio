@@ -34,7 +34,31 @@
     })();
     </script>
     <div class="table-wrapper"><table class="table">
-    <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Kelas yang Diikuti</th><th>Aksi</th></tr></thead>
+    @php
+        $sortUrl = fn(string $kolom) => route('laboran.mahasiswa', array_filter([
+            'q'    => $q ?: null,
+            'sort' => $kolom,
+            'dir'  => ($sort === $kolom && $dir === 'asc') ? 'desc' : 'asc',
+        ]));
+        // Aktif hanya kalau $sort benar-benar dipilih user (bukan default null)
+        $isAktif = fn(string $kolom) => $sort === $kolom;
+    @endphp
+    <thead><tr>
+        <th data-col="nim"
+            class="{{ $isAktif('nim_mahasiswa') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
+            style="cursor:pointer;user-select:none;white-space:nowrap;"
+            onclick="window.location='{{ $sortUrl('nim_mahasiswa') }}'">
+            NIM <span class="sort-icon" aria-hidden="true">{{ $isAktif('nim_mahasiswa') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+        </th>
+        <th data-col="nama"
+            class="{{ $isAktif('nama_mahasiswa') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
+            style="cursor:pointer;user-select:none;white-space:nowrap;"
+            onclick="window.location='{{ $sortUrl('nama_mahasiswa') }}'">
+            Nama Mahasiswa <span class="sort-icon" aria-hidden="true">{{ $isAktif('nama_mahasiswa') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+        </th>
+        <th>Kelas yang Diikuti</th>
+        <th>Aksi</th>
+    </tr></thead>
     <tbody>
     @forelse($mahasiswaAll as $m)
     @php $adaAlpa = $m->praktikum->contains(fn($p) => $m->melebihiBatasAlpaDiKelas($p->id)); @endphp
@@ -88,7 +112,7 @@
 </table></div>
 @if($mahasiswaAll->hasPages())
     <div class="card-footer">
-        {{ $mahasiswaAll->appends(['q' => $q])->links() }}
+        {{ $mahasiswaAll->appends(array_filter(['q' => $q, 'sort' => $sort !== 'nama_mahasiswa' ? $sort : null, 'dir' => $dir !== 'asc' ? $dir : null]))->links() }}
     </div>
 @endif
 </div>
