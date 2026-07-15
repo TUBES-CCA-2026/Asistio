@@ -115,7 +115,7 @@
 
                 {{-- Data jadwal tersembunyi — hanya dibaca JS --}}
                 <select id="__dataHari" hidden>
-                    @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $h)
+                    @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'] as $h)
                     <option value="{{ $h }}"
                         data-cari="{{ strtolower($h) }}"
                         data-label="{{ $h }}">

@@ -136,7 +136,7 @@ class LaboranController extends Controller
         ]);
     }
     public function kelasStore(Request $request): RedirectResponse {
-        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
         $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
         $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
 
@@ -181,7 +181,7 @@ class LaboranController extends Controller
     }
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
     public function kelasUpdate(Request $request, Praktikum $praktikum): RedirectResponse {
-        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
         $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
         $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
 

@@ -151,7 +151,7 @@
         @endforeach
     </select>
     <select id="__dataTHari" hidden>
-        @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $h)
+        @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'] as $h)
         <option value="{{ $h }}" data-cari="{{ strtolower($h) }}" data-label="{{ $h }}"></option>
         @endforeach
     </select>
