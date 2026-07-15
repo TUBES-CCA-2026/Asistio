@@ -234,6 +234,30 @@ class LaboranController extends Controller
         $praktikum->mahasiswa()->detach($mahasiswa->id);
         return back()->with('success', 'Mahasiswa dikeluarkan dari kelas ini.');
     }
+
+    /** Enroll banyak mahasiswa sekaligus ke kelas ini via checkbox */
+    public function kelasEnrollBanyak(Request $request, Praktikum $praktikum): RedirectResponse
+    {
+        $v = $request->validate([
+            'mahasiswa_ids'   => ['required', 'array', 'min:1'],
+            'mahasiswa_ids.*' => ['exists:mahasiswa,id'],
+        ], [
+            'mahasiswa_ids.required' => 'Pilih minimal 1 mahasiswa.',
+            'mahasiswa_ids.min'      => 'Pilih minimal 1 mahasiswa.',
+        ]);
+
+        $sudahAda   = $praktikum->mahasiswa()->pluck('mahasiswa.id')->toArray();
+        $akanDitambah = array_diff($v['mahasiswa_ids'], $sudahAda);
+
+        if (empty($akanDitambah)) {
+            return back()->with('error', 'Semua mahasiswa yang dipilih sudah ada di kelas ini.');
+        }
+
+        $praktikum->mahasiswa()->attach($akanDitambah);
+
+        $jumlah = count($akanDitambah);
+        return back()->with('success', "{$jumlah} mahasiswa berhasil ditambahkan ke kelas ini.");
+    }
  
     // ── Asisten ────────────────────────────────────────────────────────────
     public function asisten(): View {
