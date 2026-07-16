@@ -216,6 +216,42 @@ class LaboranController extends Controller
                     );
                 }
             }
+
+            // 4. Tabrakan asisten 1
+            if (!empty($v['asisten_id'])) {
+                $tabA1 = $baseQuery(
+                    Praktikum::where(function($q) use ($v) {
+                        $q->where('asisten_id',  $v['asisten_id'])
+                          ->orWhere('asisten2_id', $v['asisten_id']);
+                    })
+                )->first();
+                if ($tabA1) {
+                    return back()->withInput()->with('error_tabrakan',
+                        'Asisten 1 sudah mendampingi kelas <strong>' .
+                        e($tabA1->mataKuliah?->nama_mk) . ' ' . e($tabA1->nama_kelas) .
+                        '</strong> pada ' . e($tabA1->hari) . ', ' .
+                        e($tabA1->jam_mulai) . '&ndash;' . e($tabA1->jam_selesai) . '.'
+                    );
+                }
+            }
+
+            // 5. Tabrakan asisten 2
+            if (!empty($v['asisten2_id'])) {
+                $tabA2 = $baseQuery(
+                    Praktikum::where(function($q) use ($v) {
+                        $q->where('asisten_id',  $v['asisten2_id'])
+                          ->orWhere('asisten2_id', $v['asisten2_id']);
+                    })
+                )->first();
+                if ($tabA2) {
+                    return back()->withInput()->with('error_tabrakan',
+                        'Asisten 2 sudah mendampingi kelas <strong>' .
+                        e($tabA2->mataKuliah?->nama_mk) . ' ' . e($tabA2->nama_kelas) .
+                        '</strong> pada ' . e($tabA2->hari) . ', ' .
+                        e($tabA2->jam_mulai) . '&ndash;' . e($tabA2->jam_selesai) . '.'
+                    );
+                }
+            }
         }
 
         Praktikum::create($v);
@@ -328,6 +364,42 @@ class LaboranController extends Controller
                         'di mata kuliah <strong>' . e($tabKelas->mataKuliah?->nama_mk) .
                         '</strong> pada ' . e($tabKelas->hari) . ', ' .
                         e($tabKelas->jam_mulai) . '&ndash;' . e($tabKelas->jam_selesai) . '.'
+                    );
+                }
+            }
+
+            // 4. Tabrakan asisten 1
+            if (!empty($v['asisten_id'])) {
+                $tabA1 = $baseQuery(
+                    Praktikum::where(function($q) use ($v) {
+                        $q->where('asisten_id',  $v['asisten_id'])
+                          ->orWhere('asisten2_id', $v['asisten_id']);
+                    })
+                )->first();
+                if ($tabA1) {
+                    return back()->withInput()->with('error_tabrakan',
+                        'Asisten 1 sudah mendampingi kelas <strong>' .
+                        e($tabA1->mataKuliah?->nama_mk) . ' ' . e($tabA1->nama_kelas) .
+                        '</strong> pada ' . e($tabA1->hari) . ', ' .
+                        e($tabA1->jam_mulai) . '&ndash;' . e($tabA1->jam_selesai) . '.'
+                    );
+                }
+            }
+
+            // 5. Tabrakan asisten 2
+            if (!empty($v['asisten2_id'])) {
+                $tabA2 = $baseQuery(
+                    Praktikum::where(function($q) use ($v) {
+                        $q->where('asisten_id',  $v['asisten2_id'])
+                          ->orWhere('asisten2_id', $v['asisten2_id']);
+                    })
+                )->first();
+                if ($tabA2) {
+                    return back()->withInput()->with('error_tabrakan',
+                        'Asisten 2 sudah mendampingi kelas <strong>' .
+                        e($tabA2->mataKuliah?->nama_mk) . ' ' . e($tabA2->nama_kelas) .
+                        '</strong> pada ' . e($tabA2->hari) . ', ' .
+                        e($tabA2->jam_mulai) . '&ndash;' . e($tabA2->jam_selesai) . '.'
                     );
                 }
             }
