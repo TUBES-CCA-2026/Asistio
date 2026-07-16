@@ -62,42 +62,35 @@
         @endif
     </nav>
 
-    {{-- Reset Password --}}
+    <div class="sidebar-footer">
+
+        {{-- Ganti Password --}}
         @if($role === 'asisten')
-            <a href="{{ route('asisten.ganti-password') }}" class="nav-item sidebar-footer-link {{ request()->routeIs('asisten.ganti-password*') ? 'active' : '' }}">
+            <a href="{{ route('asisten.ganti-password') }}" class="nav-item {{ request()->routeIs('asisten.ganti-password*') ? 'active' : '' }}" style="justify-content:center;width:100%;box-sizing:border-box;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 <span>Ganti Password</span>
             </a>
         @elseif($role === 'dosen')
-            <a href="{{ route('dosen.ganti-password') }}" class="nav-item sidebar-footer-link {{ request()->routeIs('dosen.ganti-password*') ? 'active' : '' }}">
+            <a href="{{ route('dosen.ganti-password') }}" class="nav-item {{ request()->routeIs('dosen.ganti-password*') ? 'active' : '' }}" style="justify-content:center;width:100%;box-sizing:border-box;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 <span>Ganti Password</span>
             </a>
         @elseif($role === 'laboran')
-            <a href="{{ route('laboran.ganti-password') }}" class="nav-item sidebar-footer-link {{ request()->routeIs('laboran.ganti-password*') ? 'active' : '' }}">
+            <a href="{{ route('laboran.ganti-password') }}" class="nav-item {{ request()->routeIs('laboran.ganti-password*') ? 'active' : '' }}" style="justify-content:center;width:100%;box-sizing:border-box;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 <span>Ganti Password</span>
             </a>
         @endif
-        
-            {{-- sidebar-user dan form logout yang sudah ada, dipindah ke dalam div ini --}}
-    
 
-    {{-- User info + logout di bagian bawah sidebar --}}
-    <div class="sidebar-footer">
-        <div class="sidebar-user">
-            <div class="sidebar-user-avatar">{{ auth()->user()->initials }}</div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name">{{ auth()->user()->nama }}</div>
-                <div class="sidebar-user-role">{{ ucfirst($role) }}</div>
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="sidebar-logout" title="Keluar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                </button>
-            </form>
-        </div>
+        {{-- Logout --}}
+        <form method="POST" action="{{ route('logout') }}" style="width:100%;">
+            @csrf
+            <button type="submit" class="nav-item" style="width:100%;background:none;border:none;cursor:pointer;justify-content:center;color:var(--text-muted);transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.color='#E2E8F0';" onmouseout="this.style.background='none';this.style.color='var(--text-muted)';">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Keluar</span>
+            </button>
+        </form>
+
     </div>
 </aside>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
