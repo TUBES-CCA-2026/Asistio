@@ -66,18 +66,26 @@ document.addEventListener('DOMContentLoaded', function () {
     // KECUALI jika klik berasal dari dalam .search-results (dropdown combobox)
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function (e) {
+            // Jangan tutup modal jika:
+            // 1. Klik bukan tepat pada overlay (klik di dalam modal)
             if (e.target !== this) return;
-            // Pastikan tidak ada dropdown combobox yang sedang terbuka
-            const adaDropdownTerbuka = document.querySelector('.search-results.open');
-            if (adaDropdownTerbuka) return;
+            // 2. Ada preview combobox yang sedang terbuka
+            if (document.querySelector('.search-results.open')) return;
+            // 3. Flag global sedangPilihCombobox aktif
+            if (window._sedangPilihCombobox) return;
             this.classList.remove('open');
             document.body.style.overflow = '';
         });
     });
 
-    // ESC menutup semua modal
+    // ESC menutup dropdown dulu, baru modal jika tidak ada dropdown terbuka
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
+            const adaDropdown = document.querySelector('.search-results.open');
+            if (adaDropdown) {
+                // biarkan buatCombobox yang tangani tutup dropdown-nya
+                return;
+            }
             document.querySelectorAll('.modal-overlay.open').forEach(m => {
                 m.classList.remove('open');
             });
@@ -121,13 +129,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── SMART COMBOBOX — helper reusable ─────────────────────────────
-    // data  : array of { value, label, cari, kolom1?, kolom2? }
-    // inputEl, hiddenEl, previewEl : elemen DOM
-    // clearable : jika true, backspace/hapus semua teks → reset hidden ke ''
+    window._sedangPilihCombobox = false; // flag global: ada item yang sedang diklik
+
     function buatCombobox({ data, inputEl, hiddenEl, previewEl, clearable = true }) {
         if (!inputEl || !hiddenEl || !previewEl) return;
 
-        let focusedIdx = -1; // indeks item yang sedang di-highlight arrow key
+        let focusedIdx = -1;
 
         function posisi() {
             const r = inputEl.getBoundingClientRect();
@@ -140,7 +147,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return teks.replace(/\s*—\s*/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
         }
 
-        // Pindah highlight ke item tertentu & scroll supaya kelihatan
+        function tutup() {
+            previewEl.classList.remove('open');
+            focusedIdx = -1;
+        }
+
+        function pilih(d) {
+            hiddenEl.value = d.value;
+            inputEl.value  = d.label;
+            tutup();
+        }
+
         function highlight(idx) {
             const items = previewEl.querySelectorAll('.search-result-item');
             items.forEach(el => el.classList.remove('keyboard-focus'));
@@ -155,11 +172,8 @@ document.addEventListener('DOMContentLoaded', function () {
             previewEl.innerHTML = '';
             focusedIdx = -1;
             const qBersih = bersihkan(q);
-            const list = qBersih
-                ? data.filter(d => d.cari.includes(qBersih))
-                : data;
-
-            const slice = list.slice(0, 50);
+            const list    = qBersih ? data.filter(d => d.cari.includes(qBersih)) : data;
+            const slice   = list.slice(0, 50);
 
             if (slice.length === 0) {
                 previewEl.innerHTML = '<div class="search-result-empty">Tidak ditemukan.</div>';
@@ -167,21 +181,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 slice.forEach(d => {
                     const item = document.createElement('div');
                     item.className = 'search-result-item';
-                    if (d.kolom1) {
-                        item.innerHTML =
-                            '<span class="search-result-nim">'  + d.kolom1 + '</span>' +
-                            '<span class="search-result-nama">' + d.kolom2 + '</span>';
-                    } else {
-                        item.innerHTML = '<span class="search-result-nama">' + d.label + '</span>';
-                    }
+                    item.innerHTML = d.kolom1
+                        ? '<span class="search-result-nim">' + d.kolom1 + '</span><span class="search-result-nama">' + d.kolom2 + '</span>'
+                        : '<span class="search-result-nama">' + d.label + '</span>';
+
+                    // mousedown: set flag global agar overlay & blur tahu ada pilihan aktif
                     item.addEventListener('mousedown', function (e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        hiddenEl.value = d.value;
-                        inputEl.value  = d.label;
-                        focusedIdx = -1;
-                        previewEl.classList.remove('open');
+                        window._sedangPilihCombobox = true;
                     });
+
+                    // pointerup: commit pilihan, reset flag
+                    item.addEventListener('pointerup', function (e) {
+                        e.stopPropagation();
+                        pilih(d);
+                        window._sedangPilihCombobox = false;
+                        inputEl.focus();
+                    });
+
                     previewEl.appendChild(item);
                 });
             }
@@ -189,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function () {
             previewEl.classList.add('open');
         }
 
-        // Arrow key, Enter, Escape — tangani di sini
         inputEl.addEventListener('keydown', function (e) {
             const isOpen = previewEl.classList.contains('open');
             const items  = previewEl.querySelectorAll('.search-result-item');
@@ -198,21 +215,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
                 if (!isOpen) { tampil(this.value); return; }
                 highlight(Math.min(focusedIdx + 1, items.length - 1));
-
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (!isOpen) return;
                 highlight(Math.max(focusedIdx - 1, 0));
-
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if (isOpen && focusedIdx >= 0 && items[focusedIdx]) {
-                    items[focusedIdx].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                    pilih(data.find(d => d.label === items[focusedIdx].textContent.trim()) || { value: hiddenEl.value, label: inputEl.value });
                 }
-
             } else if (e.key === 'Escape') {
-                previewEl.classList.remove('open');
-                focusedIdx = -1;
+                e.stopPropagation(); // jangan sampai ESC tutup modal juga
+                tutup();
             }
         });
 
@@ -222,14 +236,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         inputEl.addEventListener('focus', function () {
-            const sudahDipilih = hiddenEl.value !== '' &&
-                data.find(d => d.label === this.value.trim());
-            if (!sudahDipilih) {
-                tampil('');
-            }
+            const sudahDipilih = hiddenEl.value !== '' && data.find(d => d.label === this.value.trim());
+            if (!sudahDipilih) tampil('');
         });
 
         inputEl.addEventListener('blur', function () {
+            // Jika sedang proses klik item, jangan tutup dan jangan reset
+            if (window._sedangPilihCombobox) return;
+
             if (clearable) {
                 const cocok = data.find(d => d.label === this.value.trim());
                 if (!cocok) {
@@ -237,30 +251,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     hiddenEl.value = '';
                 }
             }
-            setTimeout(() => { previewEl.classList.remove('open'); focusedIdx = -1; }, 200);
+            setTimeout(function () {
+                if (!window._sedangPilihCombobox) tutup();
+            }, 300);
         });
 
+        // Klik di luar: tutup preview tapi jangan rambat ke overlay modal
         document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-combobox')) {
-                previewEl.classList.remove('open');
-                focusedIdx = -1;
+            if (window._sedangPilihCombobox) return;
+            if (!e.target.closest('.search-combobox') && !previewEl.contains(e.target)) {
+                tutup();
             }
         });
 
         previewEl.addEventListener('wheel', function (e) {
             const atTop    = previewEl.scrollTop === 0;
             const atBottom = previewEl.scrollTop + previewEl.offsetHeight >= previewEl.scrollHeight;
-            if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
-                e.preventDefault();
-            }
+            if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) e.preventDefault();
             e.stopPropagation();
         }, { passive: false });
 
         window.addEventListener('scroll', function (e) {
-            if (!previewEl.contains(e.target) && e.target !== previewEl) {
-                previewEl.classList.remove('open');
-                focusedIdx = -1;
-            }
+            if (!previewEl.contains(e.target) && e.target !== previewEl) tutup();
         }, true);
     }
 
