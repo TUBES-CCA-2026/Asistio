@@ -137,6 +137,8 @@ class LaboranController extends Controller
                 $query->where(function ($sub) use ($q) {
                     $sub->where('nama_kelas', 'like', "%{$q}%")
                         ->orWhere('hari', 'like', "%{$q}%")
+                        ->orWhere('jam_mulai',  'like', "%{$q}%")
+                        ->orWhere('jam_selesai','like', "%{$q}%")
                         ->orWhereHas('mataKuliah', fn($m) => $m->where('nama_mk', 'like', "%{$q}%"))
                         ->orWhereHas('dosen',      fn($d) => $d->where('nama_dosen', 'like', "%{$q}%"))
                         ->orWhereHas('ruangan',    fn($r) => $r->where('nama_ruangan', 'like', "%{$q}%"))
