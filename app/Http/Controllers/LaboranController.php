@@ -587,7 +587,7 @@ class LaboranController extends Controller
                 });
             })
             ->orderBy($sort ?? 'nama_mahasiswa', $sort ? $dir : 'asc')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString();
 
         return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q', 'sort', 'dir'));
