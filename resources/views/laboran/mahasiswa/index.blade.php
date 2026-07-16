@@ -45,6 +45,12 @@
                    class="table-search" placeholder="Cari NIM atau nama mahasiswa..."
                    autocomplete="off">
         </div>
+        <a href="{{ route('laboran.mahasiswa', array_merge(request()->only('q','sort','dir'), ['error' => $filterError ? null : '1'])) }}"
+           style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:all .15s;width:175px;box-sizing:border-box;
+                  {{ $filterError ? 'background:#c53030;color:#fff;border:1.5px solid #c53030;' : 'background:#fff5f5;color:#c53030;border:1.5px solid #fc8181;' }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor" stroke="none"/></svg>
+            {{ $filterError ? 'Semua Mahasiswa' : 'Mahasiswa Error' }}
+        </a>
         <span class="table-count" style="flex-shrink:0;">
             {{ $mahasiswaAll->total() }} mahasiswa
         </span>

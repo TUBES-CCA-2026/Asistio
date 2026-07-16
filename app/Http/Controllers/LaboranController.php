@@ -578,7 +578,8 @@ class LaboranController extends Controller
 
     // ── Mahasiswa — kini memilih praktikum bukan mata kuliah ───────────────
     public function mahasiswa(Request $request): View {
-        $q    = $request->input('q', '');
+        $q         = $request->input('q', '');
+        $filterError = $request->boolean('error');
         $sortValid = ['nim_mahasiswa', 'nama_mahasiswa'];
         $sort = in_array($request->input('sort'), $sortValid) ? $request->input('sort') : null;
         $dir  = $request->input('dir') === 'desc' ? 'desc' : 'asc';
@@ -595,11 +596,26 @@ class LaboranController extends Controller
                         });
                 });
             })
+            ->when($filterError, function ($query) {
+                // Mahasiswa yang melebihi batas alpa di minimal 1 kelas
+                $query->whereHas('presensi', function ($p) {
+                    $p->where('status_kehadiran', 'A')
+                      ->groupBy('praktikum_id')
+                      ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
+                });
+            })
             ->orderBy($sort ?? 'nama_mahasiswa', $sort ? $dir : 'asc')
             ->paginate(10)
             ->withQueryString();
 
-        return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q', 'sort', 'dir'));
+        // Hitung total mahasiswa bermasalah untuk label tombol
+        $jumlahError = Mahasiswa::whereHas('presensi', function ($p) {
+            $p->where('status_kehadiran', 'A')
+              ->groupBy('praktikum_id')
+              ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
+        })->count();
+
+        return view('laboran.mahasiswa.index', compact('mahasiswaAll', 'q', 'sort', 'dir', 'filterError', 'jumlahError'));
     }
     public function mahasiswaStore(Request $request): RedirectResponse {
         $v = $request->validate([
