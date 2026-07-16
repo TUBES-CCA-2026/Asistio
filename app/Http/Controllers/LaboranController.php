@@ -477,14 +477,47 @@ class LaboranController extends Controller
     }
  
     // ── Asisten ────────────────────────────────────────────────────────────
-    public function asisten(): View {
-        return view('laboran.asisten.index', [
-            'asistenAll' => Asisten::with([
+    public function asisten(Request $request): View {
+        $q    = $request->input('q', '');
+        $sort = in_array($request->input('sort'), ['nama_asisten','nim'])
+            ? $request->input('sort')
+            : null;
+        $dir  = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        $asistenAll = Asisten::with([
                 'user',
                 'praktikum.mataKuliah',
                 'praktikumSebagaiAsisten2.mataKuliah',
-            ])->latest()->get(),
-        ]);
+            ])
+            ->when($q, fn($query) => $query->where(function ($sub) use ($q) {
+                $sub->where('nama_asisten', 'like', "%{$q}%")
+                    ->orWhere('nim', 'like', "%{$q}%")
+                    // Cari berdasarkan username
+                    ->orWhereHas('user', fn($u) =>
+                        $u->where('username', 'like', "%{$q}%")
+                    )
+                    // Cari berdasarkan kelas yang didampingi (sebagai Asisten 1)
+                    ->orWhereHas('praktikum', fn($p) =>
+                        $p->where('nama_kelas', 'like', "%{$q}%")
+                          ->orWhereHas('mataKuliah', fn($mk) =>
+                              $mk->where('kode_mk',  'like', "%{$q}%")
+                                 ->orWhere('nama_mk', 'like', "%{$q}%")
+                          )
+                    )
+                    // Cari berdasarkan kelas yang didampingi (sebagai Asisten 2)
+                    ->orWhereHas('praktikumSebagaiAsisten2', fn($p) =>
+                        $p->where('nama_kelas', 'like', "%{$q}%")
+                          ->orWhereHas('mataKuliah', fn($mk) =>
+                              $mk->where('kode_mk',  'like', "%{$q}%")
+                                 ->orWhere('nama_mk', 'like', "%{$q}%")
+                          )
+                    );
+            }))
+            ->orderBy($sort ?? 'nama_asisten', $sort ? $dir : 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('laboran.asisten.index', compact('asistenAll', 'q', 'sort', 'dir'));
     }
     public function asistenStore(Request $request): RedirectResponse {
         $v = $request->validate([
