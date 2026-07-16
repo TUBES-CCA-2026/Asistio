@@ -586,8 +586,13 @@ class LaboranController extends Controller
         $mahasiswaAll = Mahasiswa::with('praktikum.mataKuliah')
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
-                    $sub->where('nim_mahasiswa', 'like', "%{$q}%")
-                        ->orWhere('nama_mahasiswa', 'like', "%{$q}%");
+                    $sub->where('nim_mahasiswa',  'like', "%{$q}%")
+                        ->orWhere('nama_mahasiswa', 'like', "%{$q}%")
+                        ->orWhereHas('praktikum', function ($p) use ($q) {
+                            $p->where('nama_kelas', 'like', "%{$q}%")
+                              ->orWhereHas('mataKuliah', fn($m) => $m->where('nama_mk',  'like', "%{$q}%")
+                                                                      ->orWhere('kode_mk', 'like', "%{$q}%"));
+                        });
                 });
             })
             ->orderBy($sort ?? 'nama_mahasiswa', $sort ? $dir : 'asc')
