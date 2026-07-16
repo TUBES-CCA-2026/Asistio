@@ -137,8 +137,8 @@ class LaboranController extends Controller
     }
     public function kelasStore(Request $request): RedirectResponse {
         $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-        $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
-        $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
+        $mulaiValid   = ['07:00','08:00','09:00','09:40','10:00','10:30','11:00','13:00','14:00','14:30','15:00','15:40','16:00'];
+        $selesaiValid = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20'];
 
         $v = $request->validate([
             'mata_kuliah_id' => ['required','exists:mata_kuliah,id'],
@@ -156,6 +156,64 @@ class LaboranController extends Controller
             $v['jadwal'] = $v['hari'] . ', ' . $v['jam_mulai'] . '–' . $v['jam_selesai'];
         } elseif (!empty($v['hari'])) {
             $v['jadwal'] = $v['hari'];
+        }
+
+        // ── Cek tabrakan jadwal ───────────────────────────────────────
+        if (!empty($v['hari']) && !empty($v['jam_mulai']) && !empty($v['jam_selesai'])) {
+            $mulai   = $v['jam_mulai'];
+            $selesai = $v['jam_selesai'];
+
+            // Query dasar: hari sama + rentang jam overlap (bukan hanya jam persis sama)
+            // Overlap: mulai_baru < selesai_lama AND selesai_baru > mulai_lama
+            $baseQuery = fn($q, $excludeId = null) => $q
+                ->where('hari', $v['hari'])
+                ->where('jam_mulai',   '<', $selesai)
+                ->where('jam_selesai', '>', $mulai)
+                ->when($excludeId, fn($q2) => $q2->where('id','!=',$excludeId))
+                ->with('mataKuliah');
+
+            // 1. Tabrakan ruangan
+            if (!empty($v['ruangan_id'])) {
+                $tabRuangan = $baseQuery(
+                    Praktikum::where('ruangan_id', $v['ruangan_id'])
+                )->first();
+                if ($tabRuangan) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '🏫 <strong>Ruangan sudah terpakai</strong> oleh kelas <strong>' .
+                        e($tabRuangan->mataKuliah?->nama_mk) . ' — ' . e($tabRuangan->nama_kelas) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                    );
+                }
+            }
+
+            // 2. Tabrakan dosen
+            if (!empty($v['dosen_id'])) {
+                $tabDosen = $baseQuery(
+                    Praktikum::where('dosen_id', $v['dosen_id'])
+                )->first();
+                if ($tabDosen) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '👨‍🏫 <strong>Dosen sudah mengajar</strong> di kelas <strong>' .
+                        e($tabDosen->mataKuliah?->nama_mk) . ' — ' . e($tabDosen->nama_kelas) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                    );
+                }
+            }
+
+            // 3. Tabrakan nama kelas (misal A1 tidak boleh ada 2 kelas A1 di jam yang sama)
+            if (!empty($v['nama_kelas'])) {
+                $tabKelas = $baseQuery(
+                    Praktikum::where('nama_kelas', $v['nama_kelas'])
+                )->first();
+                if ($tabKelas) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '🎓 <strong>Kelas ' . e($v['nama_kelas']) . ' sudah ada</strong> yang dijadwalkan ' .
+                        'di mata kuliah <strong>' . e($tabKelas->mataKuliah?->nama_mk) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) .
+                        '. Mahasiswa kelas ' . e($v['nama_kelas']) . ' akan bingung.'
+                    );
+                }
+            }
         }
 
         Praktikum::create($v);
@@ -182,8 +240,8 @@ class LaboranController extends Controller
     /** Ganti/tambah/hilangkan Asisten 1 & 2 untuk kelas ini */
     public function kelasUpdate(Request $request, Praktikum $praktikum): RedirectResponse {
         $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-        $mulaiValid   = ['07:00','09:40','10:30','13:00','14:30','15:40'];
-        $selesaiValid = ['09:30','10:20','12:10','14:20','15:30','18:10','18:20'];
+        $mulaiValid   = ['07:00','08:00','09:00','09:40','10:00','10:30','11:00','13:00','14:00','14:30','15:00','15:40','16:00'];
+        $selesaiValid = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20'];
 
         $v = $request->validate([
             'hari'        => ['required', 'in:' . implode(',', $hariValid)],
@@ -212,6 +270,63 @@ class LaboranController extends Controller
             $v['jadwal'] = $v['hari'];
         } else {
             $v['jadwal'] = null;
+        }
+
+        // ── Cek tabrakan jadwal (kecuali kelas ini sendiri) ──────────
+        if (!empty($v['hari']) && !empty($v['jam_mulai']) && !empty($v['jam_selesai'])) {
+            $mulai   = $v['jam_mulai'];
+            $selesai = $v['jam_selesai'];
+            $selfId  = $praktikum->id;
+
+            $baseQuery = fn($q) => $q
+                ->where('hari', $v['hari'])
+                ->where('jam_mulai',   '<', $selesai)
+                ->where('jam_selesai', '>', $mulai)
+                ->where('id', '!=', $selfId)
+                ->with('mataKuliah');
+
+            // 1. Tabrakan ruangan
+            if (!empty($v['ruangan_id'])) {
+                $tabRuangan = $baseQuery(
+                    Praktikum::where('ruangan_id', $v['ruangan_id'])
+                )->first();
+                if ($tabRuangan) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '🏫 <strong>Ruangan sudah terpakai</strong> oleh kelas <strong>' .
+                        e($tabRuangan->mataKuliah?->nama_mk) . ' — ' . e($tabRuangan->nama_kelas) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                    );
+                }
+            }
+
+            // 2. Tabrakan dosen
+            if (!empty($v['dosen_id'])) {
+                $tabDosen = $baseQuery(
+                    Praktikum::where('dosen_id', $v['dosen_id'])
+                )->first();
+                if ($tabDosen) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '👨‍🏫 <strong>Dosen sudah mengajar</strong> di kelas <strong>' .
+                        e($tabDosen->mataKuliah?->nama_mk) . ' — ' . e($tabDosen->nama_kelas) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                    );
+                }
+            }
+
+            // 3. Tabrakan nama kelas
+            if (!empty($v['nama_kelas'])) {
+                $tabKelas = $baseQuery(
+                    Praktikum::where('nama_kelas', $v['nama_kelas'])
+                )->first();
+                if ($tabKelas) {
+                    return back()->withInput()->with('error_tabrakan',
+                        '🎓 <strong>Kelas ' . e($v['nama_kelas']) . ' sudah ada</strong> yang dijadwalkan ' .
+                        'di mata kuliah <strong>' . e($tabKelas->mataKuliah?->nama_mk) .
+                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) .
+                        '. Mahasiswa kelas ' . e($v['nama_kelas']) . ' akan bingung.'
+                    );
+                }
+            }
         }
 
         $praktikum->update($v);

@@ -3,6 +3,13 @@
 @section('page-title','Kelas Praktikum')
 @section('content')
 <div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Kelas</button></div>
+
+@if(session('error_tabrakan'))
+<div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;background:#fff5f5;border:1px solid #fc8181;border-radius:8px;color:#c53030;font-size:14px;display:flex;align-items:flex-start;gap:10px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>{!! session('error_tabrakan') !!}</span>
+</div>
+@endif
 <div class="card">
     <div class="table-toolbar">
         <div class="table-search-wrap">
@@ -188,4 +195,43 @@
     </select>
     </div>
 </div></div>
+@if(session('error_tabrakan'))
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('modalTambah');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        // Restore nilai hidden input yang sudah dipilih sebelumnya
+        const fields = [
+            { hid: 'hidTMK',       vis: 'cariTMK',       store: '__dataTMK',       key: 'mata_kuliah_id' },
+            { hid: 'hidTHari',     vis: 'cariTHari',     store: '__dataTHari',     key: 'hari' },
+            { hid: 'hidTJamMulai', vis: 'cariTJamMulai', store: '__dataTJamMulai', key: 'jam_mulai' },
+            { hid: 'hidTJamSelesai',vis:'cariTJamSelesai',store: '__dataTJamSelesai',key:'jam_selesai'},
+            { hid: 'hidTRuangan',  vis: 'cariTRuangan',  store: '__dataTRuangan',  key: 'ruangan_id' },
+            { hid: 'hidTDosen',    vis: 'cariTDosen',    store: '__dataTDosen',    key: 'dosen_id' },
+            { hid: 'hidTA1',       vis: 'cariTA1',       store: '__dataTAsisten',  key: 'asisten_id' },
+            { hid: 'hidTA2',       vis: 'cariTA2',       store: '__dataTAsisten',  key: 'asisten2_id' },
+        ];
+        const old = @json(session()->getOldInput() ?? []);
+        fields.forEach(function (f) {
+            const val = old[f.key];
+            if (!val) return;
+            const hidEl = document.getElementById(f.hid);
+            const visEl = document.getElementById(f.vis);
+            const opt   = document.querySelector('#' + f.store + ' option[value="' + val + '"]');
+            if (hidEl) hidEl.value = val;
+            if (visEl && opt) visEl.value = opt.dataset.label;
+        });
+
+        // Restore nama_kelas (input teks biasa)
+        const namaKelasEl = document.querySelector('#modalTambah input[name="nama_kelas"]');
+        if (namaKelasEl && old['nama_kelas']) namaKelasEl.value = old['nama_kelas'];
+    }
+});
+</script>
+@endpush
+@endif
 @endsection

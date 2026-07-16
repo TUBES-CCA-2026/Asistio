@@ -63,12 +63,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Klik di luar modal (pada overlay) juga menutup
+    // KECUALI jika klik berasal dari dalam .search-results (dropdown combobox)
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function (e) {
-            if (e.target === this) {
-                this.classList.remove('open');
-                document.body.style.overflow = '';
-            }
+            if (e.target !== this) return;
+            // Pastikan tidak ada dropdown combobox yang sedang terbuka
+            const adaDropdownTerbuka = document.querySelector('.search-results.open');
+            if (adaDropdownTerbuka) return;
+            this.classList.remove('open');
+            document.body.style.overflow = '';
         });
     });
 
@@ -173,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     item.addEventListener('mousedown', function (e) {
                         e.preventDefault();
+                        e.stopPropagation();
                         hiddenEl.value = d.value;
                         inputEl.value  = d.label;
                         focusedIdx = -1;
