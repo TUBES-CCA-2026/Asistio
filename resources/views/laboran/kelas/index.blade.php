@@ -16,21 +16,28 @@
 @endif
 <div class="card">
     <div class="table-toolbar">
-        <div class="table-search-wrap">
-            <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" class="table-search" placeholder="Cari kelas, mata kuliah, dosen...">
-        </div>
-        <span class="table-count"></span>
+        <form method="GET" action="{{ route('laboran.kelas') }}" style="display:flex;gap:8px;align-items:center;flex:1;">
+            <div class="table-search-wrap">
+                <i class="ti ti-search" aria-hidden="true"></i>
+                <input type="text" name="q" class="table-search" placeholder="Cari kelas, mata kuliah, dosen..." value="{{ $q }}">
+            </div>
+            @if($q)
+            <a href="{{ route('laboran.kelas.index') }}" class="btn btn-outline btn-sm">✕ Reset</a>
+            @endif
+        </form>
+        <span class="table-count" style="white-space:nowrap;font-size:13px;color:var(--text-muted);">
+            {{ $kelasAll->total() }} kelas
+        </span>
     </div>
-    <div class="table-wrapper"><table class="table" data-table>
+    <div class="table-wrapper"><table class="table">
     <thead><tr>
-        <th data-col="0">Kelas</th>
-        <th data-col="1">Mata Kuliah</th>
-        <th data-col="2">Jadwal</th>
-        <th data-col="3">Ruangan</th>
-        <th data-col="4">Dosen</th>
-        <th data-col="5">Asisten 1</th>
-        <th data-col="6">Asisten 2</th>
+        <th>Kelas</th>
+        <th>Mata Kuliah</th>
+        <th>Jadwal</th>
+        <th>Ruangan</th>
+        <th>Dosen</th>
+        <th>Asisten 1</th>
+        <th>Asisten 2</th>
         <th>Aksi</th>
     </tr></thead>
     <tbody>
@@ -54,7 +61,13 @@
     @empty<tr><td colspan="8"><div class="empty-state"><p>Belum ada kelas praktikum.</p></div></td></tr>
     @endforelse
     </tbody>
-</table></div></div>
+</table></div>
+@if($kelasAll->hasPages())
+    <div class="card-footer">
+        {{ $kelasAll->appends(array_filter(['q' => $q]))->links() }}
+    </div>
+@endif
+</div>
 <div id="modalTambah" class="modal-overlay"><div class="modal" style="max-width:680px;">
     <div class="modal-header"><span class="modal-title">Tambah Kelas Praktikum</span><button data-modal-close="modalTambah" class="modal-close">✕</button></div>
     <div class="modal-body"><form method="POST" action="{{ route('laboran.kelas.store') }}">@csrf

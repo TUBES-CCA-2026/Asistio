@@ -126,9 +126,31 @@ class LaboranController extends Controller
     }
 
     // ── Kelas / Praktikum ──────────────────────────────────────────────────
-    public function kelas(): View {
+    public function kelas(Request $request): View {
+        $q    = $request->input('q', '');
+        $sort = in_array($request->input('sort'), ['nama_kelas','jadwal']) ? $request->input('sort') : null;
+        $dir  = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        $kelasAll = Praktikum::with(['mataKuliah','dosen','asisten','asisten2','ruangan'])
+            ->withCount('mahasiswa')
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('nama_kelas', 'like', "%{$q}%")
+                        ->orWhere('hari', 'like', "%{$q}%")
+                        ->orWhereHas('mataKuliah', fn($m) => $m->where('nama_mk', 'like', "%{$q}%"))
+                        ->orWhereHas('dosen',      fn($d) => $d->where('nama_dosen', 'like', "%{$q}%"))
+                        ->orWhereHas('ruangan',    fn($r) => $r->where('nama_ruangan', 'like', "%{$q}%"));
+                });
+            })
+            ->orderBy($sort ?? 'id', $sort ? $dir : 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('laboran.kelas.index', [
-            'kelasAll'   => Praktikum::with(['mataKuliah','dosen','asisten','ruangan'])->withCount('mahasiswa')->latest()->get(),
+            'kelasAll'   => $kelasAll,
+            'q'          => $q,
+            'sort'       => $sort,
+            'dir'        => $dir,
             'mataKuliah' => MataKuliah::orderBy('nama_mk')->get(),
             'dosenAll'   => Dosen::orderBy('nama_dosen')->get(),
             'asistenAll' => Asisten::orderBy('nama_asisten')->get(),
