@@ -562,11 +562,33 @@ class LaboranController extends Controller
     }
 
     // ── Dosen ──────────────────────────────────────────────────────────────
-    public function dosen(): View {
-        return view('laboran.dosen.index', [
-            'dosenAll' => Dosen::with(['user','praktikum.mataKuliah'])->latest()->get(),
-            'mataKuliah' => MataKuliah::orderBy('nama_mk')->get(),
-        ]);
+    public function dosen(Request $request): View {
+        $q    = $request->input('q', '');
+        $sort = in_array($request->input('sort'), ['nama_dosen', 'nidn'])
+            ? $request->input('sort')
+            : null;
+        $dir  = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        $dosenAll = Dosen::with(['user', 'praktikum.mataKuliah'])
+            ->when($q, fn($query) => $query->where(function ($sub) use ($q) {
+                $sub->where('nama_dosen', 'like', "%{$q}%")
+                    ->orWhere('nidn', 'like', "%{$q}%")
+                    ->orWhereHas('user', fn($u) =>
+                        $u->where('username', 'like', "%{$q}%")
+                    )
+                    ->orWhereHas('praktikum', fn($p) =>
+                        $p->where('nama_kelas', 'like', "%{$q}%")
+                          ->orWhereHas('mataKuliah', fn($mk) =>
+                              $mk->where('kode_mk',  'like', "%{$q}%")
+                                 ->orWhere('nama_mk', 'like', "%{$q}%")
+                          )
+                    );
+            }))
+            ->orderBy($sort ?? 'nama_dosen', $sort ? $dir : 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('laboran.dosen.index', compact('dosenAll', 'q', 'sort', 'dir'));
     }
     public function dosenStore(Request $request): RedirectResponse {
         $v = $request->validate([

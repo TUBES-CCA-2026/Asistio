@@ -7,16 +7,56 @@
     <div class="table-toolbar">
         <div class="table-search-wrap">
             <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" class="table-search" placeholder="Cari nama atau NIDN dosen...">
+            <input type="text" id="searchDosen"
+                   value="{{ $q }}"
+                   class="table-search" placeholder="Cari nama, NIDN, username, atau kelas..."
+                   autocomplete="off">
         </div>
-        <span class="table-count"></span>
+        <span class="table-count" style="flex-shrink:0;">
+            {{ $dosenAll->total() }} dosen
+        </span>
     </div>
-    <div class="table-wrapper"><table class="table" data-table>
+    <script>
+    (function () {
+        const input = document.getElementById('searchDosen');
+        const base  = '{{ route('laboran.dosen') }}';
+        let timer;
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                const q      = input.value.trim();
+                const params = new URLSearchParams();
+                if (q)                          params.set('q', q);
+                if ('{{ $sort }}')              params.set('sort', '{{ $sort }}');
+                if ('{{ $dir }}' !== 'asc')     params.set('dir', '{{ $dir }}');
+                window.location.href = params.toString() ? base + '?' + params.toString() : base;
+            }, 400);
+        });
+        input.setSelectionRange(input.value.length, input.value.length);
+    })();
+    </script>
+    @php
+        $sortUrl = fn(string $kolom) => route('laboran.dosen', array_filter([
+            'q'    => $q ?: null,
+            'sort' => $kolom,
+            'dir'  => ($sort === $kolom && $dir === 'asc') ? 'desc' : 'asc',
+        ]));
+        $isAktif = fn(string $kolom) => $sort === $kolom;
+    @endphp
+    <div class="table-wrapper"><table class="table">
     <thead><tr>
-        <th data-col="0">Nama Dosen</th>
-        <th data-col="1">NIDN</th>
+        <th style="cursor:pointer;user-select:none;white-space:nowrap;"
+            class="{{ $isAktif('nama_dosen') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
+            onclick="window.location='{{ $sortUrl('nama_dosen') }}'">
+            Nama Dosen <span class="sort-icon">{{ $isAktif('nama_dosen') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+        </th>
+        <th style="cursor:pointer;user-select:none;white-space:nowrap;"
+            class="{{ $isAktif('nidn') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
+            onclick="window.location='{{ $sortUrl('nidn') }}'">
+            NIDN <span class="sort-icon">{{ $isAktif('nidn') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+        </th>
         <th>Kelas Diampu</th>
-        <th data-col="3">Username</th>
+        <th>Username</th>
         <th>Aksi</th>
     </tr></thead>
     <tbody>
@@ -46,10 +86,19 @@
             </div>
         </td>
     </tr>
-    @empty<tr><td colspan="5"><div class="empty-state"><p>Belum ada dosen.</p></div></td></tr>
+    @empty
+    <tr><td colspan="5"><div class="empty-state"><p>{{ $q ? 'Tidak ada dosen dengan nama, NIDN, atau kelas "'.$q.'".' : 'Belum ada dosen.' }}</p></div></td></tr>
     @endforelse
     </tbody>
-</table></div></div>
+    </table></div>
+
+    {{-- Pagination --}}
+    @if($dosenAll->hasPages())
+    <div style="padding:12px 16px;border-top:1px solid var(--border);">
+        {{ $dosenAll->appends(['q' => $q, 'sort' => $sort, 'dir' => $dir])->links() }}
+    </div>
+    @endif
+</div>
 
 {{-- Modal Tambah Dosen --}}
 <div id="modalTambah" class="modal-overlay"><div class="modal">
@@ -85,7 +134,7 @@
     </form></div>
 </div></div>
 
-{{-- Modal Reset Password per Dosen --}}
+{{-- Modal Edit & Reset per Dosen --}}
 @foreach($dosenAll as $d)
 <div id="modalEditDosen{{ $d->id }}" class="modal-overlay"><div class="modal">
     <div class="modal-header"><span class="modal-title">Edit Data — {{ $d->nama_dosen }}</span><button data-modal-close="modalEditDosen{{ $d->id }}" class="modal-close">✕</button></div>
