@@ -45,12 +45,12 @@
     @endphp
     <div class="table-wrapper"><table class="table">
     <thead><tr>
-        <th style="cursor:pointer;user-select:none;white-space:nowrap;"
+        <th data-col="nama" style="cursor:pointer;user-select:none;white-space:nowrap;"
             class="{{ $isAktif('nama_dosen') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
             onclick="window.location='{{ $sortUrl('nama_dosen') }}'">
             Nama Dosen <span class="sort-icon">{{ $isAktif('nama_dosen') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
         </th>
-        <th style="cursor:pointer;user-select:none;white-space:nowrap;"
+        <th data-col="nidn" style="cursor:pointer;user-select:none;white-space:nowrap;"
             class="{{ $isAktif('nidn') ? ($dir === 'asc' ? 'sort-asc' : 'sort-desc') : '' }}"
             onclick="window.location='{{ $sortUrl('nidn') }}'">
             NIDN <span class="sort-icon">{{ $isAktif('nidn') ? ($dir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
