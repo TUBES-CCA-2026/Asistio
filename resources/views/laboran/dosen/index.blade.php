@@ -33,6 +33,7 @@
             }, 400);
         });
         input.setSelectionRange(input.value.length, input.value.length);
+        input.focus();
     })();
     </script>
     @php
