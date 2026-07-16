@@ -6,8 +6,12 @@
 <div class="page-toolbar"><a href="{{ route('laboran.kelas') }}" class="btn btn-outline">← Kembali ke Kelas Praktikum</a></div>
 
 @if(session('error_tabrakan'))
-<div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;background:#fff5f5;border:1px solid #fc8181;border-radius:8px;color:#c53030;font-size:14px;display:flex;align-items:flex-start;gap:10px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+<div class="alert alert-error" style="margin-bottom:16px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="13"/>
+        <circle cx="12" cy="16.5" r="0.5" fill="currentColor" stroke="none"/>
+    </svg>
     <span>{!! session('error_tabrakan') !!}</span>
 </div>
 @endif

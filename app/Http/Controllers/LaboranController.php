@@ -179,9 +179,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabRuangan) {
                     return back()->withInput()->with('error_tabrakan',
-                        '🏫 <strong>Ruangan sudah terpakai</strong> oleh kelas <strong>' .
-                        e($tabRuangan->mataKuliah?->nama_mk) . ' — ' . e($tabRuangan->nama_kelas) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                        'Ruangan sudah digunakan kelas <strong>' .
+                        e($tabRuangan->mataKuliah?->nama_mk) . ' ' . e($tabRuangan->nama_kelas) .
+                        '</strong> pada ' . e($tabRuangan->hari) . ', ' .
+                        e($tabRuangan->jam_mulai) . '&ndash;' . e($tabRuangan->jam_selesai) . '.'
                     );
                 }
             }
@@ -193,9 +194,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabDosen) {
                     return back()->withInput()->with('error_tabrakan',
-                        '👨‍🏫 <strong>Dosen sudah mengajar</strong> di kelas <strong>' .
-                        e($tabDosen->mataKuliah?->nama_mk) . ' — ' . e($tabDosen->nama_kelas) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                        'Dosen sudah mengajar di kelas <strong>' .
+                        e($tabDosen->mataKuliah?->nama_mk) . ' ' . e($tabDosen->nama_kelas) .
+                        '</strong> pada ' . e($tabDosen->hari) . ', ' .
+                        e($tabDosen->jam_mulai) . '&ndash;' . e($tabDosen->jam_selesai) . '.'
                     );
                 }
             }
@@ -207,10 +209,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabKelas) {
                     return back()->withInput()->with('error_tabrakan',
-                        '🎓 <strong>Kelas ' . e($v['nama_kelas']) . ' sudah ada</strong> yang dijadwalkan ' .
+                        'Kelas <strong>' . e($v['nama_kelas']) . '</strong> sudah terjadwal ' .
                         'di mata kuliah <strong>' . e($tabKelas->mataKuliah?->nama_mk) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) .
-                        '. Mahasiswa kelas ' . e($v['nama_kelas']) . ' akan bingung.'
+                        '</strong> pada ' . e($tabKelas->hari) . ', ' .
+                        e($tabKelas->jam_mulai) . '&ndash;' . e($tabKelas->jam_selesai) . '.'
                     );
                 }
             }
@@ -292,9 +294,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabRuangan) {
                     return back()->withInput()->with('error_tabrakan',
-                        '🏫 <strong>Ruangan sudah terpakai</strong> oleh kelas <strong>' .
-                        e($tabRuangan->mataKuliah?->nama_mk) . ' — ' . e($tabRuangan->nama_kelas) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                        'Ruangan sudah digunakan kelas <strong>' .
+                        e($tabRuangan->mataKuliah?->nama_mk) . ' ' . e($tabRuangan->nama_kelas) .
+                        '</strong> pada ' . e($tabRuangan->hari) . ', ' .
+                        e($tabRuangan->jam_mulai) . '&ndash;' . e($tabRuangan->jam_selesai) . '.'
                     );
                 }
             }
@@ -306,9 +309,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabDosen) {
                     return back()->withInput()->with('error_tabrakan',
-                        '👨‍🏫 <strong>Dosen sudah mengajar</strong> di kelas <strong>' .
-                        e($tabDosen->mataKuliah?->nama_mk) . ' — ' . e($tabDosen->nama_kelas) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) . '.'
+                        'Dosen sudah mengajar di kelas <strong>' .
+                        e($tabDosen->mataKuliah?->nama_mk) . ' ' . e($tabDosen->nama_kelas) .
+                        '</strong> pada ' . e($tabDosen->hari) . ', ' .
+                        e($tabDosen->jam_mulai) . '&ndash;' . e($tabDosen->jam_selesai) . '.'
                     );
                 }
             }
@@ -320,10 +324,10 @@ class LaboranController extends Controller
                 )->first();
                 if ($tabKelas) {
                     return back()->withInput()->with('error_tabrakan',
-                        '🎓 <strong>Kelas ' . e($v['nama_kelas']) . ' sudah ada</strong> yang dijadwalkan ' .
+                        'Kelas <strong>' . e($v['nama_kelas']) . '</strong> sudah terjadwal ' .
                         'di mata kuliah <strong>' . e($tabKelas->mataKuliah?->nama_mk) .
-                        '</strong> pada ' . e($v['hari']) . ' ' . e($mulai) . '–' . e($selesai) .
-                        '. Mahasiswa kelas ' . e($v['nama_kelas']) . ' akan bingung.'
+                        '</strong> pada ' . e($tabKelas->hari) . ', ' .
+                        e($tabKelas->jam_mulai) . '&ndash;' . e($tabKelas->jam_selesai) . '.'
                     );
                 }
             }
