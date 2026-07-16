@@ -16,19 +16,33 @@
 @endif
 <div class="card">
     <div class="table-toolbar">
-        <form method="GET" action="{{ route('laboran.kelas') }}" style="display:flex;gap:8px;align-items:center;flex:1;">
-            <div class="table-search-wrap">
-                <i class="ti ti-search" aria-hidden="true"></i>
-                <input type="text" name="q" class="table-search" placeholder="Cari kelas, mata kuliah, dosen..." value="{{ $q }}">
-            </div>
-            @if($q)
-            <a href="{{ route('laboran.kelas.index') }}" class="btn btn-outline btn-sm">✕ Reset</a>
-            @endif
-        </form>
+        <div class="table-search-wrap">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="searchKelas"
+                   value="{{ $q }}"
+                   class="table-search" placeholder="Cari kelas, mata kuliah, dosen..."
+                   autocomplete="off">
+        </div>
         <span class="table-count" style="white-space:nowrap;font-size:13px;color:var(--text-muted);">
             {{ $kelasAll->total() }} kelas
         </span>
     </div>
+    <script>
+    (function () {
+        const input = document.getElementById('searchKelas');
+        const base  = '{{ route('laboran.kelas') }}';
+        let timer;
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                const q = input.value.trim();
+                window.location.href = q ? base + '?q=' + encodeURIComponent(q) : base;
+            }, 400);
+        });
+        input.setSelectionRange(input.value.length, input.value.length);
+        input.focus();
+    })();
+    </script>
     <div class="table-wrapper"><table class="table">
     <thead><tr>
         <th>Kelas</th>

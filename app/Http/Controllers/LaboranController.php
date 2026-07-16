@@ -139,7 +139,9 @@ class LaboranController extends Controller
                         ->orWhere('hari', 'like', "%{$q}%")
                         ->orWhereHas('mataKuliah', fn($m) => $m->where('nama_mk', 'like', "%{$q}%"))
                         ->orWhereHas('dosen',      fn($d) => $d->where('nama_dosen', 'like', "%{$q}%"))
-                        ->orWhereHas('ruangan',    fn($r) => $r->where('nama_ruangan', 'like', "%{$q}%"));
+                        ->orWhereHas('ruangan',    fn($r) => $r->where('nama_ruangan', 'like', "%{$q}%"))
+                        ->orWhereHas('asisten',    fn($a) => $a->where('nama_asisten', 'like', "%{$q}%"))
+                        ->orWhereHas('asisten2',   fn($a) => $a->where('nama_asisten', 'like', "%{$q}%"));
                 });
             })
             ->orderBy($sort ?? 'id', $sort ? $dir : 'asc')
