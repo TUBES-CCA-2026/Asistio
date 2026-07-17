@@ -507,12 +507,15 @@ class LaboranController extends Controller
         foreach ($rows as $index => $row) {
             $nomorBaris = $index + 2;
 
-            // Kolom: 0=kode_mk, 1=nama_kelas, 2=hari, 3=jam_mulai, 4=jam_selesai
-            $kodeMk    = isset($row[0]) ? trim((string) $row[0]) : '';
-            $namaKelas = isset($row[1]) ? trim((string) $row[1]) : '';
-            $hari      = isset($row[2]) ? trim((string) $row[2]) : '';
-            $jamMulai  = isset($row[3]) ? trim((string) $row[3]) : '';
-            $jamSelesai= isset($row[4]) ? trim((string) $row[4]) : '';
+            $kodeMk     = isset($row[0]) ? trim((string) $row[0]) : '';
+            $namaKelas  = isset($row[1]) ? trim((string) $row[1]) : '';
+            $hari       = isset($row[2]) ? trim((string) $row[2]) : '';
+            $jamMulai   = isset($row[3]) ? trim((string) $row[3]) : '';
+            $jamSelesai = isset($row[4]) ? trim((string) $row[4]) : '';
+            $namaDosen  = isset($row[5]) ? trim((string) $row[5]) : '';
+            $namaA1     = isset($row[6]) ? trim((string) $row[6]) : '';
+            $namaA2     = isset($row[7]) ? trim((string) $row[7]) : '';
+            $namaRuangan= isset($row[8]) ? trim((string) $row[8]) : '';
 
             if ($kodeMk === '' && $namaKelas === '') continue;
 
@@ -531,7 +534,6 @@ class LaboranController extends Controller
                 $dilewati++; continue;
             }
 
-            // Validasi opsional: hari & jam
             if ($hari !== '' && !in_array($hari, $hariValid)) {
                 $errors[] = "Baris {$nomorBaris}: Hari '{$hari}' tidak valid, dilewati.";
                 $dilewati++; continue;
@@ -545,7 +547,6 @@ class LaboranController extends Controller
                 $dilewati++; continue;
             }
 
-            // Cek duplikat: kode_mk + nama_kelas sudah ada
             $sudahAda = Praktikum::where('mata_kuliah_id', $mk->id)
                 ->where('nama_kelas', $namaKelas)
                 ->exists();
@@ -553,12 +554,28 @@ class LaboranController extends Controller
                 $duplikat++; continue;
             }
 
+            // Resolve nama → ID (tidak cocok → null, tidak error)
+            $dosenId   = $namaDosen  ? Dosen::where('nama_dosen',   $namaDosen)->value('id')   : null;
+            $asistenId = $namaA1     ? Asisten::where('nama_asisten',$namaA1)->value('id')      : null;
+            $asisten2Id= $namaA2     ? Asisten::where('nama_asisten',$namaA2)->value('id')      : null;
+            $ruanganId = $namaRuangan? Ruangan::where('nama_ruangan',$namaRuangan)->value('id') : null;
+
+            // Pesan info jika nama diisi tapi tidak cocok
+            if ($namaDosen   && !$dosenId)   $errors[] = "Baris {$nomorBaris}: Dosen '{$namaDosen}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaA1      && !$asistenId) $errors[] = "Baris {$nomorBaris}: Asisten 1 '{$namaA1}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaA2      && !$asisten2Id)$errors[] = "Baris {$nomorBaris}: Asisten 2 '{$namaA2}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaRuangan && !$ruanganId) $errors[] = "Baris {$nomorBaris}: Ruangan '{$namaRuangan}' tidak ditemukan — kolom dikosongkan.";
+
             $data = [
                 'mata_kuliah_id' => $mk->id,
                 'nama_kelas'     => $namaKelas,
-                'hari'           => $hari ?: null,
-                'jam_mulai'      => $jamMulai ?: null,
+                'hari'           => $hari       ?: null,
+                'jam_mulai'      => $jamMulai   ?: null,
                 'jam_selesai'    => $jamSelesai ?: null,
+                'dosen_id'       => $dosenId,
+                'asisten_id'     => $asistenId,
+                'asisten2_id'    => $asisten2Id,
+                'ruangan_id'     => $ruanganId,
             ];
 
             if ($hari && $jamMulai && $jamSelesai) {
@@ -969,13 +986,15 @@ class LaboranController extends Controller
         $headerFound = false;
 
         foreach ($sheet->sheetData->row as $row) {
-            $rowData = [0 => '', 1 => '', 2 => '', 3 => '', 4 => ''];
+            // 0=kode_mk, 1=nama_kelas, 2=hari, 3=jam_mulai, 4=jam_selesai
+            // 5=nama_dosen, 6=nama_asisten1, 7=nama_asisten2, 8=nama_ruangan
+            $rowData = [0=>'',1=>'',2=>'',3=>'',4=>'',5=>'',6=>'',7=>'',8=>''];
 
             foreach ($row->c as $cell) {
-                $ref      = (string) $cell['r'];
+                $ref       = (string) $cell['r'];
                 $colLetter = preg_replace('/[^A-Za-z]/', '', $ref);
-                $colIndex = $this->kolomKeIndex($colLetter);
-                $type     = (string) $cell['t'];
+                $colIndex  = $this->kolomKeIndex($colLetter);
+                $type      = (string) $cell['t'];
 
                 $value = '';
                 if (isset($cell->v)) {
@@ -993,9 +1012,7 @@ class LaboranController extends Controller
                     $value = $val2;
                 }
 
-                // Kolom jam (3 = jam mulai, 4 = jam selesai) bisa tersimpan
-                // sebagai angka desimal jika user memformat sel sebagai Time di Excel.
-                // Konversi desimal → string HH:MM supaya in_array bekerja.
+                // Kolom jam: konversi desimal Excel → HH:MM
                 if (in_array($colIndex, [3, 4]) && is_numeric($value) && $value !== '') {
                     $totalMenit = round((float) $value * 24 * 60);
                     $jam        = intdiv($totalMenit, 60);
@@ -1003,7 +1020,7 @@ class LaboranController extends Controller
                     $value      = str_pad($jam, 2, '0', STR_PAD_LEFT) . ':' . str_pad($menit, 2, '0', STR_PAD_LEFT);
                 }
 
-                if ($colIndex <= 4) {
+                if ($colIndex <= 8) {
                     $rowData[$colIndex] = trim($value);
                 }
             }
