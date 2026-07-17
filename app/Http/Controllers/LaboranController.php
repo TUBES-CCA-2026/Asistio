@@ -554,17 +554,17 @@ class LaboranController extends Controller
                 $duplikat++; continue;
             }
 
-            // Resolve nama → ID (tidak cocok → null, tidak error)
-            $dosenId   = $namaDosen  ? Dosen::where('nama_dosen',   $namaDosen)->value('id')   : null;
-            $asistenId = $namaA1     ? Asisten::where('nama_asisten',$namaA1)->value('id')      : null;
-            $asisten2Id= $namaA2     ? Asisten::where('nama_asisten',$namaA2)->value('id')      : null;
-            $ruanganId = $namaRuangan? Ruangan::where('nama_ruangan',$namaRuangan)->value('id') : null;
+            // Resolve nama → ID dengan pencarian fleksibel (contains)
+            $dosenId    = $namaDosen   ? Dosen::where('nama_dosen',   'like', '%' . $namaDosen   . '%')->value('id') : null;
+            $asistenId  = $namaA1      ? Asisten::where('nama_asisten','like', '%' . $namaA1      . '%')->value('id') : null;
+            $asisten2Id = $namaA2      ? Asisten::where('nama_asisten','like', '%' . $namaA2      . '%')->value('id') : null;
+            $ruanganId  = $namaRuangan ? Ruangan::where('nama_ruangan','like', '%' . $namaRuangan . '%')->value('id') : null;
 
             // Pesan info jika nama diisi tapi tidak cocok
-            if ($namaDosen   && !$dosenId)   $errors[] = "Baris {$nomorBaris}: Dosen '{$namaDosen}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaA1      && !$asistenId) $errors[] = "Baris {$nomorBaris}: Asisten 1 '{$namaA1}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaA2      && !$asisten2Id)$errors[] = "Baris {$nomorBaris}: Asisten 2 '{$namaA2}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaRuangan && !$ruanganId) $errors[] = "Baris {$nomorBaris}: Ruangan '{$namaRuangan}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaDosen   && !$dosenId)    $errors[] = "Baris {$nomorBaris}: Dosen '{$namaDosen}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaA1      && !$asistenId)  $errors[] = "Baris {$nomorBaris}: Asisten 1 '{$namaA1}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaA2      && !$asisten2Id) $errors[] = "Baris {$nomorBaris}: Asisten 2 '{$namaA2}' tidak ditemukan — kolom dikosongkan.";
+            if ($namaRuangan && !$ruanganId)  $errors[] = "Baris {$nomorBaris}: Ruangan '{$namaRuangan}' tidak ditemukan — kolom dikosongkan.";
 
             $data = [
                 'mata_kuliah_id' => $mk->id,
@@ -602,53 +602,17 @@ class LaboranController extends Controller
      * Kolom: Kode MK | Nama Kelas | Hari | Jam Mulai | Jam Selesai
      * Baris contoh diisi otomatis dari data MK yang sudah ada di DB.
      */
-    public function kelasTemplateExcel(): \Symfony\Component\HttpFoundation\Response
+    public function kelasTemplateExcel(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
-        $xlsx = new \App\Support\SimpleXlsxWriter();
+        $path = public_path('templates/template_import_kelas.xlsx');
 
-        $header = ['Kode MK', 'Nama Kelas', 'Hari', 'Jam Mulai', 'Jam Selesai'];
-
-        // Contoh 1: pakai MK pertama yang ada di DB supaya user tidak salah format kode MK
-        $contohMk = MataKuliah::first();
-        $contohRows = [
-            [
-                $contohMk?->kode_mk ?? 'IF-BD',
-                'A1',
-                'Senin',
-                '07:00',
-                '09:30',
-            ],
-            [
-                $contohMk?->kode_mk ?? 'IF-BD',
-                'A2',
-                'Selasa',
-                '09:40',
-                '12:10',
-            ],
-        ];
-
-        $xlsx->addSheet('Import Kelas', $header, $contohRows);
-
-        // Sheet kedua: referensi nilai valid
-        $refHeader = ['Hari Valid', 'Jam Mulai Valid', 'Jam Selesai Valid', 'Kode MK Tersedia'];
-        $hariList  = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu',''];
-        $mulaiList = ['07:00','08:00','09:00','09:40','10:00','10:30','11:00','13:00','14:00','14:30','15:00','15:40','16:00',''];
-        $selesaiList = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20',''];
-        $mkList    = MataKuliah::orderBy('kode_mk')->pluck('kode_mk')->toArray();
-
-        $maxLen = max(count($hariList), count($mulaiList), count($selesaiList), count($mkList));
-        $refRows = [];
-        for ($i = 0; $i < $maxLen; $i++) {
-            $refRows[] = [
-                $hariList[$i]    ?? '',
-                $mulaiList[$i]   ?? '',
-                $selesaiList[$i] ?? '',
-                $mkList[$i]      ?? '',
-            ];
+        if (!file_exists($path)) {
+            abort(404, 'File template tidak ditemukan. Pastikan file ada di public/templates/');
         }
-        $xlsx->addSheet('Referensi', $refHeader, $refRows);
 
-        return $xlsx->download('template_import_kelas.xlsx');
+        return response()->download($path, 'template_import_kelas.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
     
     public function asisten(Request $request): View {
@@ -900,7 +864,8 @@ class LaboranController extends Controller
         $errors   = [];
 
         foreach ($rows as $index => $row) {
-            $nomorBaris = $index + 2;
+            // Header ada di baris 4, data mulai baris 5 — sesuai template kelas
+            $nomorBaris = $index + 5;
             $nim  = isset($row[0]) ? trim((string) $row[0]) : '';
             $nama = isset($row[1]) ? trim((string) $row[1]) : '';
 
@@ -964,7 +929,9 @@ class LaboranController extends Controller
         $sharedStrings = [];
         $ssXml = $zip->getFromName('xl/sharedStrings.xml');
         if ($ssXml !== false) {
-            $ss = simplexml_load_string($ssXml);
+            // Hapus SEMUA namespace (default + prefixed) sebelum parse
+            $ssXml = preg_replace('/\s+xmlns(?::\w+)?="[^"]*"/', '', $ssXml);
+            $ss = @simplexml_load_string($ssXml);
             if ($ss) {
                 foreach ($ss->si as $si) {
                     $val = '';
@@ -978,8 +945,13 @@ class LaboranController extends Controller
         $zip->close();
         if ($sheetXml === false) return [];
 
-        $sheetXml = preg_replace('/xmlns[^=]*="[^"]*"/', '', $sheetXml);
-        $sheet    = simplexml_load_string($sheetXml);
+        // Hapus SEMUA namespace (default + prefixed) sebelum parse
+        $sheetXml = preg_replace('/\s+xmlns(?::\w+)?="[^"]*"/', '', $sheetXml);
+        // Hapus prefix pada tag dan atribut (misal mc:Ignorable, x14:xxx, dll)
+        $sheetXml = preg_replace('/<(\/?)\w+:(\w+)/', '<$1$2', $sheetXml);
+        $sheetXml = preg_replace('/\s\w+:\w+="[^"]*"/', '', $sheetXml);
+
+        $sheet = @simplexml_load_string($sheetXml);
         if (!$sheet) return [];
 
         $rows        = [];
@@ -1025,20 +997,22 @@ class LaboranController extends Controller
                 }
             }
 
-            $col0 = strtolower($rowData[0]);
+            $col0 = strtolower(trim($rowData[0]));
 
-            // Deteksi baris header — lebih fleksibel
+            // Deteksi baris header — cari baris yang kolom A berisi "kode mk" atau variasinya
             if (!$headerFound) {
                 if (
-                    str_contains($col0, 'kode') ||
                     $col0 === 'kode mk' ||
-                    $col0 === 'kode_mk'
+                    $col0 === 'kode_mk' ||
+                    str_contains($col0, 'kode mk') ||
+                    str_contains($col0, 'kode_mk')
                 ) {
                     $headerFound = true;
                 }
                 continue;
             }
 
+            // Lewati baris kosong
             if ($rowData[0] === '' && $rowData[1] === '') continue;
 
             $rows[] = $rowData;
