@@ -505,7 +505,7 @@ class LaboranController extends Controller
         $selesaiValid = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20'];
 
         foreach ($rows as $index => $row) {
-            $nomorBaris = $index + 2;
+            $nomorBaris = $index + 5;
 
             $kodeMk     = isset($row[0]) ? trim((string) $row[0]) : '';
             $namaKelas  = isset($row[1]) ? trim((string) $row[1]) : '';
@@ -554,17 +554,11 @@ class LaboranController extends Controller
                 $duplikat++; continue;
             }
 
-            // Resolve nama → ID dengan pencarian fleksibel (contains)
-            $dosenId    = $namaDosen   ? Dosen::where('nama_dosen',   'like', '%' . $namaDosen   . '%')->value('id') : null;
-            $asistenId  = $namaA1      ? Asisten::where('nama_asisten','like', '%' . $namaA1      . '%')->value('id') : null;
-            $asisten2Id = $namaA2      ? Asisten::where('nama_asisten','like', '%' . $namaA2      . '%')->value('id') : null;
-            $ruanganId  = $namaRuangan ? Ruangan::where('nama_ruangan','like', '%' . $namaRuangan . '%')->value('id') : null;
-
-            // Pesan info jika nama diisi tapi tidak cocok
-            if ($namaDosen   && !$dosenId)    $errors[] = "Baris {$nomorBaris}: Dosen '{$namaDosen}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaA1      && !$asistenId)  $errors[] = "Baris {$nomorBaris}: Asisten 1 '{$namaA1}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaA2      && !$asisten2Id) $errors[] = "Baris {$nomorBaris}: Asisten 2 '{$namaA2}' tidak ditemukan — kolom dikosongkan.";
-            if ($namaRuangan && !$ruanganId)  $errors[] = "Baris {$nomorBaris}: Ruangan '{$namaRuangan}' tidak ditemukan — kolom dikosongkan.";
+            // Resolve nama → ID: exact match dulu, fallback ke contains jika unik
+            $dosenId    = $this->resolveNama(Dosen::class,   'nama_dosen',    $namaDosen,    $nomorBaris, 'Dosen',    $errors);
+            $asistenId  = $this->resolveNama(Asisten::class, 'nama_asisten',  $namaA1,       $nomorBaris, 'Asisten 1', $errors);
+            $asisten2Id = $this->resolveNama(Asisten::class, 'nama_asisten',  $namaA2,       $nomorBaris, 'Asisten 2', $errors);
+            $ruanganId  = $this->resolveNama(Ruangan::class, 'nama_ruangan',  $namaRuangan,  $nomorBaris, 'Ruangan',  $errors);
 
             $data = [
                 'mata_kuliah_id' => $mk->id,
@@ -582,6 +576,74 @@ class LaboranController extends Controller
                 $data['jadwal'] = $hari . ', ' . $jamMulai . '–' . $jamSelesai;
             } elseif ($hari) {
                 $data['jadwal'] = $hari;
+            }
+
+            // ── Cek tabrakan (aturan sama seperti penambahan manual) ──────
+            if ($hari && $jamMulai && $jamSelesai) {
+
+                // Overlap: mulai_baru < selesai_lama AND selesai_baru > mulai_lama
+                $baseQuery = fn($q) => $q
+                    ->where('hari',        $hari)
+                    ->where('jam_mulai',   '<', $jamSelesai)
+                    ->where('jam_selesai', '>', $jamMulai)
+                    ->with('mataKuliah');
+
+                // 1. Tabrakan ruangan
+                if ($ruanganId) {
+                    $tab = $baseQuery(Praktikum::where('ruangan_id', $ruanganId))->first();
+                    if ($tab) {
+                        $errors[] = "Baris {$nomorBaris}: Ruangan sudah digunakan kelas '"
+                            . ($tab->mataKuliah?->nama_mk . ' ' . $tab->nama_kelas)
+                            . "' pada {$tab->hari}, {$tab->jam_mulai}–{$tab->jam_selesai} — dilewati.";
+                        $dilewati++; continue;
+                    }
+                }
+
+                // 2. Tabrakan dosen
+                if ($dosenId) {
+                    $tab = $baseQuery(Praktikum::where('dosen_id', $dosenId))->first();
+                    if ($tab) {
+                        $errors[] = "Baris {$nomorBaris}: Dosen sudah mengajar di kelas '"
+                            . ($tab->mataKuliah?->nama_mk . ' ' . $tab->nama_kelas)
+                            . "' pada {$tab->hari}, {$tab->jam_mulai}–{$tab->jam_selesai} — dilewati.";
+                        $dilewati++; continue;
+                    }
+                }
+
+                // 3. Tabrakan nama kelas di jam yang sama
+                $tab = $baseQuery(Praktikum::where('nama_kelas', $namaKelas))->first();
+                if ($tab) {
+                    $errors[] = "Baris {$nomorBaris}: Kelas '{$namaKelas}' sudah terjadwal di mata kuliah '"
+                        . ($tab->mataKuliah?->nama_mk)
+                        . "' pada {$tab->hari}, {$tab->jam_mulai}–{$tab->jam_selesai} — dilewati.";
+                    $dilewati++; continue;
+                }
+
+                // 4. Tabrakan asisten 1
+                if ($asistenId) {
+                    $tab = $baseQuery(Praktikum::where(function ($q) use ($asistenId) {
+                        $q->where('asisten_id', $asistenId)->orWhere('asisten2_id', $asistenId);
+                    }))->first();
+                    if ($tab) {
+                        $errors[] = "Baris {$nomorBaris}: Asisten 1 sudah mendampingi kelas '"
+                            . ($tab->mataKuliah?->nama_mk . ' ' . $tab->nama_kelas)
+                            . "' pada {$tab->hari}, {$tab->jam_mulai}–{$tab->jam_selesai} — dilewati.";
+                        $dilewati++; continue;
+                    }
+                }
+
+                // 5. Tabrakan asisten 2
+                if ($asisten2Id) {
+                    $tab = $baseQuery(Praktikum::where(function ($q) use ($asisten2Id) {
+                        $q->where('asisten_id', $asisten2Id)->orWhere('asisten2_id', $asisten2Id);
+                    }))->first();
+                    if ($tab) {
+                        $errors[] = "Baris {$nomorBaris}: Asisten 2 sudah mendampingi kelas '"
+                            . ($tab->mataKuliah?->nama_mk . ' ' . $tab->nama_kelas)
+                            . "' pada {$tab->hari}, {$tab->jam_mulai}–{$tab->jam_selesai} — dilewati.";
+                        $dilewati++; continue;
+                    }
+                }
             }
 
             Praktikum::create($data);
@@ -913,6 +975,37 @@ class LaboranController extends Controller
         ]);
     }
 
+    /**
+     * Resolve nama teks → ID model.
+     * Urutan: exact match → contains (hanya jika hasil tepat 1) → ambiguous/not found.
+     */
+    private function resolveNama(string $modelClass, string $kolom, string $nama, int $nomorBaris, string $label, array &$errors): ?int
+    {
+        if ($nama === '') return null;
+
+        // 1. Exact match (case-insensitive)
+        $exact = $modelClass::whereRaw("LOWER({$kolom}) = ?", [mb_strtolower($nama)])->get();
+        if ($exact->count() === 1) return $exact->first()->id;
+
+        // 2. Contains match
+        $like = $modelClass::where($kolom, 'like', '%' . $nama . '%')->get();
+
+        if ($like->count() === 1) {
+            // Unik — aman dipakai
+            return $like->first()->id;
+        }
+
+        if ($like->count() === 0) {
+            $errors[] = "Baris {$nomorBaris}: {$label} '{$nama}' tidak ditemukan — kolom dikosongkan.";
+            return null;
+        }
+
+        // Lebih dari 1 hasil — ambiguous
+        $namaList = $like->pluck($kolom)->join(', ');
+        $errors[] = "Baris {$nomorBaris}: {$label} '{$nama}' ambigu ({$like->count()} hasil: {$namaList}) — tulis nama lebih lengkap, kolom dikosongkan.";
+        return null;
+    }
+    
     /**
      * Baca file .xlsx untuk import kelas praktikum.
      * Menangani format jam sebagai string ("07:00") maupun
