@@ -125,6 +125,44 @@ class BackupController extends Controller
         return back()->with('success', "Database berhasil dipulihkan dari {$filename}. Semua data sebelumnya telah digantikan.");
     }
 
+    /** Download semua backup sekaligus sebagai satu file .zip */
+    public function unduhSemua(): StreamedResponse|RedirectResponse {
+        $this->pastikanFolder();
+
+        $files = collect(Storage::files($this->folder))
+            ->filter(fn($f) => $this->namaSah(basename($f)))
+            ->values();
+
+        if ($files->isEmpty()) {
+            return back()->with('error', 'Tidak ada file backup untuk diunduh.');
+        }
+
+        $namaZip = 'asistio_semua_backup_' . date('Y-m-d_H-i-s') . '.zip';
+
+        return response()->streamDownload(function () use ($files) {
+            $tmpZip = tempnam(sys_get_temp_dir(), 'backup_zip_');
+            $zip    = new \ZipArchive();
+            $zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+            foreach ($files as $filePath) {
+                $zip->addFile(Storage::path($filePath), basename($filePath));
+            }
+
+            $zip->close();
+
+            $handle = fopen($tmpZip, 'rb');
+            while (!feof($handle)) {
+                echo fread($handle, 8192);
+                flush();
+            }
+            fclose($handle);
+            @unlink($tmpZip);
+        }, $namaZip, [
+            'Content-Type'        => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="' . $namaZip . '"',
+            'Cache-Control'       => 'no-store, no-cache',
+        ]);
+    }
     /** Hapus file backup */
     public function hapus(string $filename): RedirectResponse {
         if (!$this->namaSah($filename)) {

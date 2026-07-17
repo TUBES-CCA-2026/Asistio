@@ -39,6 +39,7 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     Route::post('/kelas/{praktikum}/mahasiswa/enroll-banyak', [LaboranController::class,'kelasEnrollBanyak'])->name('kelas.mahasiswa.enroll-banyak');
     Route::delete('/kelas/{praktikum}',       [LaboranController::class,'kelasDestroy'])->name('kelas.destroy');
     Route::delete('/hapus-semua',               [\App\Http\Controllers\BackupController::class,'hapusSemua'])->name('hapus-semua');
+    Route::get('/unduh-semua',                  [\App\Http\Controllers\BackupController::class,'unduhSemua'])->name('unduh-semua');
     Route::delete('/kelas-hapus-semua',       [LaboranController::class,'kelasHapusSemua'])->name('kelas.hapus-semua'); 
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
@@ -114,6 +115,7 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
         Route::post('/pulihkan/{filename}',         [\App\Http\Controllers\BackupController::class,'pulihkan'])->name('pulihkan');
         Route::delete('/hapus/{filename}',          [\App\Http\Controllers\BackupController::class,'hapus'])->name('hapus');
         Route::delete('/hapus-semua',               [\App\Http\Controllers\BackupController::class,'hapusSemua'])->name('hapus-semua');
+        Route::get('/unduh-semua',                  [\App\Http\Controllers\BackupController::class,'unduhSemua'])->name('unduh-semua');
         Route::post('/upload',                      [\App\Http\Controllers\BackupController::class,'upload'])->name('upload');
     });
 });
