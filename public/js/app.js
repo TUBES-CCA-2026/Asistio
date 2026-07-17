@@ -156,6 +156,9 @@ document.addEventListener('DOMContentLoaded', function () {
             hiddenEl.value = d.value;
             inputEl.value  = d.label;
             tutup();
+            // Trigger change agar draft persistence menangkap perubahan
+            hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         function highlight(idx) {
@@ -1113,4 +1116,512 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
     })();
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DRAFT PERSISTENCE — halaman Edit Kelas (show.blade.php)
+    // Berbeda dari modal: ini halaman penuh, bukan modal
+    // ═══════════════════════════════════════════════════════════════════
+    (function () {
+        var currentPath = window.location.pathname;
+        if (!currentPath.includes('laboran/kelas/')) return;
+        // Pastikan ini halaman detail kelas, bukan index
+        if (currentPath === '/laboran/kelas' || currentPath === '/laboran/kelas/') return;
+
+        // Key unik per kelas berdasarkan URL (misal: draft_kelas_show_5)
+        var storageKey = 'draft_kelas_show_' + currentPath.replace(/.*\/kelas\//, '').replace(/\/$/, '');
+
+        // Semua field combobox di form edit kelas
+        var COMBOS = [
+            { name: 'hari',        visId: 'cariHari'      },
+            { name: 'jam_mulai',   visId: 'cariJamMulai'  },
+            { name: 'jam_selesai', visId: 'cariJamSelesai'},
+            { name: 'ruangan_id',  visId: 'cariRuangan'   },
+            { name: 'dosen_id',    visId: 'cariDosen'     },
+            { name: 'asisten_id',  visId: 'cariA1'        },
+            { name: 'asisten2_id', visId: 'cariA2'        },
+        ];
+
+        // Form edit kelas (PATCH)
+        var form = document.querySelector('form[action*="/kelas/"]');
+        if (!form) return;
+
+        function getInput(name) {
+            return form.querySelector('[name="' + name + '"]');
+        }
+
+        // Simpan nilai asli dari server sebelum apapun
+        var nilaiAsli = {};
+        COMBOS.forEach(function (c) {
+            var el  = getInput(c.name);
+            var vis = document.getElementById(c.visId);
+            if (el)  nilaiAsli[c.name]           = el.value;
+            if (vis) nilaiAsli['_vis_' + c.name] = vis.value;
+        });
+
+        function saveDraft() {
+            var draft = {};
+            COMBOS.forEach(function (c) {
+                var el  = getInput(c.name);
+                var vis = document.getElementById(c.visId);
+                if (el)  draft[c.name]           = el.value;
+                if (vis) draft['_vis_' + c.name] = vis.value;
+            });
+            // Simpan selalu — hapus hanya jika semua sama dengan nilai asli
+            var adaPerubahan = COMBOS.some(function (c) {
+                return draft[c.name] !== nilaiAsli[c.name];
+            });
+            if (adaPerubahan) {
+                localStorage.setItem(storageKey, JSON.stringify(draft));
+            } else {
+                localStorage.removeItem(storageKey);
+            }
+        }
+
+        // Pantau perubahan hidden input via MutationObserver
+        // karena dispatchEvent('change') kadang tidak cukup untuk semua browser
+        COMBOS.forEach(function (c) {
+            var el = getInput(c.name);
+            if (el) {
+                new MutationObserver(saveDraft).observe(el, { attributes: true, attributeFilter: ['value'] });
+            }
+        });
+
+        function restoreDraft() {
+            var raw = localStorage.getItem(storageKey);
+            if (!raw) return;
+            var draft;
+            try { draft = JSON.parse(raw); } catch (e) { return; }
+            COMBOS.forEach(function (c) {
+                var el  = getInput(c.name);
+                var vis = document.getElementById(c.visId);
+                if (el  && draft[c.name]           !== undefined) el.value  = draft[c.name];
+                if (vis && draft['_vis_' + c.name] !== undefined) vis.value = draft['_vis_' + c.name];
+            });
+        }
+
+        function clearDraft() {
+            localStorage.removeItem(storageKey);
+        }
+
+        // Hapus draft jika ada flash success
+        if (document.querySelector('.alert-success, [class*="alert"][class*="success"]')) {
+            clearDraft();
+            return;
+        }
+
+        // Auto-save saat user mengubah combobox
+        COMBOS.forEach(function (c) {
+            var el  = getInput(c.name);
+            var vis = document.getElementById(c.visId);
+            if (el) {
+                el.addEventListener('input',  saveDraft);
+                el.addEventListener('change', saveDraft);
+            }
+            if (vis) {
+                vis.addEventListener('input',  saveDraft);
+                vis.addEventListener('change', saveDraft);
+            }
+        });
+
+        // Hapus draft saat form submit
+        form.addEventListener('submit', clearDraft);
+
+        // Restore draft saat halaman dimuat — tunda agar combobox selesai init
+        setTimeout(function () {
+            restoreDraft();
+            // Setelah restore, update nilaiAsli agar tidak dianggap "tidak ada perubahan"
+            // padahal draft sudah berbeda dari server
+            // Jangan update nilaiAsli di sini — biarkan tetap nilai server
+            // supaya perbandingan tetap akurat
+        }, 200);
+
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DRAFT PERSISTENCE — modal Tambah & Edit (laboran)
+    // ═══════════════════════════════════════════════════════════════════
+    (function () {
+
+        var currentPath = window.location.pathname;
+
+        var PAGE_CONFIGS = {
+            'laboran/dosen': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_dosen','nidn','username'] },
+                edit   : { prefix: 'modalEditDosen', fields: ['nama_dosen','nidn'] },
+            },
+            'laboran/asisten': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_asisten','nim','username'] },
+                edit   : { prefix: 'modalEditAsisten', fields: ['nama_asisten','nim'] },
+            },
+            'laboran/mahasiswa': {
+                tambah : { modalId: 'modalTambah', fields: ['nim_mahasiswa','nama_mahasiswa'] },
+            },
+            'laboran/mata-kuliah': {
+                tambah : { modalId: 'modalTambah', fields: ['kode_mk','nama_mk'] },
+                edit   : { prefix: 'modalEditMK', fields: ['kode_mk','nama_mk'] },
+            },
+            'laboran/ruangan': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_ruangan'] },
+                edit   : { prefix: 'modalEditRuangan', fields: ['nama_ruangan'] },
+            },
+            'laboran/kelas': {
+                tambah : {
+                    modalId : 'modalTambah',
+                    fields  : ['nama_kelas'],
+                    combos  : [
+                        { name: 'mata_kuliah_id', visId: 'cariTMK'         },
+                        { name: 'hari',           visId: 'cariTHari'       },
+                        { name: 'jam_mulai',      visId: 'cariTJamMulai'   },
+                        { name: 'jam_selesai',    visId: 'cariTJamSelesai' },
+                        { name: 'ruangan_id',     visId: 'cariTRuangan'    },
+                        { name: 'dosen_id',       visId: 'cariTDosen'      },
+                        { name: 'asisten_id',     visId: 'cariTA1'         },
+                        { name: 'asisten2_id',    visId: 'cariTA2'         },
+                    ],
+                },
+            },
+        };
+
+        var pageKey = Object.keys(PAGE_CONFIGS).find(function (k) { return currentPath.includes(k); });
+        if (!pageKey) return;
+        var pageCfg = PAGE_CONFIGS[pageKey];
+
+        var adaSuccess = !!document.querySelector('.alert-success, [class*="alert"][class*="success"]');
+
+        function initModal(modalEl, storageKey, fields, combos) {
+            if (!modalEl) return;
+
+            function getInput(name) {
+                return modalEl.querySelector('[name="' + name + '"]');
+            }
+
+            function saveDraft() {
+                var draft = {};
+                fields.forEach(function (name) {
+                    var el = getInput(name);
+                    if (el) draft[name] = el.value;
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el) draft[c.name] = el.value;
+                        var vis = document.getElementById(c.visId);
+                        if (vis) draft['_vis_' + c.name] = vis.value;
+                    });
+                }
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (hasData) {
+                    localStorage.setItem(storageKey, JSON.stringify(draft));
+                } else {
+                    localStorage.removeItem(storageKey);
+                }
+            }
+
+            function restoreDraft() {
+                var raw = localStorage.getItem(storageKey);
+                if (!raw) return false;
+                var draft;
+                try { draft = JSON.parse(raw); } catch (e) { return false; }
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (!hasData) return false;
+                fields.forEach(function (name) {
+                    var el = getInput(name);
+                    if (el && draft[name] !== undefined) el.value = draft[name];
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el && draft[c.name] !== undefined) el.value = draft[c.name];
+                        var vis = document.getElementById(c.visId);
+                        if (vis && draft['_vis_' + c.name] !== undefined) vis.value = draft['_vis_' + c.name];
+                    });
+                }
+                return true;
+            }
+
+            function clearDraft() {
+                localStorage.removeItem(storageKey);
+            }
+
+            function resetFields() {
+                fields.forEach(function (name) {
+                    var el = getInput(name);
+                    if (el) el.value = '';
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el) el.value = '';
+                        var vis = document.getElementById(c.visId);
+                        if (vis) vis.value = '';
+                    });
+                }
+            }
+
+            if (adaSuccess) { clearDraft(); return; }
+
+            fields.forEach(function (name) {
+                var el = getInput(name);
+                if (el) {
+                    el.addEventListener('input',  saveDraft);
+                    el.addEventListener('change', saveDraft);
+                }
+            });
+            if (combos) {
+                combos.forEach(function (c) {
+                    var el = getInput(c.name);
+                    if (el) {
+                        el.addEventListener('input',  saveDraft);
+                        el.addEventListener('change', saveDraft);
+                    }
+                    var vis = document.getElementById(c.visId);
+                    if (vis) {
+                        vis.addEventListener('input',  saveDraft);
+                        vis.addEventListener('change', saveDraft);
+                    }
+                });
+            }
+
+            var form = modalEl.querySelector('form');
+            if (form) form.addEventListener('submit', clearDraft);
+
+            var raw = localStorage.getItem(storageKey);
+            if (raw) {
+                var draft;
+                try { draft = JSON.parse(raw); } catch (e) { draft = {}; }
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (hasData) {
+                    setTimeout(function () {
+                        restoreDraft();
+                        modalEl.classList.add('open');
+                        document.body.style.overflow = 'hidden';
+                    }, 100);
+                }
+            }
+
+            var wasOpen = modalEl.classList.contains('open');
+            new MutationObserver(function () {
+                var isOpen = modalEl.classList.contains('open');
+                if (wasOpen && !isOpen) {
+                    clearDraft();
+                    resetFields();
+                }
+                wasOpen = isOpen;
+            }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        if (pageCfg.tambah) {
+            var t = pageCfg.tambah;
+            initModal(
+                document.getElementById(t.modalId),
+                'draft_tambah_' + pageKey.split('/').pop(),
+                t.fields,
+                t.combos || null
+            );
+        }
+
+        if (pageCfg.edit) {
+            var cfg = pageCfg.edit;
+            document.querySelectorAll('[id^="' + cfg.prefix + '"]').forEach(function (modalEl) {
+                var recordId = modalEl.id.replace(cfg.prefix, '');
+                if (!recordId) return;
+                var storageKey = 'draft_edit_' + pageKey.split('/').pop() + '_' + recordId;
+
+                var nilaiAsli = {};
+                cfg.fields.forEach(function (name) {
+                    var el = modalEl.querySelector('[name="' + name + '"]');
+                    if (el) nilaiAsli[name] = el.value;
+                });
+
+                initModal(modalEl, storageKey, cfg.fields, null);
+
+                var wasOpenEdit = modalEl.classList.contains('open');
+                new MutationObserver(function () {
+                    var isOpen = modalEl.classList.contains('open');
+                    if (wasOpenEdit && !isOpen) {
+                        cfg.fields.forEach(function (name) {
+                            var el = modalEl.querySelector('[name="' + name + '"]');
+                            if (el && nilaiAsli[name] !== undefined) el.value = nilaiAsli[name];
+                        });
+                    }
+                    wasOpenEdit = isOpen;
+                }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+            });
+        }
+
+    })();
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DRAFT PERSISTENCE — halaman Edit Kelas (show.blade.php)
+    // Menyimpan: combobox jadwal/dosen/asisten + teks pencarian
+    // mahasiswa + daftar checkbox mahasiswa yang sudah dicentang
+    // ═══════════════════════════════════════════════════════════════════
+    (function () {
+        var currentPath = window.location.pathname;
+        if (!currentPath.includes('laboran/kelas/')) return;
+        if (currentPath === '/laboran/kelas' || currentPath === '/laboran/kelas/') return;
+
+        var kelasSlug  = currentPath.replace(/.*\/kelas\//, '').replace(/\/$/, '');
+        var keyJadwal  = 'draft_kelas_jadwal_' + kelasSlug;
+        var keyMhs     = 'draft_kelas_mhs_'    + kelasSlug;
+
+        var adaSuccess = !!document.querySelector('.alert-success, [class*="alert"][class*="success"]');
+
+        // ── Bagian 1: Combobox Jadwal / Dosen / Asisten ───────────────────
+        var COMBOS = [
+            { name: 'hari',        visId: 'cariHari'       },
+            { name: 'jam_mulai',   visId: 'cariJamMulai'   },
+            { name: 'jam_selesai', visId: 'cariJamSelesai' },
+            { name: 'ruangan_id',  visId: 'cariRuangan'    },
+            { name: 'dosen_id',    visId: 'cariDosen'      },
+            { name: 'asisten_id',  visId: 'cariA1'         },
+            { name: 'asisten2_id', visId: 'cariA2'         },
+        ];
+
+        var formJadwal = document.querySelector('form[action*="/kelas/"]');
+
+        if (formJadwal) {
+            function getInput(name) { return formJadwal.querySelector('[name="' + name + '"]'); }
+
+            var nilaiAsli = {};
+            COMBOS.forEach(function (c) {
+                var el  = getInput(c.name);
+                var vis = document.getElementById(c.visId);
+                if (el)  nilaiAsli[c.name]           = el.value;
+                if (vis) nilaiAsli['_vis_' + c.name] = vis.value;
+            });
+
+            function saveJadwal() {
+                var draft = {};
+                COMBOS.forEach(function (c) {
+                    var el  = getInput(c.name);
+                    var vis = document.getElementById(c.visId);
+                    if (el)  draft[c.name]           = el.value;
+                    if (vis) draft['_vis_' + c.name] = vis.value;
+                });
+                var adaPerubahan = COMBOS.some(function (c) { return draft[c.name] !== nilaiAsli[c.name]; });
+                if (adaPerubahan) {
+                    localStorage.setItem(keyJadwal, JSON.stringify(draft));
+                } else {
+                    localStorage.removeItem(keyJadwal);
+                }
+            }
+
+            function restoreJadwal() {
+                var raw = localStorage.getItem(keyJadwal);
+                if (!raw) return;
+                var draft;
+                try { draft = JSON.parse(raw); } catch (e) { return; }
+                COMBOS.forEach(function (c) {
+                    var el  = getInput(c.name);
+                    var vis = document.getElementById(c.visId);
+                    if (el  && draft[c.name]           !== undefined) el.value  = draft[c.name];
+                    if (vis && draft['_vis_' + c.name] !== undefined) vis.value = draft['_vis_' + c.name];
+                });
+            }
+
+            if (adaSuccess) {
+                localStorage.removeItem(keyJadwal);
+            } else {
+                COMBOS.forEach(function (c) {
+                    var el  = getInput(c.name);
+                    var vis = document.getElementById(c.visId);
+                    if (el)  { el.addEventListener('input', saveJadwal);  el.addEventListener('change', saveJadwal); }
+                    if (vis) { vis.addEventListener('input', saveJadwal); vis.addEventListener('change', saveJadwal); }
+                });
+                COMBOS.forEach(function (c) {
+                    var el = getInput(c.name);
+                    if (el) new MutationObserver(saveJadwal).observe(el, { attributes: true, attributeFilter: ['value'] });
+                });
+                formJadwal.addEventListener('submit', function () { localStorage.removeItem(keyJadwal); });
+                setTimeout(restoreJadwal, 200);
+            }
+        }
+
+        // ── Bagian 2: Filter Pencarian Mahasiswa + Checkbox ───────────────
+        var cariMhsBanyak = document.getElementById('cariMhsBanyak');
+        var formEnroll    = document.getElementById('formEnrollBanyak');
+
+        if (!cariMhsBanyak || !formEnroll) return;
+
+        function getAllRows()  { return document.querySelectorAll('.mhs-checkbox-row'); }
+        function getVisible() { return [...getAllRows()].filter(function (r) { return r.style.display !== 'none'; }); }
+
+        function triggerUpdateUI() {
+            var dipilih     = document.querySelectorAll('.mhs-cb:checked').length;
+            var btnEnroll   = document.getElementById('btnEnroll');
+            var labelJumlah = document.getElementById('jumlahDipilih');
+            var checkSemua  = document.getElementById('checkSemuaMhs');
+            if (btnEnroll) {
+                btnEnroll.disabled    = dipilih === 0;
+                btnEnroll.textContent = dipilih > 0
+                    ? '+ Tambahkan ' + dipilih + ' Mahasiswa ke Kelas'
+                    : '+ Tambahkan ke Kelas';
+            }
+            if (labelJumlah) {
+                labelJumlah.textContent = dipilih > 0 ? dipilih + ' dipilih' : '';
+            }
+            if (checkSemua) {
+                var cbVisible   = getVisible().map(function (r) { return r.querySelector('.mhs-cb'); });
+                var semuaCeklis = cbVisible.length > 0 && cbVisible.every(function (cb) { return cb.checked; });
+                checkSemua.indeterminate = !semuaCeklis && cbVisible.some(function (cb) { return cb.checked; });
+                checkSemua.checked       = semuaCeklis && cbVisible.length > 0;
+            }
+        }
+
+        function applyFilter(q) {
+            getAllRows().forEach(function (row) {
+                row.style.display = (!q || row.dataset.cari.includes(q.toLowerCase().trim()))
+                    ? 'flex' : 'none';
+            });
+        }
+
+        function saveMhs() {
+            var ids = [];
+            document.querySelectorAll('.mhs-cb:checked').forEach(function (cb) { ids.push(cb.value); });
+            var q   = cariMhsBanyak.value;
+            if (q !== '' || ids.length > 0) {
+                localStorage.setItem(keyMhs, JSON.stringify({ q: q, ids: ids }));
+            } else {
+                localStorage.removeItem(keyMhs);
+            }
+        }
+
+        function restoreMhs() {
+            var raw = localStorage.getItem(keyMhs);
+            if (!raw) return;
+            var draft;
+            try { draft = JSON.parse(raw); } catch (e) { return; }
+            if (draft.q) {
+                cariMhsBanyak.value = draft.q;
+                applyFilter(draft.q);
+            }
+            if (Array.isArray(draft.ids) && draft.ids.length > 0) {
+                var idSet = new Set(draft.ids);
+                document.querySelectorAll('.mhs-cb').forEach(function (cb) {
+                    if (idSet.has(cb.value)) cb.checked = true;
+                });
+            }
+            triggerUpdateUI();
+        }
+
+        if (adaSuccess) {
+            localStorage.removeItem(keyMhs);
+        } else {
+            cariMhsBanyak.addEventListener('input', saveMhs);
+
+            document.getElementById('daftarMhsCheckbox')?.addEventListener('change', function (e) {
+                if (e.target.classList.contains('mhs-cb')) saveMhs();
+            });
+
+            var checkSemua = document.getElementById('checkSemuaMhs');
+            if (checkSemua) checkSemua.addEventListener('change', saveMhs);
+
+            formEnroll.addEventListener('submit', function () { localStorage.removeItem(keyMhs); });
+
+            setTimeout(restoreMhs, 150);
+        }
+
+    })();
+
 });
