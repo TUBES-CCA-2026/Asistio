@@ -887,215 +887,230 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
     // ═══════════════════════════════════════════════════════════════════
-    // DRAFT PERSISTENCE — simpan isi form modal ke localStorage,
-    // restore saat halaman dimuat ulang, hapus saat form berhasil submit
+    // DRAFT PERSISTENCE
     // ═══════════════════════════════════════════════════════════════════
     (function () {
 
-        // Daftar modal yang dilacak beserta field-nya
-        // key     : nama unik di localStorage
-        // modal   : id elemen modal
-        // fields  : array { name, type }
-        //   type  : 'text' | 'hidden' (combobox hidden input)
-        const DRAFTS = [
-            {
-                key    : 'draft_tambah_dosen',
-                modal  : 'modalTambah',
-                page   : 'laboran/dosen',
-                fields : [
-                    { name: 'nama_dosen', type: 'text' },
-                    { name: 'nidn',       type: 'text' },
-                    { name: 'username',   type: 'text' },
-                ],
-            },
-            {
-                key    : 'draft_tambah_asisten',
-                modal  : 'modalTambah',
-                page   : 'laboran/asisten',
-                fields : [
-                    { name: 'nama_asisten', type: 'text' },
-                    { name: 'nim',          type: 'text' },
-                    { name: 'username',     type: 'text' },
-                ],
-            },
-            {
-                key    : 'draft_tambah_mahasiswa',
-                modal  : 'modalTambah',
-                page   : 'laboran/mahasiswa',
-                fields : [
-                    { name: 'nim_mahasiswa',  type: 'text' },
-                    { name: 'nama_mahasiswa', type: 'text' },
-                ],
-            },
-            {
-                key    : 'draft_tambah_mk',
-                modal  : 'modalTambah',
-                page   : 'laboran/mata-kuliah',
-                fields : [
-                    { name: 'kode_mk', type: 'text' },
-                    { name: 'nama_mk', type: 'text' },
-                ],
-            },
-            {
-                key    : 'draft_tambah_ruangan',
-                modal  : 'modalTambah',
-                page   : 'laboran/ruangan',
-                fields : [
-                    { name: 'nama_ruangan', type: 'text' },
-                ],
-            },
-            {
-                key    : 'draft_tambah_kelas',
-                modal  : 'modalTambah',
-                page   : 'laboran/kelas',
-                fields : [
-                    { name: 'nama_kelas',   type: 'text'   },
-                    // hidden inputs dari combobox
-                    { name: 'mata_kuliah_id', type: 'hidden', visId: 'cariTMK'         },
-                    { name: 'hari',           type: 'hidden', visId: 'cariTHari'        },
-                    { name: 'jam_mulai',      type: 'hidden', visId: 'cariTJamMulai'    },
-                    { name: 'jam_selesai',    type: 'hidden', visId: 'cariTJamSelesai'  },
-                    { name: 'ruangan_id',     type: 'hidden', visId: 'cariTRuangan'     },
-                    { name: 'dosen_id',       type: 'hidden', visId: 'cariTDosen'       },
-                    { name: 'asisten_id',     type: 'hidden', visId: 'cariTA1'          },
-                    { name: 'asisten2_id',    type: 'hidden', visId: 'cariTA2'          },
-                ],
-            },
-        ];
-
-        // Deteksi halaman saat ini dari URL
         const currentPath = window.location.pathname;
 
-        // Cari konfigurasi draft yang cocok dengan halaman ini
-        const cfg = DRAFTS.find(d => currentPath.includes(d.page));
-        if (!cfg) return;
+        // Konfigurasi field per tipe modal (tambah & edit)
+        const PAGE_CONFIGS = {
+            'laboran/dosen': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_dosen','nidn','username'] },
+                edit   : { prefix: 'modalEditDosen', fields: ['nama_dosen','nidn'] },
+            },
+            'laboran/asisten': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_asisten','nim','username'] },
+                edit   : { prefix: 'modalEditAsisten', fields: ['nama_asisten','nim'] },
+            },
+            'laboran/mahasiswa': {
+                tambah : { modalId: 'modalTambah', fields: ['nim_mahasiswa','nama_mahasiswa'] },
+            },
+            'laboran/mata-kuliah': {
+                tambah : { modalId: 'modalTambah', fields: ['kode_mk','nama_mk'] },
+                edit   : { prefix: 'modalEditMK', fields: ['kode_mk','nama_mk'] },
+            },
+            'laboran/ruangan': {
+                tambah : { modalId: 'modalTambah', fields: ['nama_ruangan'] },
+                edit   : { prefix: 'modalEditRuangan', fields: ['nama_ruangan'] },
+            },
+            'laboran/kelas': {
+                tambah : {
+                    modalId : 'modalTambah',
+                    fields  : ['nama_kelas'],
+                    combos  : [
+                        { name: 'mata_kuliah_id', visId: 'cariTMK'          },
+                        { name: 'hari',           visId: 'cariTHari'         },
+                        { name: 'jam_mulai',      visId: 'cariTJamMulai'    },
+                        { name: 'jam_selesai',    visId: 'cariTJamSelesai'  },
+                        { name: 'ruangan_id',     visId: 'cariTRuangan'     },
+                        { name: 'dosen_id',       visId: 'cariTDosen'       },
+                        { name: 'asisten_id',     visId: 'cariTA1'          },
+                        { name: 'asisten2_id',    visId: 'cariTA2'          },
+                    ],
+                },
+            },
+        };
 
-        const modal = document.getElementById(cfg.modal);
-        if (!modal) return;
+        // Cari config yang cocok dengan URL saat ini
+        const pageKey = Object.keys(PAGE_CONFIGS).find(k => currentPath.includes(k));
+        if (!pageKey) return;
+        const pageCfg = PAGE_CONFIGS[pageKey];
 
-        // ── Helper: ambil elemen input di dalam modal ──────────────
-        function getInput(name) {
-            return modal.querySelector(`[name="${name}"]`);
-        }
-        function getVisInput(id) {
-            return id ? document.getElementById(id) : null;
-        }
+        const adaSuccess = !!document.querySelector('.alert-success, [class*="alert"][class*="success"]');
 
-        // ── Simpan draft ke localStorage ───────────────────────────
-        function saveDraft() {
-            const draft = {};
-            cfg.fields.forEach(f => {
-                const el = getInput(f.name);
-                if (!el) return;
-                draft[f.name] = el.value;
-                // Untuk combobox: simpan juga teks yang terlihat
-                if (f.visId) {
-                    const vis = getVisInput(f.visId);
-                    if (vis) draft['_vis_' + f.name] = vis.value;
-                }
-            });
-            // Jangan simpan jika semua kosong
-            const hasData = Object.values(draft).some(v => v !== '');
-            if (hasData) {
-                localStorage.setItem(cfg.key, JSON.stringify(draft));
+        // ── Fungsi inti per modal ─────────────────────────────────
+        function initModal(modalEl, storageKey, fields, combos) {
+            if (!modalEl) return;
+
+            function getInput(name) {
+                return modalEl.querySelector('[name="' + name + '"]');
             }
-        }
 
-        // ── Restore draft dari localStorage ────────────────────────
-        function restoreDraft() {
-            const raw = localStorage.getItem(cfg.key);
-            if (!raw) return false;
-
-            let draft;
-            try { draft = JSON.parse(raw); } catch (e) { return false; }
-
-            const hasData = Object.values(draft).some(v => v !== '');
-            if (!hasData) return false;
-
-            cfg.fields.forEach(f => {
-                const el = getInput(f.name);
-                if (!el) return;
-                if (draft[f.name] !== undefined) el.value = draft[f.name];
-                // Restore teks visible untuk combobox
-                if (f.visId && draft['_vis_' + f.name] !== undefined) {
-                    const vis = getVisInput(f.visId);
-                    if (vis) vis.value = draft['_vis_' + f.name];
+            function saveDraft() {
+                var draft = {};
+                fields.forEach(function (name) {
+                    var el = getInput(name);
+                    if (el) draft[name] = el.value;
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el) draft[c.name] = el.value;
+                        var vis = document.getElementById(c.visId);
+                        if (vis) draft['_vis_' + c.name] = vis.value;
+                    });
                 }
-            });
-
-            return hasData;
-        }
-
-        // ── Hapus draft ────────────────────────────────────────────
-        function clearDraft() {
-            localStorage.removeItem(cfg.key);
-        }
-
-        // ── Auto-save: dengarkan perubahan semua field ──────────────
-        cfg.fields.forEach(f => {
-            const el = getInput(f.name);
-            if (!el) return;
-            el.addEventListener('input', saveDraft);
-            el.addEventListener('change', saveDraft);
-
-            // Untuk combobox visible input
-            if (f.visId) {
-                const vis = getVisInput(f.visId);
-                if (vis) {
-                    vis.addEventListener('input',  saveDraft);
-                    vis.addEventListener('change', saveDraft);
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (hasData) {
+                    localStorage.setItem(storageKey, JSON.stringify(draft));
+                } else {
+                    localStorage.removeItem(storageKey);
                 }
             }
-        });
 
-        // ── Saat halaman dimuat: jika ada draft, buka modal & restore ──
-        // Jalankan langsung (DOMContentLoaded sudah lewat karena kode ini
-        // ada di dalam DOMContentLoaded utama di atas)
-        (function () {
-            const raw = localStorage.getItem(cfg.key);
-            if (!raw) return;
-            let draft;
-            try { draft = JSON.parse(raw); } catch (e) { return; }
-            const hasData = Object.values(draft).some(v => v !== '');
-            if (!hasData) return;
+            function restoreDraft() {
+                var raw = localStorage.getItem(storageKey);
+                if (!raw) return false;
+                var draft;
+                try { draft = JSON.parse(raw); } catch (e) { return false; }
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (!hasData) return false;
+                fields.forEach(function (name) {
+                    var el = getInput(name);
+                    if (el && draft[name] !== undefined) el.value = draft[name];
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el && draft[c.name] !== undefined) el.value = draft[c.name];
+                        var vis = document.getElementById(c.visId);
+                        if (vis && draft['_vis_' + c.name] !== undefined) vis.value = draft['_vis_' + c.name];
+                    });
+                }
+                return true;
+            }
 
-            // Buka modal & restore — tunda agar combobox selesai init
-            setTimeout(() => {
-                modal.classList.add('open');
-                document.body.style.overflow = 'hidden';
-                restoreDraft();
-            }, 100);
-        })();
+            function clearDraft() {
+                localStorage.removeItem(storageKey);
+            }
 
-        // ── Saat form di-submit: hapus draft ───────────────────────
-        const form = modal.querySelector('form');
-        if (form) {
-            form.addEventListener('submit', clearDraft);
-        }
-
-        // ── Hapus draft kapanpun modal ditutup (dari sumber manapun) ──
-        // Hanya hapus jika modal SEBELUMNYA terbuka (wasOpen),
-        // agar tidak terhapus saat halaman baru dimuat
-        var wasOpen = modal.classList.contains('open');
-        new MutationObserver(function () {
-            var isOpen = modal.classList.contains('open');
-            if (wasOpen && !isOpen) {
-                // Modal baru saja ditutup secara sengaja — hapus draft dan reset field
-                clearDraft();
-                cfg.fields.forEach(function (f) {
-                    var el = getInput(f.name);
+            function resetFields() {
+                fields.forEach(function (name) {
+                    var el = getInput(name);
                     if (el) el.value = '';
-                    if (f.visId) {
-                        var vis = document.getElementById(f.visId);
+                });
+                if (combos) {
+                    combos.forEach(function (c) {
+                        var el = getInput(c.name);
+                        if (el) el.value = '';
+                        var vis = document.getElementById(c.visId);
                         if (vis) vis.value = '';
+                    });
+                }
+            }
+
+            // Hapus draft jika ada flash success
+            if (adaSuccess) { clearDraft(); return; }
+
+            // Auto-save saat user mengetik
+            fields.forEach(function (name) {
+                var el = getInput(name);
+                if (el) {
+                    el.addEventListener('input',  saveDraft);
+                    el.addEventListener('change', saveDraft);
+                }
+            });
+            if (combos) {
+                combos.forEach(function (c) {
+                    var el = getInput(c.name);
+                    if (el) {
+                        el.addEventListener('input',  saveDraft);
+                        el.addEventListener('change', saveDraft);
+                    }
+                    var vis = document.getElementById(c.visId);
+                    if (vis) {
+                        vis.addEventListener('input',  saveDraft);
+                        vis.addEventListener('change', saveDraft);
                     }
                 });
             }
-            wasOpen = isOpen;
-        }).observe(modal, { attributes: true, attributeFilter: ['class'] });
 
-        // ── Saat session flash 'success' ada: hapus draft ──────────
-        const successAlert = document.querySelector('.alert-success, [class*="alert"][class*="success"]');
-        if (successAlert) clearDraft();
+            // Hapus draft saat form submit
+            var form = modalEl.querySelector('form');
+            if (form) form.addEventListener('submit', clearDraft);
+
+            // Restore saat halaman dimuat jika ada draft
+            var raw = localStorage.getItem(storageKey);
+            if (raw) {
+                var draft;
+                try { draft = JSON.parse(raw); } catch (e) { draft = {}; }
+                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
+                if (hasData) {
+                    setTimeout(function () {
+                        restoreDraft();
+                        modalEl.classList.add('open');
+                        document.body.style.overflow = 'hidden';
+                    }, 100);
+                }
+            }
+
+            // Hapus draft & reset field saat modal ditutup
+            var wasOpen = modalEl.classList.contains('open');
+            new MutationObserver(function () {
+                var isOpen = modalEl.classList.contains('open');
+                if (wasOpen && !isOpen) {
+                    clearDraft();
+                    resetFields();
+                }
+                wasOpen = isOpen;
+            }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        // ── Inisialisasi modal TAMBAH ─────────────────────────────
+        if (pageCfg.tambah) {
+            var t = pageCfg.tambah;
+            initModal(
+                document.getElementById(t.modalId),
+                'draft_tambah_' + pageKey.split('/').pop(),
+                t.fields,
+                t.combos || null
+            );
+        }
+
+        // ── Inisialisasi semua modal EDIT ─────────────────────────
+        if (pageCfg.edit) {
+            var e = pageCfg.edit;
+            document.querySelectorAll('[id^="' + e.prefix + '"]').forEach(function (modalEl) {
+                var recordId = modalEl.id.replace(e.prefix, '');
+                if (!recordId) return;
+                var storageKey = 'draft_edit_' + pageKey.split('/').pop() + '_' + recordId;
+
+                // Simpan nilai asli dari server sebelum apapun terjadi
+                var nilaiAsli = {};
+                e.fields.forEach(function (name) {
+                    var el = modalEl.querySelector('[name="' + name + '"]');
+                    if (el) nilaiAsli[name] = el.value;
+                });
+
+                initModal(modalEl, storageKey, e.fields, null);
+
+                // Override: saat modal edit ditutup, kembalikan ke nilai asli
+                // (bukan kosongkan seperti modal tambah)
+                var wasOpenEdit = modalEl.classList.contains('open');
+                new MutationObserver(function () {
+                    var isOpen = modalEl.classList.contains('open');
+                    if (wasOpenEdit && !isOpen) {
+                        // Kembalikan ke nilai asli server, bukan kosong
+                        e.fields.forEach(function (name) {
+                            var el = modalEl.querySelector('[name="' + name + '"]');
+                            if (el && nilaiAsli[name] !== undefined) el.value = nilaiAsli[name];
+                        });
+                    }
+                    wasOpenEdit = isOpen;
+                }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+            });
+        }
+
     })();
 });
