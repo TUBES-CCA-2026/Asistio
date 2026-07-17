@@ -113,6 +113,7 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
         Route::get('/unduh/{filename}',             [\App\Http\Controllers\BackupController::class,'unduh'])->name('unduh');
         Route::post('/pulihkan/{filename}',         [\App\Http\Controllers\BackupController::class,'pulihkan'])->name('pulihkan');
         Route::delete('/hapus/{filename}',          [\App\Http\Controllers\BackupController::class,'hapus'])->name('hapus');
+        Route::delete('/hapus-semua',               [\App\Http\Controllers\BackupController::class,'hapusSemua'])->name('hapus-semua');
         Route::post('/upload',                      [\App\Http\Controllers\BackupController::class,'upload'])->name('upload');
     });
 });
