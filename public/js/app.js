@@ -1619,7 +1619,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             formEnroll.addEventListener('submit', function () { localStorage.removeItem(keyMhs); });
 
-            setTimeout(restoreMhs, 150);
+            // Saat navigasi keluar: hapus draft pencarian mahasiswa (keyMhs saja,
+            // keyJadwal dibiarkan agar perubahan dosen/asisten yang belum disimpan tetap ada)
+            window.addEventListener('pagehide', function () {
+                localStorage.removeItem(keyMhs);
+            });
+
+            // Bedakan refresh vs navigasi masuk:
+            // - refresh: PerformanceNavigationTiming.type === 'reload'
+            // - navigasi masuk dari halaman lain: type === 'navigate'
+            // Hanya restore draft pencarian jika ini adalah refresh
+            var navType = (performance.getEntriesByType('navigation')[0] || {}).type;
+            if (navType === 'reload') {
+                setTimeout(restoreMhs, 150);
+            }
+            // Jika 'navigate' (masuk dari halaman lain): tidak restore, tidak perlu hapus
+            // karena pagehide di kunjungan sebelumnya sudah menghapusnya
         }
 
     })();
