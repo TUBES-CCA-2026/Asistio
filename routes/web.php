@@ -38,24 +38,29 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     Route::delete('/kelas/{praktikum}/mahasiswa/{mahasiswa}', [LaboranController::class,'kelasHapusMahasiswa'])->name('kelas.mahasiswa.remove');
     Route::post('/kelas/{praktikum}/mahasiswa/enroll-banyak', [LaboranController::class,'kelasEnrollBanyak'])->name('kelas.mahasiswa.enroll-banyak');
     Route::delete('/kelas/{praktikum}',       [LaboranController::class,'kelasDestroy'])->name('kelas.destroy');
+    Route::delete('/hapus-semua',               [\App\Http\Controllers\BackupController::class,'hapusSemua'])->name('hapus-semua');
+    Route::delete('/kelas-hapus-semua',       [LaboranController::class,'kelasHapusSemua'])->name('kelas.hapus-semua'); 
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
     Route::post('/asisten',                   [LaboranController::class,'asistenStore'])->name('asisten.store');
     Route::patch('/asisten/{asisten}',        [LaboranController::class,'asistenUpdate'])->name('asisten.update');
     Route::patch('/asisten/{asisten}/reset-password', [LaboranController::class,'asistenResetPassword'])->name('asisten.reset-password');
     Route::delete('/asisten/{asisten}',       [LaboranController::class,'asistenDestroy'])->name('asisten.destroy');
+    Route::delete('/asisten-hapus-semua',     [LaboranController::class,'asistenHapusSemua'])->name('asisten.hapus-semua');
     // Dosen
     Route::get('/dosen',                      [LaboranController::class,'dosen'])->name('dosen');
     Route::post('/dosen',                     [LaboranController::class,'dosenStore'])->name('dosen.store');
     Route::patch('/dosen/{dosen}',            [LaboranController::class,'dosenUpdate'])->name('dosen.update');
     Route::patch('/dosen/{dosen}/reset-password', [LaboranController::class,'dosenResetPassword'])->name('dosen.reset-password');
     Route::delete('/dosen/{dosen}',           [LaboranController::class,'dosenDestroy'])->name('dosen.destroy');
+    Route::delete('/dosen-hapus-semua',       [LaboranController::class,'dosenHapusSemua'])->name('dosen.hapus-semua');
     // Mahasiswa
     Route::get('/mahasiswa',                  [LaboranController::class,'mahasiswa'])->name('mahasiswa');
     Route::post('/mahasiswa',                 [LaboranController::class,'mahasiswaStore'])->name('mahasiswa.store');
     Route::get('/mahasiswa/{mahasiswa}/edit', [LaboranController::class,'mahasiswaEdit'])->name('mahasiswa.edit');
     Route::patch('/mahasiswa/{mahasiswa}',    [LaboranController::class,'mahasiswaUpdate'])->name('mahasiswa.update');
     Route::delete('/mahasiswa/{mahasiswa}',   [LaboranController::class,'mahasiswaDestroy'])->name('mahasiswa.destroy');
+    Route::delete('/mahasiswa-hapus-semua',   [LaboranController::class,'mahasiswaHapusSemua'])->name('mahasiswa.hapus-semua');
     Route::post('/mahasiswa/import',        [LaboranController::class,'mahasiswaImport'])->name('mahasiswa.import');
     Route::get('/mahasiswa/template-excel', [LaboranController::class,'mahasiswaTemplateExcel'])->name('mahasiswa.template-excel');
     Route::get('/mahasiswa/{mahasiswa}/nilai/{praktikum}', [LaboranController::class,'mahasiswaNilai'])->name('mahasiswa.nilai');

@@ -152,6 +152,20 @@ class BackupController extends Controller
             ->with('konfirmasi_restore', true);
     }
 
+    /** Hapus semua file backup sekaligus */
+    public function hapusSemua(): RedirectResponse {
+        $this->pastikanFolder();
+        $files = Storage::files($this->folder);
+        $valid = collect($files)->filter(fn($f) => $this->namaSah(basename($f)));
+        
+        if ($valid->isEmpty()) {
+            return back()->with('error', 'Tidak ada file backup untuk dihapus.');
+        }
+
+        Storage::delete($valid->values()->all());
+        return back()->with('success', "Semua {$valid->count()} file backup berhasil dihapus.");
+    }
+    
     private function formatUkuran(int $bytes): string {
         if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
         if ($bytes >= 1024)    return round($bytes / 1024, 1) . ' KB';

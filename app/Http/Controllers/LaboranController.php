@@ -477,6 +477,62 @@ class LaboranController extends Controller
     }
  
     // ── Asisten ────────────────────────────────────────────────────────────
+    // ── Hapus Semua Kelas Praktikum ───────────────────────────────────────
+    public function kelasHapusSemua(): RedirectResponse
+    {
+        DB::transaction(function () {
+            // Hapus semua data turunan kelas dulu
+            \App\Models\RekapDetailNilai::query()->delete();
+            \App\Models\NilaiEvaluasi::query()->delete();
+            \App\Models\NilaiAsistensi::query()->delete();
+            \App\Models\NilaiUjian::query()->delete();
+            \App\Models\Presensi::query()->delete();
+            DB::table('mahasiswa_praktikum')->delete();
+            Praktikum::query()->delete();
+        });
+        return back()->with('success', 'Semua data kelas praktikum beserta nilai & presensi berhasil dihapus.');
+    }
+
+    // ── Hapus Semua Asisten ───────────────────────────────────────────────
+    public function asistenHapusSemua(): RedirectResponse
+    {
+        DB::transaction(function () {
+            $userIds = Asisten::pluck('user_id')->filter();
+            Asisten::query()->delete();
+            if ($userIds->isNotEmpty()) {
+                User::whereIn('id', $userIds)->delete();
+            }
+        });
+        return back()->with('success', 'Semua data asisten beserta akun berhasil dihapus.');
+    }
+
+    // ── Hapus Semua Dosen ─────────────────────────────────────────────────
+    public function dosenHapusSemua(): RedirectResponse
+    {
+        DB::transaction(function () {
+            $userIds = Dosen::pluck('user_id')->filter();
+            Dosen::query()->delete();
+            if ($userIds->isNotEmpty()) {
+                User::whereIn('id', $userIds)->delete();
+            }
+        });
+        return back()->with('success', 'Semua data dosen beserta akun berhasil dihapus.');
+    }
+
+    // ── Hapus Semua Mahasiswa ─────────────────────────────────────────────
+    public function mahasiswaHapusSemua(): RedirectResponse
+    {
+        DB::transaction(function () {
+            \App\Models\RekapDetailNilai::query()->delete();
+            \App\Models\NilaiEvaluasi::query()->delete();
+            \App\Models\NilaiAsistensi::query()->delete();
+            \App\Models\NilaiUjian::query()->delete();
+            \App\Models\Presensi::query()->delete();
+            DB::table('mahasiswa_praktikum')->delete();
+            Mahasiswa::query()->delete();
+        });
+        return back()->with('success', 'Semua data mahasiswa beserta nilai & presensi berhasil dihapus.');
+    }
     // ── Import Kelas Praktikum via Excel ──────────────────────────────────
     public function kelasImport(Request $request): RedirectResponse
     {
