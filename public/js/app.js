@@ -1227,226 +1227,9 @@ document.addEventListener('DOMContentLoaded', function () {
         form.addEventListener('submit', clearDraft);
 
         // Restore draft saat halaman dimuat — tunda agar combobox selesai init
-        setTimeout(function () {
-            restoreDraft();
-            // Setelah restore, update nilaiAsli agar tidak dianggap "tidak ada perubahan"
-            // padahal draft sudah berbeda dari server
-            // Jangan update nilaiAsli di sini — biarkan tetap nilai server
-            // supaya perbandingan tetap akurat
-        }, 200);
-
-    });
-
-    // ═══════════════════════════════════════════════════════════════════
-    // DRAFT PERSISTENCE — modal Tambah & Edit (laboran)
-    // ═══════════════════════════════════════════════════════════════════
-    (function () {
-
-        var currentPath = window.location.pathname;
-
-        var PAGE_CONFIGS = {
-            'laboran/dosen': {
-                tambah : { modalId: 'modalTambah', fields: ['nama_dosen','nidn','username'] },
-                edit   : { prefix: 'modalEditDosen', fields: ['nama_dosen','nidn'] },
-            },
-            'laboran/asisten': {
-                tambah : { modalId: 'modalTambah', fields: ['nama_asisten','nim','username'] },
-                edit   : { prefix: 'modalEditAsisten', fields: ['nama_asisten','nim'] },
-            },
-            'laboran/mahasiswa': {
-                tambah : { modalId: 'modalTambah', fields: ['nim_mahasiswa','nama_mahasiswa'] },
-            },
-            'laboran/mata-kuliah': {
-                tambah : { modalId: 'modalTambah', fields: ['kode_mk','nama_mk'] },
-                edit   : { prefix: 'modalEditMK', fields: ['kode_mk','nama_mk'] },
-            },
-            'laboran/ruangan': {
-                tambah : { modalId: 'modalTambah', fields: ['nama_ruangan'] },
-                edit   : { prefix: 'modalEditRuangan', fields: ['nama_ruangan'] },
-            },
-            'laboran/kelas': {
-                tambah : {
-                    modalId : 'modalTambah',
-                    fields  : ['nama_kelas'],
-                    combos  : [
-                        { name: 'mata_kuliah_id', visId: 'cariTMK'         },
-                        { name: 'hari',           visId: 'cariTHari'       },
-                        { name: 'jam_mulai',      visId: 'cariTJamMulai'   },
-                        { name: 'jam_selesai',    visId: 'cariTJamSelesai' },
-                        { name: 'ruangan_id',     visId: 'cariTRuangan'    },
-                        { name: 'dosen_id',       visId: 'cariTDosen'      },
-                        { name: 'asisten_id',     visId: 'cariTA1'         },
-                        { name: 'asisten2_id',    visId: 'cariTA2'         },
-                    ],
-                },
-            },
-        };
-
-        var pageKey = Object.keys(PAGE_CONFIGS).find(function (k) { return currentPath.includes(k); });
-        if (!pageKey) return;
-        var pageCfg = PAGE_CONFIGS[pageKey];
-
-        var adaSuccess = !!document.querySelector('.alert-success, [class*="alert"][class*="success"]');
-
-        function initModal(modalEl, storageKey, fields, combos) {
-            if (!modalEl) return;
-
-            function getInput(name) {
-                return modalEl.querySelector('[name="' + name + '"]');
-            }
-
-            function saveDraft() {
-                var draft = {};
-                fields.forEach(function (name) {
-                    var el = getInput(name);
-                    if (el) draft[name] = el.value;
-                });
-                if (combos) {
-                    combos.forEach(function (c) {
-                        var el = getInput(c.name);
-                        if (el) draft[c.name] = el.value;
-                        var vis = document.getElementById(c.visId);
-                        if (vis) draft['_vis_' + c.name] = vis.value;
-                    });
-                }
-                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
-                if (hasData) {
-                    localStorage.setItem(storageKey, JSON.stringify(draft));
-                } else {
-                    localStorage.removeItem(storageKey);
-                }
-            }
-
-            function restoreDraft() {
-                var raw = localStorage.getItem(storageKey);
-                if (!raw) return false;
-                var draft;
-                try { draft = JSON.parse(raw); } catch (e) { return false; }
-                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
-                if (!hasData) return false;
-                fields.forEach(function (name) {
-                    var el = getInput(name);
-                    if (el && draft[name] !== undefined) el.value = draft[name];
-                });
-                if (combos) {
-                    combos.forEach(function (c) {
-                        var el = getInput(c.name);
-                        if (el && draft[c.name] !== undefined) el.value = draft[c.name];
-                        var vis = document.getElementById(c.visId);
-                        if (vis && draft['_vis_' + c.name] !== undefined) vis.value = draft['_vis_' + c.name];
-                    });
-                }
-                return true;
-            }
-
-            function clearDraft() {
-                localStorage.removeItem(storageKey);
-            }
-
-            function resetFields() {
-                fields.forEach(function (name) {
-                    var el = getInput(name);
-                    if (el) el.value = '';
-                });
-                if (combos) {
-                    combos.forEach(function (c) {
-                        var el = getInput(c.name);
-                        if (el) el.value = '';
-                        var vis = document.getElementById(c.visId);
-                        if (vis) vis.value = '';
-                    });
-                }
-            }
-
-            if (adaSuccess) { clearDraft(); return; }
-
-            fields.forEach(function (name) {
-                var el = getInput(name);
-                if (el) {
-                    el.addEventListener('input',  saveDraft);
-                    el.addEventListener('change', saveDraft);
-                }
-            });
-            if (combos) {
-                combos.forEach(function (c) {
-                    var el = getInput(c.name);
-                    if (el) {
-                        el.addEventListener('input',  saveDraft);
-                        el.addEventListener('change', saveDraft);
-                    }
-                    var vis = document.getElementById(c.visId);
-                    if (vis) {
-                        vis.addEventListener('input',  saveDraft);
-                        vis.addEventListener('change', saveDraft);
-                    }
-                });
-            }
-
-            var form = modalEl.querySelector('form');
-            if (form) form.addEventListener('submit', clearDraft);
-
-            var raw = localStorage.getItem(storageKey);
-            if (raw) {
-                var draft;
-                try { draft = JSON.parse(raw); } catch (e) { draft = {}; }
-                var hasData = Object.values(draft).some(function (v) { return v !== ''; });
-                if (hasData) {
-                    setTimeout(function () {
-                        restoreDraft();
-                        modalEl.classList.add('open');
-                        document.body.style.overflow = 'hidden';
-                    }, 100);
-                }
-            }
-
-            var wasOpen = modalEl.classList.contains('open');
-            new MutationObserver(function () {
-                var isOpen = modalEl.classList.contains('open');
-                if (wasOpen && !isOpen) {
-                    clearDraft();
-                    resetFields();
-                }
-                wasOpen = isOpen;
-            }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
-        }
-
-        if (pageCfg.tambah) {
-            var t = pageCfg.tambah;
-            initModal(
-                document.getElementById(t.modalId),
-                'draft_tambah_' + pageKey.split('/').pop(),
-                t.fields,
-                t.combos || null
-            );
-        }
-
-        if (pageCfg.edit) {
-            var cfg = pageCfg.edit;
-            document.querySelectorAll('[id^="' + cfg.prefix + '"]').forEach(function (modalEl) {
-                var recordId = modalEl.id.replace(cfg.prefix, '');
-                if (!recordId) return;
-                var storageKey = 'draft_edit_' + pageKey.split('/').pop() + '_' + recordId;
-
-                var nilaiAsli = {};
-                cfg.fields.forEach(function (name) {
-                    var el = modalEl.querySelector('[name="' + name + '"]');
-                    if (el) nilaiAsli[name] = el.value;
-                });
-
-                initModal(modalEl, storageKey, cfg.fields, null);
-
-                var wasOpenEdit = modalEl.classList.contains('open');
-                new MutationObserver(function () {
-                    var isOpen = modalEl.classList.contains('open');
-                    if (wasOpenEdit && !isOpen) {
-                        cfg.fields.forEach(function (name) {
-                            var el = modalEl.querySelector('[name="' + name + '"]');
-                            if (el && nilaiAsli[name] !== undefined) el.value = nilaiAsli[name];
-                        });
-                    }
-                    wasOpenEdit = isOpen;
-                }).observe(modalEl, { attributes: true, attributeFilter: ['class'] });
-            });
+        var navTypeShow = (performance.getEntriesByType('navigation')[0] || {}).type;
+        if (navTypeShow === 'reload') {
+            setTimeout(restoreDraft, 200);
         }
 
     })();
@@ -1534,7 +1317,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (el) new MutationObserver(saveJadwal).observe(el, { attributes: true, attributeFilter: ['value'] });
                 });
                 formJadwal.addEventListener('submit', function () { localStorage.removeItem(keyJadwal); });
-                setTimeout(restoreJadwal, 200);
+                // Hanya restore jadwal saat refresh, bukan saat navigasi masuk dari halaman lain
+                var navTypeJadwal = (performance.getEntriesByType('navigation')[0] || {}).type;
+                if (navTypeJadwal === 'reload') {
+                    setTimeout(restoreJadwal, 200);
+                }
             }
         }
 
@@ -1619,22 +1406,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             formEnroll.addEventListener('submit', function () { localStorage.removeItem(keyMhs); });
 
-            // Saat navigasi keluar: hapus draft pencarian mahasiswa (keyMhs saja,
-            // keyJadwal dibiarkan agar perubahan dosen/asisten yang belum disimpan tetap ada)
+            // Saat navigasi keluar (pindah page / back / close tab):
+            // hapus KEDUA draft agar saat kembali ke halaman ini data sudah bersih
             window.addEventListener('pagehide', function () {
-                localStorage.removeItem(keyMhs);
+                var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
+                if (nav !== 'reload') {
+                    localStorage.removeItem(keyMhs);
+                    localStorage.removeItem(keyJadwal);
+                }
             });
 
             // Bedakan refresh vs navigasi masuk:
-            // - refresh: PerformanceNavigationTiming.type === 'reload'
-            // - navigasi masuk dari halaman lain: type === 'navigate'
-            // Hanya restore draft pencarian jika ini adalah refresh
+            // - 'reload' : user tekan F5 / Ctrl+R → restore draft
+            // - 'navigate': masuk dari halaman lain → TIDAK restore (draft sudah
+            //               dihapus oleh pagehide di kunjungan sebelumnya)
             var navType = (performance.getEntriesByType('navigation')[0] || {}).type;
             if (navType === 'reload') {
                 setTimeout(restoreMhs, 150);
             }
-            // Jika 'navigate' (masuk dari halaman lain): tidak restore, tidak perlu hapus
-            // karena pagehide di kunjungan sebelumnya sudah menghapusnya
         }
 
     })();
