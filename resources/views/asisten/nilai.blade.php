@@ -135,15 +135,113 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         Batalkan Perubahan
     </button>
-    <button type="submit"
-        class="btn btn-primary"
-        style="box-shadow:0 4px 16px rgba(0,0,0,.18);
-               display:flex;align-items:center;gap:8px;
-               padding:12px 20px;font-size:14px;border-radius:999px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-        Simpan Semua Nilai
-    </button>
+    <button type="submit" id="btnSimpanNilai"
+    style="position:fixed;bottom:28px;right:28px;z-index:300;
+           box-shadow:0 4px 16px rgba(0,0,0,.18);
+           display:flex;align-items:center;gap:8px;
+           padding:12px 20px;font-size:14px;border-radius:999px;
+           transition:background .25s,color .25s;
+           background:var(--primary);color:#fff;border:none;cursor:pointer;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+    <span class="btn-label">Simpan Semua Nilai</span>
+</button>
+
+{{-- Indikator autosave --}}
+<div id="autosaveStatus"
+     style="position:fixed;bottom:88px;right:28px;z-index:300;
+            font-size:12px;color:var(--text-muted);text-align:right;
+            transition:opacity .3s;opacity:0;">
+</div>
 </div>
 
 </form>
+
+<script>
+(function () {
+    const form     = document.querySelector('form[action*="simpan-semua"]');
+    const btn      = document.getElementById('btnSimpanNilai');
+    const label    = btn?.querySelector('.btn-label');
+    const status   = document.getElementById('autosaveStatus');
+    if (!form || !btn) return;
+
+    const AUTOSAVE_URL = '{{ route('asisten.nilai.autosave', $praktikum) }}';
+    const CSRF         = document.querySelector('meta[name="csrf-token"]')?.content;
+    let timer   = null;
+    let unsaved = false;
+
+    function setBtn(state, msg) {
+        const map = {
+            idle:    { bg: 'var(--primary)',  text: 'Simpan Semua Nilai' },
+            saving:  { bg: '#f59e0b',         text: 'Menyimpan…' },
+            saved:   { bg: '#22c55e',         text: msg || 'Tersimpan ✓' },
+            unsaved: { bg: 'var(--primary)',  text: 'Simpan Semua Nilai ●' },
+            error:   { bg: '#ef4444',         text: 'Gagal — Coba Manual ⚠' },
+        };
+        const s = map[state] || map.idle;
+        btn.style.background = s.bg;
+        if (label) label.textContent = s.text;
+    }
+
+    function showStatus(msg, color) {
+        if (!status) return;
+        status.textContent  = msg;
+        status.style.color  = color || 'var(--text-muted)';
+        status.style.opacity = '1';
+        setTimeout(() => status.style.opacity = '0', 4000);
+    }
+
+    async function autosave() {
+        setBtn('saving');
+        try {
+            const res  = await fetch(AUTOSAVE_URL, {
+                method : 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body   : new FormData(form),
+            });
+            const json = await res.json();
+            if (json.success) {
+                unsaved = false;
+                setBtn('saved', '✓ ' + json.pesan);
+                showStatus(json.pesan, '#22c55e');
+                setTimeout(() => setBtn('idle'), 3000);
+            } else {
+                setBtn('error');
+                showStatus('Autosave gagal', '#ef4444');
+                setTimeout(() => setBtn('idle'), 4000);
+            }
+        } catch {
+            setBtn('error');
+            showStatus('Tidak dapat menyimpan — periksa koneksi', '#ef4444');
+            setTimeout(() => setBtn('idle'), 4000);
+        }
+    }
+
+    // Trigger autosave 2 detik setelah berhenti mengetik
+    document.querySelectorAll('.input-nilai').forEach(el => {
+        el.addEventListener('change', () => {
+            unsaved = true;
+            setBtn('unsaved');
+            clearTimeout(timer);
+            timer = setTimeout(autosave, 2000);
+        });
+    });
+
+    // Autosave periodik setiap 30 detik jika ada perubahan yang belum disimpan
+    setInterval(() => { if (unsaved) autosave(); }, 30000);
+
+    // Peringatan saat user mau menutup tab dengan data belum tersimpan
+    window.addEventListener('beforeunload', e => {
+        if (unsaved) {
+            e.preventDefault();
+            e.returnValue = 'Ada nilai yang belum tersimpan. Yakin ingin meninggalkan halaman?';
+        }
+    });
+
+    // Klik tombol manual → matikan timer autosave supaya tidak dobel request
+    btn.addEventListener('click', () => {
+        clearTimeout(timer);
+        unsaved = false;
+    });
+})();
+</script>
 @endsection

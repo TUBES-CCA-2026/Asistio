@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\{Praktikum,Mahasiswa,Presensi,PresensiAsistensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
-use Illuminate\Http\{Request,RedirectResponse};
+use Illuminate\Http\{Request, RedirectResponse, JsonResponse};
 use Illuminate\Support\Facades\{Auth,Hash};
 use Illuminate\View\View;
 
@@ -204,6 +204,73 @@ class AsistenController extends Controller
         }
 
         return back()->with('success', 'Nilai semua mahasiswa berhasil disimpan.');
+    }
+    /**
+     * Autosave nilai via AJAX — identik dengan nilaiSimpanSemua
+     * tapi return JSON (tidak redirect) sehingga halaman tidak reload.
+     * Dipanggil otomatis oleh JS setiap 2 detik setelah perubahan terakhir.
+     */
+    public function nilaiAutosave(Request $request, Praktikum $praktikum): JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $toNull = fn($x) => ($x === '' || $x === null) ? null : (float) $x;
+
+        foreach ($request->input('nilai', []) as $mahasiswaId => $v) {
+            $mahasiswaId = (int) $mahasiswaId;
+            if (!$praktikum->mahasiswa->contains($mahasiswaId)) continue;
+
+            $eval = array_map($toNull, array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))));
+            $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
+            $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
+
+            if ($eval) NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $eval);
+            if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
+            if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
+
+            RekapDetailNilai::hitungDanSimpan($mahasiswaId, $praktikum->id);
+        }
+
+        return response()->json([
+            'success'   => true,
+            'pesan'     => 'Tersimpan otomatis pukul ' . now()->format('H:i'),
+            'timestamp' => now()->toISOString(),
+        ]);
+    }
+
+    /**
+     * Autosave satu baris presensi via AJAX.
+     * Dipanggil segera saat radio button status kehadiran diubah.
+     */
+    public function presensiAutosave(Request $request, Praktikum $praktikum): JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $mahasiswaId = (int) $request->input('mahasiswa_id');
+        $pertemuan   = (int) $request->input('pertemuan_ke');
+        $status      = $request->input('status_kehadiran');
+        $catatan     = $request->input('catatan', '') ?: null;
+
+        if (!in_array($status, ['H','I','S','A'])) {
+            return response()->json(['success' => false, 'pesan' => 'Status tidak valid.'], 422);
+        }
+        if (!$praktikum->mahasiswa->contains($mahasiswaId)) {
+            return response()->json(['success' => false, 'pesan' => 'Mahasiswa tidak ada di kelas ini.'], 403);
+        }
+
+        Presensi::updateOrCreate(
+            [
+                'mahasiswa_id' => $mahasiswaId,
+                'praktikum_id' => $praktikum->id,
+                'pertemuan_ke' => $pertemuan,
+            ],
+            ['status_kehadiran' => $status, 'catatan' => $catatan]
+        );
+
+        return response()->json([
+            'success' => true,
+            'pesan'   => 'Disimpan ' . now()->format('H:i'),
+        ]);
     }
 
     /** Reset satu kolom (asist1/2/3, MID, UAS) ke 0 untuk semua mahasiswa di kelas */

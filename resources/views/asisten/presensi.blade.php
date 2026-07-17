@@ -68,6 +68,86 @@
     <div class="card-footer"><button type="submit" class="btn btn-primary">Simpan Presensi Pertemuan {{ $pertemuan }}</button></div>
     @endif
 </div>
+<script>
+(function () {
+    const form       = document.getElementById('formPresensi');
+    const CSRF       = document.querySelector('meta[name="csrf-token"]')?.content;
+    const URL_SAVE   = '{{ route('asisten.presensi.autosave', $praktikum) }}';
+    const PERTEMUAN  = {{ $pertemuan }};
+
+    // Status badge kecil per baris
+    function tandaiStatus(tr, state) {
+        let badge = tr.querySelector('.autosave-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'autosave-badge';
+            badge.style.cssText = 'font-size:10px;margin-left:6px;transition:opacity .3s;';
+            const nama = tr.querySelector('td:first-child .fw-600');
+            if (nama) nama.after(badge);
+        }
+        const map = {
+            saving: { text: '⏳', color: '#f59e0b' },
+            saved:  { text: '✓',  color: '#22c55e' },
+            error:  { text: '⚠',  color: '#ef4444' },
+        };
+        const s = map[state] || {};
+        badge.textContent   = s.text || '';
+        badge.style.color   = s.color || '';
+        badge.style.opacity = '1';
+        if (state === 'saved') setTimeout(() => badge.style.opacity = '0', 2500);
+    }
+
+    // Simpan satu baris presensi via AJAX
+    async function simpanBaris(radio) {
+        const tr         = radio.closest('tr');
+        const namaField  = radio.name; // presensi[{mahasiswaId}][status_kehadiran]
+        const mahasiswaId = namaField.match(/\[(\d+)\]/)?.[1];
+        if (!mahasiswaId) return;
+
+        const catatan = tr.querySelector('input[name*="[catatan]"]')?.value ?? '';
+        tandaiStatus(tr, 'saving');
+
+        try {
+            const res  = await fetch(URL_SAVE, {
+                method : 'POST',
+                headers: {
+                    'X-CSRF-TOKEN' : CSRF,
+                    'Content-Type' : 'application/json',
+                    'Accept'       : 'application/json',
+                },
+                body: JSON.stringify({
+                    mahasiswa_id      : parseInt(mahasiswaId),
+                    pertemuan_ke      : PERTEMUAN,
+                    status_kehadiran  : radio.value,
+                    catatan           : catatan,
+                }),
+            });
+            const json = await res.json();
+            tandaiStatus(tr, json.success ? 'saved' : 'error');
+        } catch {
+            tandaiStatus(tr, 'error');
+        }
+    }
+
+    // Simpan segera saat radio berubah
+    form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(r => {
+        r.addEventListener('change', function () { simpanBaris(this); });
+    });
+
+    // Simpan catatan 1.5s setelah berhenti mengetik
+    form.querySelectorAll('input[name*="[catatan]"]').forEach(inp => {
+        let t;
+        inp.addEventListener('input', function () {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                const tr = this.closest('tr');
+                const radio = tr.querySelector('input[type="radio"]:checked');
+                if (radio) simpanBaris(radio);
+            }, 1500);
+        });
+    });
+})();
+</script>
 </form>
 
 <div class="card" style="margin-top:20px;">
