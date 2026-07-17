@@ -36,6 +36,8 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     Route::delete('/kelas/{praktikum}/mahasiswa/{mahasiswa}', [LaboranController::class,'kelasHapusMahasiswa'])->name('kelas.mahasiswa.remove');
     Route::post('/kelas/{praktikum}/mahasiswa/enroll-banyak', [LaboranController::class,'kelasEnrollBanyak'])->name('kelas.mahasiswa.enroll-banyak');
     Route::delete('/kelas/{praktikum}',       [LaboranController::class,'kelasDestroy'])->name('kelas.destroy');
+    Route::post('/kelas/import',        [LaboranController::class,'kelasImport'])->name('kelas.import');
+    Route::get('/kelas/template-excel', [LaboranController::class,'kelasTemplateExcel'])->name('kelas.template-excel');
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
     Route::post('/asisten',                   [LaboranController::class,'asistenStore'])->name('asisten.store');

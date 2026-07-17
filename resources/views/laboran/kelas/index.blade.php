@@ -2,8 +2,40 @@
 @section('title','Kelas Praktikum')
 @section('page-title','Kelas Praktikum')
 @section('content')
-<div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Kelas</button></div>
-
+<div class="page-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Kelas</button>
+    <button class="btn btn-outline" data-modal-open="modalImportKelas"
+        style="display:inline-flex;align-items:center;gap:6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4m0 0l4-4m-4 4V4"/>
+        </svg>
+        Import Excel
+    </button>
+    <a href="{{ route('laboran.kelas.template-excel') }}"
+        class="btn btn-outline"
+        style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;" download>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        Template Excel
+    </a>
+</div>
+@if(session('import_errors_kelas'))
+<div class="card" style="border-left:4px solid #F59E0B;margin-bottom:12px;">
+    <div style="padding:12px 16px;">
+        <strong style="color:#92400E;">⚠ Beberapa baris dilewati:</strong>
+        <ul style="margin:8px 0 0 16px;padding:0;font-size:13px;color:#78350F;">
+            @foreach(session('import_errors_kelas') as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+</div>
+@endif
 @if(session('error_tabrakan'))
 <div class="alert alert-error" style="margin-bottom:16px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;">
@@ -226,6 +258,116 @@
     </select>
     </div>
 </div></div>
+{{-- Modal Import Excel Kelas --}}
+<div id="modalImportKelas" class="modal-overlay"><div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+        <span class="modal-title">Import Kelas Praktikum via Excel</span>
+        <button data-modal-close="modalImportKelas" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+        @if($errors->has('file_excel'))
+            <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#B91C1C;">
+                {{ $errors->first('file_excel') }}
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('laboran.kelas.import') }}"
+              enctype="multipart/form-data" id="formImportKelas">
+            @csrf
+
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1E40AF;line-height:1.6;">
+                <strong>Format kolom Excel:</strong><br>
+                <strong>A</strong>: Kode MK (harus sudah ada di sistem)<br>
+                <strong>B</strong>: Nama Kelas (cth: A1, B2)<br>
+                <strong>C</strong>: Hari <em>(opsional)</em> — Senin/Selasa/dst<br>
+                <strong>D</strong>: Jam Mulai <em>(opsional)</em> — cth: 08:00<br>
+                <strong>E</strong>: Jam Selesai <em>(opsional)</em> — cth: 09:40<br>
+                <br>
+                Duplikat (Kode MK + Nama Kelas sama) dilewati otomatis.
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">File Excel (.xlsx / .xls)</label>
+                <div id="dropZoneKelas" style="border:2px dashed #93C5FD;border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;background:#F8FAFC;transition:border-color .2s,background .2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none"
+                        viewBox="0 0 24 24" stroke="#60A5FA" stroke-width="1.5" style="margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 17v-2m3 2v-4m3 4v-6M3 7l4-4m0 0l4 4M7 3v14M17 3h2a2 2 0 012 2v14a2 2 0 01-2 2h-2"/>
+                    </svg>
+                    <p id="dropLabelKelas" style="margin:0;font-size:13px;color:#6B7280;">Klik atau seret file Excel ke sini</p>
+                    <input type="file" name="file_excel" id="fileExcelKelas"
+                        accept=".xlsx,.xls" style="position:absolute;opacity:0;width:0;height:0;" required>
+                </div>
+            </div>
+
+            <p style="font-size:12px;color:var(--text-muted);margin:-8px 0 16px;">
+                Maks. 5 MB · Gunakan tombol "Template Excel" untuk format yang benar.
+            </p>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="button" data-modal-close="modalImportKelas" class="btn btn-outline">Batal</button>
+                <button type="submit" class="btn btn-primary" id="btnImportKelas">Import</button>
+            </div>
+        </form>
+    </div>
+</div></div>
+
+@push('scripts')
+<script>
+(function () {
+    const zone   = document.getElementById('dropZoneKelas');
+    const input  = document.getElementById('fileExcelKelas');
+    const label  = document.getElementById('dropLabelKelas');
+    const btn    = document.getElementById('btnImportKelas');
+    const form   = document.getElementById('formImportKelas');
+    if (!zone) return;
+
+    zone.addEventListener('click', () => input.click());
+
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.style.borderColor = '#2563EB';
+        zone.style.background  = '#EFF6FF';
+    });
+    zone.addEventListener('dragleave', () => {
+        zone.style.borderColor = '#93C5FD';
+        zone.style.background  = '#F8FAFC';
+    });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.style.borderColor = '#93C5FD';
+        zone.style.background  = '#F8FAFC';
+        const file = e.dataTransfer.files[0];
+        if (file) setFile(file);
+    });
+    input.addEventListener('change', () => {
+        if (input.files[0]) setFile(input.files[0]);
+    });
+
+    function setFile(file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        label.innerHTML = '<strong style="color:#1D4ED8;">✓ ' + file.name + '</strong>'
+            + '<br><span style="font-size:11px;color:#6B7280;">' + (file.size/1024).toFixed(1) + ' KB</span>';
+        zone.style.borderColor = '#34D399';
+        zone.style.background  = '#F0FDF4';
+    }
+
+    form.addEventListener('submit', function () {
+        btn.disabled    = true;
+        btn.textContent = 'Mengimport…';
+    });
+
+    @if($errors->has('file_excel'))
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('modalImportKelas')?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    });
+    @endif
+})();
+</script>
+@endpush
 @if(session('error_tabrakan'))
 @push('scripts')
 <script>

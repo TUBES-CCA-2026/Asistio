@@ -477,6 +477,163 @@ class LaboranController extends Controller
     }
  
     // ── Asisten ────────────────────────────────────────────────────────────
+    // ── Import Kelas Praktikum via Excel ──────────────────────────────────
+    public function kelasImport(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file_excel' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
+        ], [
+            'file_excel.required' => 'File Excel wajib dipilih.',
+            'file_excel.mimes'    => 'File harus berformat .xlsx atau .xls.',
+            'file_excel.max'      => 'Ukuran file maksimal 5 MB.',
+        ]);
+
+        $path = $request->file('file_excel')->getRealPath();
+        $rows = $this->bacaExcelKelas($path);
+
+        if (empty($rows)) {
+            return back()->with('error', 'File Excel kosong atau format tidak dikenali.');
+        }
+
+        $berhasil = 0;
+        $dilewati = 0;
+        $duplikat = 0;
+        $errors   = [];
+
+        $hariValid    = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        $mulaiValid   = ['07:00','08:00','09:00','09:40','10:00','10:30','11:00','13:00','14:00','14:30','15:00','15:40','16:00'];
+        $selesaiValid = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20'];
+
+        foreach ($rows as $index => $row) {
+            $nomorBaris = $index + 2;
+
+            // Kolom: 0=kode_mk, 1=nama_kelas, 2=hari, 3=jam_mulai, 4=jam_selesai
+            $kodeMk    = isset($row[0]) ? trim((string) $row[0]) : '';
+            $namaKelas = isset($row[1]) ? trim((string) $row[1]) : '';
+            $hari      = isset($row[2]) ? trim((string) $row[2]) : '';
+            $jamMulai  = isset($row[3]) ? trim((string) $row[3]) : '';
+            $jamSelesai= isset($row[4]) ? trim((string) $row[4]) : '';
+
+            if ($kodeMk === '' && $namaKelas === '') continue;
+
+            if ($kodeMk === '') {
+                $errors[] = "Baris {$nomorBaris}: Kode MK kosong, dilewati.";
+                $dilewati++; continue;
+            }
+            if ($namaKelas === '') {
+                $errors[] = "Baris {$nomorBaris}: Nama Kelas kosong (Kode MK: {$kodeMk}), dilewati.";
+                $dilewati++; continue;
+            }
+
+            $mk = MataKuliah::where('kode_mk', $kodeMk)->first();
+            if (!$mk) {
+                $errors[] = "Baris {$nomorBaris}: Kode MK '{$kodeMk}' tidak ditemukan, dilewati.";
+                $dilewati++; continue;
+            }
+
+            // Validasi opsional: hari & jam
+            if ($hari !== '' && !in_array($hari, $hariValid)) {
+                $errors[] = "Baris {$nomorBaris}: Hari '{$hari}' tidak valid, dilewati.";
+                $dilewati++; continue;
+            }
+            if ($jamMulai !== '' && !in_array($jamMulai, $mulaiValid)) {
+                $errors[] = "Baris {$nomorBaris}: Jam Mulai '{$jamMulai}' tidak valid, dilewati.";
+                $dilewati++; continue;
+            }
+            if ($jamSelesai !== '' && !in_array($jamSelesai, $selesaiValid)) {
+                $errors[] = "Baris {$nomorBaris}: Jam Selesai '{$jamSelesai}' tidak valid, dilewati.";
+                $dilewati++; continue;
+            }
+
+            // Cek duplikat: kode_mk + nama_kelas sudah ada
+            $sudahAda = Praktikum::where('mata_kuliah_id', $mk->id)
+                ->where('nama_kelas', $namaKelas)
+                ->exists();
+            if ($sudahAda) {
+                $duplikat++; continue;
+            }
+
+            $data = [
+                'mata_kuliah_id' => $mk->id,
+                'nama_kelas'     => $namaKelas,
+                'hari'           => $hari ?: null,
+                'jam_mulai'      => $jamMulai ?: null,
+                'jam_selesai'    => $jamSelesai ?: null,
+            ];
+
+            if ($hari && $jamMulai && $jamSelesai) {
+                $data['jadwal'] = $hari . ', ' . $jamMulai . '–' . $jamSelesai;
+            } elseif ($hari) {
+                $data['jadwal'] = $hari;
+            }
+
+            Praktikum::create($data);
+            $berhasil++;
+        }
+
+        $pesan = "{$berhasil} kelas berhasil diimport.";
+        if ($duplikat > 0) $pesan .= " {$duplikat} kelas duplikat dilewati.";
+        if ($dilewati > 0) $pesan .= " {$dilewati} baris tidak valid dilewati.";
+
+        if (!empty($errors)) session()->flash('import_errors_kelas', $errors);
+
+        return back()->with($berhasil > 0 ? 'success' : 'error', $pesan);
+    }
+
+    /**
+     * Generate template Excel import kelas praktikum secara dinamis.
+     * Kolom: Kode MK | Nama Kelas | Hari | Jam Mulai | Jam Selesai
+     * Baris contoh diisi otomatis dari data MK yang sudah ada di DB.
+     */
+    public function kelasTemplateExcel(): \Symfony\Component\HttpFoundation\Response
+    {
+        $xlsx = new \App\Support\SimpleXlsxWriter();
+
+        $header = ['Kode MK', 'Nama Kelas', 'Hari', 'Jam Mulai', 'Jam Selesai'];
+
+        // Contoh 1: pakai MK pertama yang ada di DB supaya user tidak salah format kode MK
+        $contohMk = MataKuliah::first();
+        $contohRows = [
+            [
+                $contohMk?->kode_mk ?? 'IF-BD',
+                'A1',
+                'Senin',
+                '07:00',
+                '09:30',
+            ],
+            [
+                $contohMk?->kode_mk ?? 'IF-BD',
+                'A2',
+                'Selasa',
+                '09:40',
+                '12:10',
+            ],
+        ];
+
+        $xlsx->addSheet('Import Kelas', $header, $contohRows);
+
+        // Sheet kedua: referensi nilai valid
+        $refHeader = ['Hari Valid', 'Jam Mulai Valid', 'Jam Selesai Valid', 'Kode MK Tersedia'];
+        $hariList  = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu',''];
+        $mulaiList = ['07:00','08:00','09:00','09:40','10:00','10:30','11:00','13:00','14:00','14:30','15:00','15:40','16:00',''];
+        $selesaiList = ['08:40','09:30','10:20','11:20','12:00','12:10','14:20','15:00','15:20','15:30','16:20','17:00','18:10','18:20',''];
+        $mkList    = MataKuliah::orderBy('kode_mk')->pluck('kode_mk')->toArray();
+
+        $maxLen = max(count($hariList), count($mulaiList), count($selesaiList), count($mkList));
+        $refRows = [];
+        for ($i = 0; $i < $maxLen; $i++) {
+            $refRows[] = [
+                $hariList[$i]    ?? '',
+                $mulaiList[$i]   ?? '',
+                $selesaiList[$i] ?? '',
+                $mkList[$i]      ?? '',
+            ];
+        }
+        $xlsx->addSheet('Referensi', $refHeader, $refRows);
+
+        return $xlsx->download('template_import_kelas.xlsx');
+    }
+    
     public function asisten(Request $request): View {
         $q    = $request->input('q', '');
         $sort = in_array($request->input('sort'), ['nama_asisten','nim'])
@@ -774,8 +931,107 @@ class LaboranController extends Controller
         ]);
     }
 
-    private function bacaExcel(string $path): array
+    /**
+     * Baca file .xlsx untuk import kelas praktikum.
+     * Menangani format jam sebagai string ("07:00") maupun
+     * sebagai nilai numerik Excel (desimal, misal 0.2916).
+     */
+    private function bacaExcelKelas(string $path): array
     {
+        if (!class_exists('ZipArchive')) return [];
+
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) return [];
+
+        // Baca shared strings
+        $sharedStrings = [];
+        $ssXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($ssXml !== false) {
+            $ss = simplexml_load_string($ssXml);
+            if ($ss) {
+                foreach ($ss->si as $si) {
+                    $val = '';
+                    foreach ($si->xpath('.//t') as $t) $val .= (string) $t;
+                    $sharedStrings[] = $val;
+                }
+            }
+        }
+
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        if ($sheetXml === false) return [];
+
+        $sheetXml = preg_replace('/xmlns[^=]*="[^"]*"/', '', $sheetXml);
+        $sheet    = simplexml_load_string($sheetXml);
+        if (!$sheet) return [];
+
+        $rows        = [];
+        $headerFound = false;
+
+        foreach ($sheet->sheetData->row as $row) {
+            $rowData = [0 => '', 1 => '', 2 => '', 3 => '', 4 => ''];
+
+            foreach ($row->c as $cell) {
+                $ref      = (string) $cell['r'];
+                $colLetter = preg_replace('/[^A-Za-z]/', '', $ref);
+                $colIndex = $this->kolomKeIndex($colLetter);
+                $type     = (string) $cell['t'];
+
+                $value = '';
+                if (isset($cell->v)) {
+                    $value = trim((string) $cell->v);
+                } elseif (isset($cell->is->t)) {
+                    $value = trim((string) $cell->is->t);
+                }
+
+                if ($type === 's' && isset($sharedStrings[(int) $value])) {
+                    $value = $sharedStrings[(int) $value];
+                }
+                if ($type === 'inlineStr' && isset($cell->is)) {
+                    $val2 = '';
+                    foreach ($cell->is->xpath('.//t') as $t) $val2 .= (string) $t;
+                    $value = $val2;
+                }
+
+                // Kolom jam (3 = jam mulai, 4 = jam selesai) bisa tersimpan
+                // sebagai angka desimal jika user memformat sel sebagai Time di Excel.
+                // Konversi desimal → string HH:MM supaya in_array bekerja.
+                if (in_array($colIndex, [3, 4]) && is_numeric($value) && $value !== '') {
+                    $totalMenit = round((float) $value * 24 * 60);
+                    $jam        = intdiv($totalMenit, 60);
+                    $menit      = $totalMenit % 60;
+                    $value      = str_pad($jam, 2, '0', STR_PAD_LEFT) . ':' . str_pad($menit, 2, '0', STR_PAD_LEFT);
+                }
+
+                if ($colIndex <= 4) {
+                    $rowData[$colIndex] = trim($value);
+                }
+            }
+
+            $col0 = strtolower($rowData[0]);
+
+            // Deteksi baris header — lebih fleksibel
+            if (!$headerFound) {
+                if (
+                    str_contains($col0, 'kode') ||
+                    $col0 === 'kode mk' ||
+                    $col0 === 'kode_mk'
+                ) {
+                    $headerFound = true;
+                }
+                continue;
+            }
+
+            if ($rowData[0] === '' && $rowData[1] === '') continue;
+
+            $rows[] = $rowData;
+        }
+
+        return $rows;
+    }
+
+    private function bacaExcel(string $path): array
+    {   
         if (!class_exists('ZipArchive')) return [];
 
         $zip = new \ZipArchive();
