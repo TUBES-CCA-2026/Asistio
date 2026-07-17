@@ -24,6 +24,14 @@ class SimpleXlsxWriter
     /** @var array<int, array{name:string, header:array<int,string>, rows:array<int,array<int,mixed>>, bold_header:bool}> */
     private array $sheets = [];
 
+    /** @var array<string, array> */
+    private array $dropdowns = [];
+
+    public function setDropdowns(string $sheetName, array $dropdowns): self
+    {
+        $this->dropdowns[$this->sanitizeSheetName($sheetName)] = $dropdowns;
+        return $this;
+    }
     public function addSheet(string $name, array $header, array $rows, bool $boldHeader = true): self
     {
         $safeName = $this->sanitizeSheetName($name);
@@ -222,12 +230,30 @@ class SimpleXlsxWriter
         $lastCol  = $this->colLetter($colCount - 1);
         $lastRow  = max(1, $rowIndex - 1);
 
+        // Buat dataValidation jika ada dropdown untuk sheet ini
+        $dvXml = '';
+        if (isset($this->dropdowns[$sheet['name']])) {
+            $dvItems = '';
+            foreach ($this->dropdowns[$sheet['name']] as [$col, $rowStart, $rowEnd, $formula]) {
+                $sqref = "{$col}{$rowStart}:{$col}{$rowEnd}";
+                $dvItems .= '<dataValidation type="list" allowBlank="1" showDropDown="0"'
+                    . ' showInputMessage="1" showErrorMessage="1"'
+                    . ' sqref="' . $sqref . '">'
+                    . '<formula1>' . htmlspecialchars($formula, ENT_XML1) . '</formula1>'
+                    . '</dataValidation>';
+            }
+            if ($dvItems) {
+                $dvXml = '<dataValidations count="' . count($this->dropdowns[$sheet['name']]) . '">' . $dvItems . '</dataValidations>';
+            }
+        }
+
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
             . '<dimension ref="A1:' . $lastCol . $lastRow . '"/>'
             . '<sheetViews><sheetView workbookViewId="0"/></sheetViews>'
             . '<sheetFormatPr defaultRowHeight="15"/>'
             . '<sheetData>' . $rowsXml . '</sheetData>'
+            . $dvXml
             . '</worksheet>';
     }
 
