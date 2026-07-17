@@ -57,42 +57,58 @@
                     <div class="alert alert-error" style="margin-bottom:12px;">{{ $errors->first('bobot') }}</div>
                 @endif
 
-                @php
-                    $bobotFields = [
-                        'bobot_kehadiran' => ['label'=>'Kehadiran',  'icon'=>'🗓'],
-                        'bobot_praktikum' => ['label'=>'Praktikum',  'icon'=>'🔬'],
-                        'bobot_asistensi' => ['label'=>'Asistensi',  'icon'=>'👨‍🏫'],
-                        'bobot_mid'       => ['label'=>'MID',        'icon'=>'📝'],
-                        'bobot_uas'       => ['label'=>'UAS',        'icon'=>'📋'],
-                    ];
-                @endphp
+                {{-- Seksi 1: Bobot sub-komponen praktikum --}}
+                <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:#1E40AF;margin-bottom:10px;">
+                        🔬 Komposisi Nilai Praktikum (total harus 100%)
+                    </div>
+                    @foreach(['bobot_kegiatan'=>['label'=>'Kegiatan Praktikum','icon'=>'⚗️'],'bobot_evaluasi_praktikum'=>['label'=>'Evaluasi Praktikum','icon'=>'📋']] as $field=>$meta)
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label class="form-label" style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                            <span>{{ $meta['icon'] }}</span><span>{{ $meta['label'] }}</span>
+                        </label>
+                        <div style="position:relative;">
+                            <input type="text" name="{{ $field }}"
+                                   class="form-control bobot-sub-{{ $kelas->id }} input-bobot"
+                                   inputmode="numeric"
+                                   value="{{ old($field, $kelas->$field ?? \App\Models\Praktikum::BOBOT_DEFAULT[$field]) }}"
+                                   required>
+                            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;">%</span>
+                        </div>
+                    </div>
+                    @endforeach
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;background:var(--bg-page);border:1px solid var(--border);">
+                        <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Total Sub</span>
+                        <span id="totalBobotSub{{ $kelas->id }}" style="font-size:14px;font-weight:800;">100%</span>
+                    </div>
+                </div>
 
-                @foreach($bobotFields as $field => $meta)
-                <div class="form-group" style="margin-bottom:10px;">
+                {{-- Seksi 2: Bobot komponen nilai akhir --}}
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">
+                    📊 Komposisi Nilai Akhir (total harus 100%)
+                </div>
+                @foreach(['bobot_praktikum'=>['label'=>'Praktikum','icon'=>'🔬'],'bobot_asistensi'=>['label'=>'Asistensi','icon'=>'👨‍🏫'],'bobot_mid'=>['label'=>'MID','icon'=>'📝'],'bobot_uas'=>['label'=>'UAS','icon'=>'📋']] as $field=>$meta)
+                <div class="form-group" style="margin-bottom:8px;">
                     <label class="form-label" style="display:flex;align-items:center;gap:6px;">
-                        <span>{{ $meta['icon'] }}</span>
-                        <span>{{ $meta['label'] }}</span>
+                        <span>{{ $meta['icon'] }}</span><span>{{ $meta['label'] }}</span>
                     </label>
                     <div style="position:relative;">
-                        <input type="text"
-                               name="{{ $field }}"
+                        <input type="text" name="{{ $field }}"
                                class="form-control bobot-input-{{ $kelas->id }} input-bobot"
                                inputmode="numeric"
                                value="{{ old($field, $kelas->$field ?? \App\Models\Praktikum::BOBOT_DEFAULT[$field]) }}"
                                required>
-                        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
-                                     color:var(--text-muted);font-size:13px;pointer-events:none;">%</span>
+                        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;">%</span>
                     </div>
                 </div>
                 @endforeach
 
-                {{-- Live total --}}
+                {{-- Live total nilai akhir --}}
                 <div style="display:flex;align-items:center;justify-content:space-between;
                             padding:10px 14px;border-radius:8px;margin:12px 0;
                             background:var(--bg-page);border:1.5px solid var(--border);">
-                    <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Total</span>
-                    <span id="totalBobot{{ $kelas->id }}"
-                          style="font-size:18px;font-weight:800;">100%</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Total Nilai Akhir</span>
+                    <span id="totalBobot{{ $kelas->id }}" style="font-size:18px;font-weight:800;">100%</span>
                 </div>
 
                 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">

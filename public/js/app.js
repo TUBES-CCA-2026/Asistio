@@ -792,9 +792,25 @@ document.addEventListener('DOMContentLoaded', function () {
 // ── LIVE TOTAL BOBOT ─────────────────────────────────────────────
     document.querySelectorAll('[id^="formBobot"]').forEach(function (form) {
         var kelasId    = form.id.replace('formBobot','');
-        var totalEl    = document.getElementById('totalBobot' + kelasId);
-        var btnSimpan  = document.getElementById('btnSimpanBobot' + kelasId);
-        var inputs     = form.querySelectorAll('.bobot-input-' + kelasId);
+        var totalEl    = document.getElementById('totalBobot'    + kelasId);
+        var totalSubEl = document.getElementById('totalBobotSub' + kelasId);
+        var btnSimpan  = document.getElementById('btnSimpanBobot'+ kelasId);
+        var inputs     = form.querySelectorAll('.bobot-input-'   + kelasId);
+        var inputsSub  = form.querySelectorAll('.bobot-sub-'     + kelasId);
+
+        function hitungTotalSub() {
+            var total = 0;
+            inputsSub.forEach(function (el) { total += parseFloat(el.value) || 0; });
+            total = Math.round(total * 100) / 100;
+            if (totalSubEl) {
+                totalSubEl.textContent = total + '%';
+                var ok = Math.abs(total - 100) < 0.01;
+                totalSubEl.style.color = ok ? '#22C55E' : '#EF4444';
+            }
+            return Math.abs(total - 100) < 0.01;
+        }
+        inputsSub.forEach(function (el) { el.addEventListener('input', hitungTotalSub); });
+        hitungTotalSub();
 
         function hitungTotal() {
             var total = 0;
@@ -809,7 +825,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 totalEl.style.color      = ok ? '#22C55E' : '#EF4444';
                 totalEl.parentElement.style.borderColor = ok ? '#86EFAC' : '#FECACA';
                 totalEl.parentElement.style.background  = ok ? '#F0FDF4' : '#FEF2F2';
-                if (btnSimpan) btnSimpan.disabled = !ok;
+                if (btnSimpan) btnSimpan.disabled = !ok || !hitungTotalSub();
             }
         }
 
@@ -818,6 +834,56 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         hitungTotal();
     });
+
+    // ── LIVE HITUNG KOLOM NILAI PRAKTIKUM (read-only) ────────────────
+    // Saat user ubah nilai kegiatan/evaluasi, hitung otomatis nilai pertemuan
+    // menggunakan bobot yang disimpan di data-bobot-kegiatan pada form
+    (function () {
+        // Ambil bobot dari hidden input (akan di-refresh jika berubah)
+        function getBobotKegiatan(mhsId) {
+            // Cari form nilai — bobot tersimpan di data attribute
+            var form = document.querySelector('form[action*="simpan-semua"]');
+            if (!form) return 50;
+            return parseFloat(form.dataset.bobotKegiatan || 50);
+        }
+        function getBobotEvaluasi(mhsId) {
+            var form = document.querySelector('form[action*="simpan-semua"]');
+            if (!form) return 50;
+            return parseFloat(form.dataset.bobotEvaluasi || 50);
+        }
+
+        function hitungNilaiPertemuan(mhsId, pertemuan) {
+            var bKegiatan = getBobotKegiatan(mhsId);
+            var bEvaluasi = getBobotEvaluasi(mhsId);
+            var total     = bKegiatan + bEvaluasi;
+            if (total <= 0) return null;
+
+            var kegEl  = document.querySelector('[data-mhs="'+mhsId+'"][data-pertemuan="'+pertemuan+'"][data-sub="kegiatan"]');
+            var evalEl = document.querySelector('[data-mhs="'+mhsId+'"][data-pertemuan="'+pertemuan+'"][data-sub="evaluasi"]');
+            var nilaiEl= document.getElementById('nilai_p'+pertemuan+'_'+mhsId);
+
+            if (!nilaiEl) return;
+
+            var vKeg  = kegEl  && kegEl.value  !== '' && kegEl.value  !== '—' ? parseFloat(kegEl.value)  : null;
+            var vEval = evalEl && evalEl.value !== '' && evalEl.value !== '—' ? parseFloat(evalEl.value) : null;
+
+            if (vKeg === null && vEval === null) {
+                nilaiEl.value = '';
+                return;
+            }
+            var hasil = ((bKegiatan * (vKeg || 0)) + (bEvaluasi * (vEval || 0))) / total;
+            nilaiEl.value = hasil.toFixed(2);
+        }
+
+        document.querySelectorAll('.input-sub-nilai').forEach(function (el) {
+            el.addEventListener('input', function () {
+                hitungNilaiPertemuan(this.dataset.mhs, this.dataset.pertemuan);
+            });
+            el.addEventListener('change', function () {
+                hitungNilaiPertemuan(this.dataset.mhs, this.dataset.pertemuan);
+            });
+        });
+    })();
 
     // ── INPUT BOBOT — hanya angka dan satu titik desimal ──────────────
     document.querySelectorAll('.input-bobot').forEach(function (el) {

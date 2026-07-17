@@ -6,7 +6,9 @@
 <div class="page-toolbar"><a href="{{ route('asisten.dashboard') }}" class="btn btn-outline">← Kembali</a></div>
 
 {{-- Form tunggal membungkus seluruh tabel --}}
-<form method="POST" action="{{ route('asisten.nilai.simpan-semua', $praktikum) }}">
+<form method="POST" action="{{ route('asisten.nilai.simpan-semua', $praktikum) }}"
+      data-bobot-kegiatan="{{ $praktikum->bobot_kegiatan ?? 50 }}"
+      data-bobot-evaluasi="{{ $praktikum->bobot_evaluasi_praktikum ?? 50 }}">
 @csrf
 <div class="card"><div class="table-wrapper" style="overflow-x:auto;">
     <table class="table" style="min-width:1900px;">
@@ -15,7 +17,7 @@
         <tr>
             <th>Mahasiswa</th>
             @for($i = 1; $i <= 14; $i++)
-            <th style="text-align:center;">P{{ $i }}</th>
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);">P{{ $i }}</th>
             @endfor
             <th style="text-align:center;">Asist 1</th>
             <th style="text-align:center;">Asist 2</th>
@@ -28,15 +30,9 @@
         <tr>
             <th></th>
             @for($i = 1; $i <= 14; $i++)
-            <th style="text-align:center;padding:4px 2px;">
-                <button type="button"
-                    class="btn btn-sm btn-danger"
-                    style="font-size:10px;padding:2px 6px;line-height:1.4;"
-                    data-reset-field="p{{ $i }}"
-                    title="Set semua nilai P{{ $i }} menjadi 0 (belum tersimpan)">
-                    Reset
-                </button>
-            </th>
+            <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);border-left:2px solid var(--border);">Keg</th>
+            <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);">Eval</th>
+            <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);">Nilai</th>
             @endfor
             @foreach(['nilai_asistensi1'=>'Asist 1','nilai_asistensi2'=>'Asist 2','nilai_asistensi3'=>'Asist 3','nilai_MID'=>'MID','nilai_UAS'=>'UAS'] as $kolom => $label)
             <th style="text-align:center;padding:4px 2px;">
@@ -71,14 +67,36 @@
                 </div>
                 <div class="fs-11 text-muted">{{ $m->nim_mahasiswa }}</div>
             </td>
-            {{-- Nilai Evaluasi P1–P14 --}}
+            {{-- Nilai P1–P14: Kegiatan | Evaluasi | Nilai (read-only) --}}
             @for($i = 1; $i <= 14; $i++)
-            <td class="td-nilai">
-                <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}]"
-                    class="form-control form-control-xs input-nilai"
+            @php
+                $nilaiP = $n['evaluasi']->{'p'.$i} ?? null;
+            @endphp
+            <td class="td-nilai" style="border-left:2px solid var(--border);">
+                <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}_kegiatan]"
+                    class="form-control form-control-xs input-nilai input-sub-nilai"
                     inputmode="decimal"
-                    value="{{ $n['evaluasi']->{'p'.$i} ?? '' }}"
+                    data-mhs="{{ $m->id }}" data-pertemuan="{{ $i }}" data-sub="kegiatan"
+                    value="{{ $n['evaluasi']->{'p'.$i.'_kegiatan'} ?? '' }}"
                     placeholder="—">
+            </td>
+            <td class="td-nilai">
+                <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}_evaluasi]"
+                    class="form-control form-control-xs input-nilai input-sub-nilai"
+                    inputmode="decimal"
+                    data-mhs="{{ $m->id }}" data-pertemuan="{{ $i }}" data-sub="evaluasi"
+                    value="{{ $n['evaluasi']->{'p'.$i.'_evaluasi'} ?? '' }}"
+                    placeholder="—">
+            </td>
+            <td class="td-nilai" style="background:var(--bg-page);">
+                <input type="text"
+                    id="nilai_p{{ $i }}_{{ $m->id }}"
+                    class="form-control form-control-xs"
+                    style="background:transparent;cursor:default;text-align:center;font-weight:600;"
+                    readonly
+                    value="{{ $nilaiP !== null ? number_format($nilaiP, 2) : '' }}"
+                    placeholder="—"
+                    tabindex="-1">
             </td>
             @endfor
             {{-- Nilai Asistensi 1–3 --}}
@@ -115,7 +133,7 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="21"><div class="empty-state"><p>Belum ada mahasiswa.</p></div></td></tr>
+        <tr><td colspan="{{ 1 + 14*3 + 5 + 1 }}"><div class="empty-state"><p>Belum ada mahasiswa.</p></div></td></tr>
         @endforelse
         </tbody>
     </table>

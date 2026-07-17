@@ -115,21 +115,42 @@ class AsistenController extends Controller
         abort_unless($this->isAuthorizedForKelas($praktikum), 403);
 
         $v = $request->validate([
-            'bobot_kehadiran' => ['required','numeric','min:0','max:100'],
-            'bobot_praktikum' => ['required','numeric','min:0','max:100'],
-            'bobot_asistensi' => ['required','numeric','min:0','max:100'],
-            'bobot_mid'       => ['required','numeric','min:0','max:100'],
-            'bobot_uas'       => ['required','numeric','min:0','max:100'],
+            'bobot_kegiatan'            => ['required','numeric','min:0','max:100'],
+            'bobot_evaluasi_praktikum'  => ['required','numeric','min:0','max:100'],
+            'bobot_praktikum'           => ['required','numeric','min:0','max:100'],
+            'bobot_asistensi'           => ['required','numeric','min:0','max:100'],
+            'bobot_mid'                 => ['required','numeric','min:0','max:100'],
+            'bobot_uas'                 => ['required','numeric','min:0','max:100'],
         ]);
 
-        $total = $v['bobot_kehadiran'] + $v['bobot_praktikum'] + $v['bobot_asistensi']
-               + $v['bobot_mid'] + $v['bobot_uas'];
-
-        if (abs($total - 100) > 0.01) {
-            return back()->withErrors(['bobot' => "Total bobot harus 100%. Saat ini: {$total}%"]);
+        // Sub-bobot praktikum (kegiatan + evaluasi) harus = 100
+        $totalSub = $v['bobot_kegiatan'] + $v['bobot_evaluasi_praktikum'];
+        if (abs($totalSub - 100) > 0.01) {
+            return back()->withErrors(['bobot' => "Total bobot Kegiatan + Evaluasi Praktikum harus 100%. Saat ini: {$totalSub}%"]);
         }
 
-        $praktikum->update($v);
+        // Bobot komponen nilai akhir harus = 100
+        $total = $v['bobot_praktikum'] + $v['bobot_asistensi'] + $v['bobot_mid'] + $v['bobot_uas'];
+        if (abs($total - 100) > 0.01) {
+            return back()->withErrors(['bobot' => "Total bobot Praktikum + Asistensi + MID + UAS harus 100%. Saat ini: {$total}%"]);
+        }
+
+        $praktikum->update(array_merge($v, ['bobot_kehadiran' => 0]));
+
+        // Hitung ulang nilai pertemuan semua mahasiswa dengan bobot baru
+        foreach ($praktikum->mahasiswa as $m) {
+            $eval = \App\Models\NilaiEvaluasi::where([
+                'mahasiswa_id' => $m->id,
+                'praktikum_id' => $praktikum->id,
+            ])->first();
+            if ($eval) {
+                $eval->hitungDanSimpanNilaiPertemuan(
+                    $v['bobot_kegiatan'],
+                    $v['bobot_evaluasi_praktikum']
+                );
+            }
+            RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id);
+        }
 
         // Hitung ulang rekap semua mahasiswa di kelas ini dengan bobot baru
         foreach ($praktikum->mahasiswa as $m) {
@@ -192,7 +213,13 @@ class AsistenController extends Controller
             // Filter hanya field yang diisi
             // Konversi string kosong → null (bukan dibuang) supaya field yang dikosongkan ikut tersimpan
             $toNull = fn($x) => ($x === '' || $x === null) ? null : (float) $x;
-            $eval = array_map($toNull, array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))));
+            // Kolom evaluasi: p1_kegiatan, p1_evaluasi, ... p14_kegiatan, p14_evaluasi
+            $evalKeys = [];
+            for ($i = 1; $i <= 14; $i++) {
+                $evalKeys[] = "p{$i}_kegiatan";
+                $evalKeys[] = "p{$i}_evaluasi";
+            }
+            $eval = array_map($toNull, array_intersect_key($v, array_flip($evalKeys)));
             $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
             $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
@@ -220,11 +247,27 @@ class AsistenController extends Controller
             $mahasiswaId = (int) $mahasiswaId;
             if (!$praktikum->mahasiswa->contains($mahasiswaId)) continue;
 
-            $eval = array_map($toNull, array_intersect_key($v, array_flip(array_map(fn($i) => "p{$i}", range(1, 14)))));
+            // Kolom evaluasi: p1_kegiatan, p1_evaluasi, ... p14_kegiatan, p14_evaluasi
+            $evalKeys = [];
+            for ($i = 1; $i <= 14; $i++) {
+                $evalKeys[] = "p{$i}_kegiatan";
+                $evalKeys[] = "p{$i}_evaluasi";
+            }
+            $eval = array_map($toNull, array_intersect_key($v, array_flip($evalKeys)));
             $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
             $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
-            if ($eval) NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $eval);
+            if ($eval) {
+                $evalModel = NilaiEvaluasi::updateOrCreate(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id],
+                    $eval
+                );
+                // Hitung ulang nilai p1..p14 dari sub-kolom berdasarkan bobot kelas
+                $evalModel->hitungDanSimpanNilaiPertemuan(
+                    (float) ($praktikum->bobot_kegiatan ?? 50),
+                    (float) ($praktikum->bobot_evaluasi_praktikum ?? 50)
+                );
+            }
             if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
             if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
 

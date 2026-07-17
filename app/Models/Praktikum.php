@@ -9,22 +9,27 @@ class Praktikum extends Model {
      * Distribusi: Kehadiran 10, Praktikum 20, Asistensi 20, MID 20, UAS 30
      */
     public const BOBOT_DEFAULT = [
-        'bobot_kehadiran' => 10,
-        'bobot_praktikum' => 20,
-        'bobot_asistensi' => 20,
-        'bobot_mid'       => 20,
-        'bobot_uas'       => 30,
+        'bobot_kehadiran'           => 0,
+        'bobot_kegiatan'            => 50,
+        'bobot_evaluasi_praktikum'  => 50,
+        'bobot_praktikum'           => 20,
+        'bobot_asistensi'           => 20,
+        'bobot_mid'                 => 30,
+        'bobot_uas'                 => 30,
     ];
 
     protected $attributes = [
-        'bobot_kehadiran' => 10,
-        'bobot_praktikum' => 20,
-        'bobot_asistensi' => 20,
-        'bobot_mid'       => 20,
-        'bobot_uas'       => 30,
+        'bobot_kehadiran'           => 0,
+        'bobot_kegiatan'            => 50,
+        'bobot_evaluasi_praktikum'  => 50,
+        'bobot_praktikum'           => 20,
+        'bobot_asistensi'           => 20,
+        'bobot_mid'                 => 30,
+        'bobot_uas'                 => 30,
     ];
     protected $fillable = [
-        'bobot_kehadiran','bobot_praktikum','bobot_asistensi','bobot_mid','bobot_uas','mata_kuliah_id','nama_kelas','jadwal','hari','jam_mulai','jam_selesai','ruangan_id','dosen_id','asisten_id','asisten2_id'];
+        'bobot_kehadiran','bobot_kegiatan','bobot_evaluasi_praktikum',
+        'bobot_praktikum','bobot_asistensi','bobot_mid','bobot_uas','mata_kuliah_id','nama_kelas','jadwal','hari','jam_mulai','jam_selesai','ruangan_id','dosen_id','asisten_id','asisten2_id'];
     public function mataKuliah() { return $this->belongsTo(MataKuliah::class); }
     public function ruangan()    { return $this->belongsTo(Ruangan::class); }
     public function dosen()      { return $this->belongsTo(Dosen::class); }
