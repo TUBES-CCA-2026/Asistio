@@ -1096,6 +1096,25 @@ img {
     color: white;
 }
 
+.btn-reset-mini {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 2px 1px;
+    border-radius: 4px;
+    transition: background .15s, color .15s;
+}
+
+.btn-reset-mini:hover {
+    background: #FEE2E2;
+    color: var(--status-a);
+}
+
 .btn-lg {
     padding: 12px 20px;
     font-size: 15px;

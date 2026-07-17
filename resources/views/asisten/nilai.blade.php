@@ -30,8 +30,16 @@
         <tr>
             <th></th>
             @for($i = 1; $i <= 14; $i++)
-            <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);border-left:2px solid var(--border);">Keg</th>
-            <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);">Eval</th>
+            <th style="text-align:center;padding:1px;border-left:2px solid var(--border);">
+                <button type="button" class="btn-reset-mini"
+                    data-reset-field="p{{ $i }}_kegiatan"
+                    title="Set semua nilai Kegiatan P{{ $i }} menjadi kosong (belum tersimpan)">Keg</button>
+            </th>
+            <th style="text-align:center;padding:1px;">
+                <button type="button" class="btn-reset-mini"
+                    data-reset-field="p{{ $i }}_evaluasi"
+                    title="Set semua nilai Evaluasi P{{ $i }} menjadi kosong (belum tersimpan)">Eval</button>
+            </th>
             <th style="text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);">Nilai</th>
             @endfor
             @foreach(['nilai_asistensi1'=>'Asist 1','nilai_asistensi2'=>'Asist 2','nilai_asistensi3'=>'Asist 3','nilai_MID'=>'MID','nilai_UAS'=>'UAS'] as $kolom => $label)
