@@ -30,14 +30,14 @@ Route::prefix('laboran')->middleware(['auth','role:laboran'])->name('laboran.')-
     // Kelas Praktikum
     Route::get('/kelas',                      [LaboranController::class,'kelas'])->name('kelas');
     Route::post('/kelas',                     [LaboranController::class,'kelasStore'])->name('kelas.store');
-    Route::get('/kelas/{praktikum}',           [LaboranController::class,'kelasShow'])->name('kelas.show');
-    Route::patch('/kelas/{praktikum}',         [LaboranController::class,'kelasUpdate'])->name('kelas.update');
+    Route::post('/kelas/import',              [LaboranController::class,'kelasImport'])->name('kelas.import');
+    Route::get('/kelas/template-excel',       [LaboranController::class,'kelasTemplateExcel'])->name('kelas.template-excel');
+    Route::get('/kelas/{praktikum}',          [LaboranController::class,'kelasShow'])->name('kelas.show');
+    Route::patch('/kelas/{praktikum}',        [LaboranController::class,'kelasUpdate'])->name('kelas.update');
     Route::post('/kelas/{praktikum}/mahasiswa', [LaboranController::class,'kelasTambahMahasiswa'])->name('kelas.mahasiswa.add');
     Route::delete('/kelas/{praktikum}/mahasiswa/{mahasiswa}', [LaboranController::class,'kelasHapusMahasiswa'])->name('kelas.mahasiswa.remove');
     Route::post('/kelas/{praktikum}/mahasiswa/enroll-banyak', [LaboranController::class,'kelasEnrollBanyak'])->name('kelas.mahasiswa.enroll-banyak');
     Route::delete('/kelas/{praktikum}',       [LaboranController::class,'kelasDestroy'])->name('kelas.destroy');
-    Route::post('/kelas/import',        [LaboranController::class,'kelasImport'])->name('kelas.import');
-    Route::get('/kelas/template-excel', [LaboranController::class,'kelasTemplateExcel'])->name('kelas.template-excel');
     // Asisten
     Route::get('/asisten',                    [LaboranController::class,'asisten'])->name('asisten');
     Route::post('/asisten',                   [LaboranController::class,'asistenStore'])->name('asisten.store');
