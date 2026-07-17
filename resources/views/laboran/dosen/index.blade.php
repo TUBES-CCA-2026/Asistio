@@ -2,7 +2,58 @@
 @section('title','Dosen')
 @section('page-title','Manajemen Dosen')
 @section('content')
-<div class="page-toolbar"><button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Dosen</button></div>
+<div class="page-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-primary" data-modal-open="modalTambah">+ Tambah Dosen</button>
+    <button class="btn btn-danger" data-modal-open="modalHapusSemuaDosen"
+        style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round"
+            d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
+        </svg>
+        Hapus Semua
+    </button>
+</div>
+
+{{-- Modal Hapus Semua Dosen --}}
+<div id="modalHapusSemuaDosen" class="modal-overlay"><div class="modal" style="max-width:440px;">
+    <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <span class="modal-title" style="color:#B91C1C;">⚠ Hapus Semua Dosen</span>
+        <button data-modal-close="modalHapusSemuaDosen" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+        <p style="font-size:14px;color:#374151;margin:0 0 12px;">Tindakan ini akan menghapus <strong>seluruh data dosen</strong> beserta akun login mereka.</p>
+        <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#B91C1C;">
+            <strong>Tindakan ini tidak dapat dibatalkan.</strong> Dosen yang terhapus tidak bisa login lagi. Kolom dosen di kelas akan dikosongkan.
+        </div>
+        <p style="font-size:13px;color:#374151;margin:0 0 8px;">Ketik <strong>HAPUS SEMUA</strong> untuk konfirmasi:</p>
+        <input type="text" id="konfirmasiHapusDosen" class="form-control" placeholder="HAPUS SEMUA" autocomplete="off">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:16px;">
+        <button type="button" data-modal-close="modalHapusSemuaDosen" class="btn btn-outline">Batal</button>
+        <form method="POST" action="{{ route('laboran.dosen.hapus-semua') }}" id="formHapusSemuaDosen">
+            @csrf @method('DELETE')
+            <button type="submit" id="btnHapusSemuaDosen" class="btn btn-danger" disabled>Hapus Semua</button>
+        </form>
+    </div>
+</div></div>
+@push('scripts')
+<script>
+(function () {
+    const input = document.getElementById('konfirmasiHapusDosen');
+    const btn   = document.getElementById('btnHapusSemuaDosen');
+    const form  = document.getElementById('formHapusSemuaDosen');
+    if (!input) return;
+    input.addEventListener('input', () => {
+        btn.disabled = input.value.trim() !== 'HAPUS SEMUA';
+    });
+    form.addEventListener('submit', function (e) {
+        if (input.value.trim() !== 'HAPUS SEMUA') { e.preventDefault(); return; }
+        btn.disabled = true; btn.textContent = 'Menghapus…';
+    });
+})();
+</script>
+@endpush
 <div class="card">
     <div class="table-toolbar">
         <div class="table-search-wrap">
