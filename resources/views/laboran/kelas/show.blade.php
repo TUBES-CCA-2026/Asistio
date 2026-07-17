@@ -179,6 +179,8 @@
                     <div id="daftarMhsCheckbox" style="
                         max-height:320px;
                         overflow-y:auto;
+                        scrollbar-width:none;
+                        -ms-overflow-style:none;
                         border:1px solid var(--border);
                         border-radius:8px;
                         margin-bottom:12px;

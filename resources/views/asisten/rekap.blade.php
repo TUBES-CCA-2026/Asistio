@@ -6,7 +6,7 @@
 <div class="page-toolbar"><a href="{{ route('asisten.dashboard') }}" class="btn btn-outline">← Kembali</a></div>
 <div class="card mb-4">
     <div class="card-header"><span class="card-title">Rekap Nilai Akhir</span></div>
-    <div class="table-wrapper"><table class="table">
+    <div class="table-wrapper" style="scrollbar-width:none; -ms-overflow-style:none;"><table class="table">
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;">Eval</th><th style="text-align:center;">Asist</th><th style="text-align:center;">MID</th><th style="text-align:center;">UAS</th><th style="text-align:center;">Nilai Akhir</th><th style="text-align:center;">Huruf</th><th style="text-align:center;">Kehadiran</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $m)
@@ -37,7 +37,7 @@
  
 <div class="card mb-4">
     <div class="card-header"><span class="card-title">Rekap Presensi</span></div>
-    <div style="overflow-x:auto;"><table class="table" style="min-width:800px;">
+    <div style="overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;"><table class="table" style="min-width:800px;">
         <thead><tr><th>NIM</th><th>Nama</th>@for($i=1;$i<=14;$i++)<th style="text-align:center;width:32px;">P{{ $i }}</th>@endfor<th>H</th><th>A</th></tr></thead>
         <tbody>
         @foreach($mahasiswaList as $m)
@@ -67,7 +67,7 @@
  
 <div class="card">
     <div class="card-header"><span class="card-title">Rekap Absensi Asistensi</span></div>
-    <div style="overflow-x:auto;"><table class="table" style="min-width:400px;">
+    <div style="overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;"><table class="table" style="min-width:400px;">
         <thead><tr><th>NIM</th><th>Nama</th><th style="text-align:center;width:90px;">Asistensi 1</th><th style="text-align:center;width:90px;">Asistensi 2</th><th style="text-align:center;width:90px;">Asistensi 3</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $m)
