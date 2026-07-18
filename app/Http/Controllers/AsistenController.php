@@ -223,7 +223,18 @@ class AsistenController extends Controller
             $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
             $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
-            if ($eval) NilaiEvaluasi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $eval);
+            if ($eval) {
+                $evalModel = NilaiEvaluasi::updateOrCreate(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id],
+                    $eval
+                );
+                // Hitung ulang nilai p1..p14 dari sub-kolom kegiatan/evaluasi
+                // (menyamakan perilaku dengan nilaiAutosave())
+                $evalModel->hitungDanSimpanNilaiPertemuan(
+                    (float) ($praktikum->bobot_kegiatan ?? 50),
+                    (float) ($praktikum->bobot_evaluasi_praktikum ?? 50)
+                );
+            }
             if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
             if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
 
