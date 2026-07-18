@@ -194,7 +194,7 @@
                 <button type="button" class="btn btn-sm btn-outline" data-modal-open="modalEditMhs{{ $m->id }}">Edit</button>
                 <form method="POST" action="{{ route('laboran.mahasiswa.destroy', $m) }}" style="margin:0;">
                     @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus mahasiswa ini?')">Hapus</button>
+                    <button class="btn btn-sm btn-danger" type="button" data-konfirm="Hapus mahasiswa ini?" data-konfirm-judul="Hapus Mahasiswa">Hapus</button>
                 </form>
             </div>
         </td>
