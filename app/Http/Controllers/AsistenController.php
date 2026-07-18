@@ -368,7 +368,7 @@ class AsistenController extends Controller
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
  
-        $mahasiswaList = $praktikum->mahasiswa()->orderBy('nama_mahasiswa')->get();
+        $mahasiswaList = $praktikum->mahasiswa()->orderBy('nim_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
         // Rekap nilai akhir per mahasiswa, khusus untuk kelas (praktikum) ini

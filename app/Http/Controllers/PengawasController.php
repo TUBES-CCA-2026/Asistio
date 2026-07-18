@@ -38,7 +38,7 @@ class PengawasController extends Controller
     private function dataRekap(Praktikum $praktikum): array {
         $mahasiswaList = $praktikum->mahasiswa()
             ->with(['rekap', 'praktikum', 'presensi' => fn($q) => $q->where('praktikum_id', $praktikum->id)])
-            ->orderBy('nama_mahasiswa')->get();
+            ->orderBy('nim_mahasiswa')->get();
         $presensiAll   = Presensi::where('praktikum_id', $praktikum->id)->get()
             ->groupBy('mahasiswa_id')->map(fn($r) => $r->keyBy('pertemuan_ke'));
         // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi

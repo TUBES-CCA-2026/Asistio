@@ -35,7 +35,7 @@ class Praktikum extends Model {
     public function dosen()      { return $this->belongsTo(Dosen::class); }
     public function asisten()    { return $this->belongsTo(Asisten::class); }
     public function asisten2() { return $this->belongsTo(Asisten::class, 'asisten2_id'); }
-    public function mahasiswa() { return $this->belongsToMany(Mahasiswa::class, 'mahasiswa_praktikum'); }
+    public function mahasiswa() { return $this->belongsToMany(Mahasiswa::class, 'mahasiswa_praktikum')->orderBy('nim_mahasiswa'); }
     public function presensi()   { return $this->hasMany(Presensi::class); }
     public function nilaiAsistensi() { return $this->hasMany(NilaiAsistensi::class); }
     public function nilaiUjian()     { return $this->hasMany(NilaiUjian::class); }
