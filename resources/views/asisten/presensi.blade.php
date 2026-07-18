@@ -61,24 +61,13 @@
             @endforeach
             <td><input type="text" name="presensi[{{ $m->id }}][catatan]" class="form-control form-control-sm" value="{{ $p?->catatan }}" placeholder="—"></td>
             <td style="text-align:center;vertical-align:middle;padding:6px;">
+                <input type="file" name="foto_{{ $m->id }}" id="file-input-{{ $m->id }}"
+                       accept="image/*" style="display:none;">
                 @if($punyaFoto)
                     <a href="{{ route('asisten.presensi.bukti.lihat', $p) }}" target="_blank"
                        class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;">📎 Lihat</a>
-                    <label class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;cursor:pointer;margin-left:2px;" title="Ganti foto">
-                        ✏️ Ganti
-                        <input type="file" name="foto_{{ $m->id }}" accept="image/*"
-                               class="bukti-input" data-mid="{{ $m->id }}" style="display:none;">
-                    </label>
                 @else
-                    <label class="btn btn-sm btn-outline bukti-label" id="blabel-{{ $m->id }}"
-                           style="font-size:11px;padding:3px 8px;cursor:pointer;{{ in_array($status,['S','I']) ? 'background:#fef2f2;border-color:#f87171;color:#dc2626;' : '' }}"
-                           title="Wajib untuk Sakit/Izin">
-                        📷 {{ in_array($status,['S','I']) ? 'Wajib Upload' : 'Upload Foto' }}
-                        <input type="file" name="foto_{{ $m->id }}" accept="image/*"
-                               class="bukti-input" data-mid="{{ $m->id }}"
-                               style="display:none;" {{ in_array($status,['S','I']) ? 'required' : '' }}>
-                    </label>
-                    <span id="bname-{{ $m->id }}" style="display:none;font-size:10px;color:#16a34a;display:block;margin-top:2px;"></span>
+                    <span id="bukti-status-{{ $m->id }}" style="font-size:11px;color:#9ca3af;">—</span>
                 @endif
             </td>
         </tr>
@@ -92,14 +81,10 @@
 </div>
 <script>
 (function () {
-    var form     = document.querySelector('form[action*="presensi"][action*="simpan"]');
+    var form      = document.querySelector('form[enctype="multipart/form-data"]');
     var DRAFT_KEY = 'draft_presensi_{{ $praktikum->id }}_p{{ $pertemuan }}';
     if (!form) return;
 
-    var navType  = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
-    var isReload = navType === 'reload';
-
-    // ── Baca seluruh state form ke objek ─────────────────────────────
     function bacaState() {
         var state = {};
         form.querySelectorAll('input[type="radio"]:checked[name*="status_kehadiran"]').forEach(function (r) {
@@ -113,10 +98,8 @@
         return state;
     }
 
-    // ── Baca state DB (dari value awal HTML) ──────────────────────────
     function bacaStateDB() {
         var state = {};
-        // Status: cek radio yang awalnya checked (dari PHP)
         form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
             var id = r.name.match(/\[(\d+)\]/)?.[1];
             if (!id) return;
@@ -134,7 +117,6 @@
 
     var stateDB = bacaStateDB();
 
-    // ── Cek apakah ada perubahan dari DB ─────────────────────────────
     function adaPerubahan() {
         var now = bacaState();
         return Object.keys(now).some(function (id) {
@@ -144,13 +126,11 @@
         });
     }
 
-    // ── Simpan ke sessionStorage ──────────────────────────────────────
     function simpanDraft() {
         try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(bacaState())); } catch (e) {}
         updateIndikator();
     }
 
-    // ── Restore dari sessionStorage ───────────────────────────────────
     function pulihkanDraft() {
         var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { return; }
         if (!raw) return;
@@ -169,19 +149,17 @@
         updateIndikator();
     }
 
-    // ── Hapus draft ───────────────────────────────────────────────────
     function hapusDraft() {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
         updateIndikator();
     }
 
-    // ── Indikator "Belum disimpan" di card-header ─────────────────────
     var indEl = null;
     var cardHeader = form.querySelector('.card-header');
     if (cardHeader) {
         cardHeader.style.position = 'relative';
         indEl = document.createElement('span');
-        indEl.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:3px 10px;';indEl.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:3px 10px;position:absolute;left:50%;transform:translateX(-50%);';
+        indEl.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:3px 10px;position:absolute;left:50%;transform:translateX(-50%);';
         indEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Belum disimpan';
         cardHeader.appendChild(indEl);
     }
@@ -192,87 +170,201 @@
         if (indEl) indEl.style.display = ada ? 'inline-flex' : 'none';
     }
 
-    // ── Init ──────────────────────────────────────────────────────────
     pulihkanDraft();
 
-    // ── Dengarkan perubahan ───────────────────────────────────────────
-    form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
-        r.addEventListener('change', simpanDraft);
+    // ── Foto tersimpan di DB (dari PHP) ──────────────────────────────
+    var fotoTersimpan = @json(
+        collect($presensiMap)->mapWithKeys(fn($p, $id) => [$id => (bool)$p->bukti_foto])
+    );
+
+    // ── State foto pending (belum disubmit) ───────────────────────────
+    var fotoPending = {};
+
+    // ── Buat modal upload bukti sekali saja ───────────────────────────
+    var modalEl = document.createElement('div');
+    modalEl.id  = 'modal-bukti';
+    modalEl.className = 'modal-overlay';
+    modalEl.innerHTML = [
+        '<div class="modal" style="max-width:440px;">',
+            '<div class="modal-header" style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;">',
+                '<span class="modal-title" style="color:#15803D;" id="modal-bukti-judul">Upload Bukti Foto</span>',
+                '<button type="button" class="modal-close" id="modal-bukti-tutup">✕</button>',
+            '</div>',
+            '<div class="modal-body">',
+                '<p id="modal-bukti-nama" style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1e293b;"></p>',
+                '<p style="margin:0 0 14px;font-size:13px;color:#64748b;">Upload foto bukti (surat dokter, surat izin, dll.) untuk melanjutkan.</p>',
+                '<div id="modal-drop-area" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;">',
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5" style="margin-bottom:8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>',
+                    '<p style="margin:0 0 4px;font-size:13px;color:#475569;font-weight:500;">Klik atau drag foto ke sini</p>',
+                    '<p id="modal-file-name" style="margin:0;font-size:12px;color:#94a3b8;">JPG, PNG, WEBP · Maks 5 MB</p>',
+                    '<input id="modal-file-input" type="file" accept="image/*" style="display:none;">',
+                '</div>',
+                '<div id="modal-preview-wrap" style="display:none;margin-top:12px;text-align:center;">',
+                    '<img id="modal-preview-img" src="" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;border:1px solid #e2e8f0;">',
+                    '<p id="modal-preview-name" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p>',
+                '</div>',
+            '</div>',
+            '<div style="display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px;">',
+                '<button id="modal-bukti-batal" type="button" class="btn btn-outline">Batal (kosongkan)</button>',
+                '<button id="modal-bukti-simpan" type="button" class="btn btn-primary" disabled style="opacity:.5;">Konfirmasi</button>',
+            '</div>',
+        '</div>',
+    ].join('');
+    document.body.appendChild(modalEl);
+
+    var judulEl     = modalEl.querySelector('#modal-bukti-judul');
+    var namaEl      = modalEl.querySelector('#modal-bukti-nama');
+    var tutupBtn    = modalEl.querySelector('#modal-bukti-tutup');
+    var dropArea    = modalEl.querySelector('#modal-drop-area');
+    var fileInput   = modalEl.querySelector('#modal-file-input');
+    var fileNameEl  = modalEl.querySelector('#modal-file-name');
+    var previewWrap = modalEl.querySelector('#modal-preview-wrap');
+    var previewImg  = modalEl.querySelector('#modal-preview-img');
+    var previewName = modalEl.querySelector('#modal-preview-name');
+    var batalBtn    = modalEl.querySelector('#modal-bukti-batal');
+    var simpanBtn   = modalEl.querySelector('#modal-bukti-simpan');
+
+    var modalMhsId   = null;
+    var modalRadioEl = null;
+
+    function bukaModalBukti(mahasiswaId, nama, radioEl) {
+        modalMhsId   = mahasiswaId;
+        modalRadioEl = radioEl;
+        judulEl.textContent = 'Upload Bukti — ' + (radioEl.value === 'S' ? 'Sakit' : 'Izin');
+        namaEl.textContent  = nama;
+        resetPreviewModal();
+        modalEl.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function tutupModalBukti(batalkan) {
+        modalEl.classList.remove('open');
+        document.body.style.overflow = '';
+        if (batalkan && modalRadioEl) {
+            modalRadioEl.checked = false;
+            delete fotoPending[modalMhsId];
+            var inp = document.getElementById('file-input-' + modalMhsId);
+            if (inp) inp.value = '';
+            updateBuktiStatus(modalMhsId, null);
+            simpanDraft();
+        }
+        modalMhsId   = null;
+        modalRadioEl = null;
+    }
+
+    function resetPreviewModal() {
+        fileInput.value = '';
+        fileNameEl.textContent = 'JPG, PNG, WEBP · Maks 5 MB';
+        previewWrap.style.display = 'none';
+        previewImg.src = '';
+        previewName.textContent = '';
+        simpanBtn.disabled = true;
+        simpanBtn.style.opacity = '.5';
+        dropArea.style.borderColor = '#cbd5e1';
+        dropArea.style.background  = '';
+    }
+
+    function pilihanFile(file) {
+        if (!file || !file.type.startsWith('image/')) { alert('File harus berupa gambar.'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('Ukuran file maksimal 5 MB.'); return; }
+        fileNameEl.textContent = file.name;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            previewImg.src = e.target.result;
+            previewName.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+            previewWrap.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        simpanBtn.disabled = false;
+        simpanBtn.style.opacity = '1';
+        dropArea.style.borderColor = '#6366f1';
+        dropArea.style.background  = '#f5f3ff';
+        fotoPending[modalMhsId] = file;
+    }
+
+    dropArea.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () { if (fileInput.files[0]) pilihanFile(fileInput.files[0]); });
+    dropArea.addEventListener('dragover', function (e) { e.preventDefault(); dropArea.style.borderColor = '#6366f1'; dropArea.style.background = '#f5f3ff'; });
+    dropArea.addEventListener('dragleave', function () { dropArea.style.borderColor = '#cbd5e1'; dropArea.style.background = ''; });
+    dropArea.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) pilihanFile(e.dataTransfer.files[0]); });
+
+    simpanBtn.addEventListener('click', function () {
+        if (!fotoPending[modalMhsId]) return;
+        var inp = document.getElementById('file-input-' + modalMhsId);
+        if (inp) {
+            var dt = new DataTransfer();
+            dt.items.add(fotoPending[modalMhsId]);
+            inp.files = dt.files;
+        }
+        updateBuktiStatus(modalMhsId, fotoPending[modalMhsId].name);
+        simpanDraft();
+        modalEl.classList.remove('open');
+        document.body.style.overflow = '';
+        modalMhsId   = null;
+        modalRadioEl = null;
     });
-    form.querySelectorAll('input[name*="[catatan]"]').forEach(function (inp) {
-        var t;
-        inp.addEventListener('input', function () {
-            clearTimeout(t); t = setTimeout(simpanDraft, 600);
+
+    batalBtn.addEventListener('click', function () { tutupModalBukti(true); });
+    tutupBtn.addEventListener('click',  function () { tutupModalBukti(true); });
+    modalEl.addEventListener('click',   function (e) { if (e.target === modalEl) tutupModalBukti(true); });
+
+    function updateBuktiStatus(id, namaFile) {
+        var el = document.getElementById('bukti-status-' + id);
+        if (!el) return;
+        if (namaFile) {
+            el.innerHTML = '<span style="color:#16a34a;font-size:11px;">✓ ' + namaFile + '</span>';
+        } else {
+            el.textContent = '—';
+            el.style.color = '#9ca3af';
+        }
+    }
+
+    // ── Intercept radio I dan S → buka modal ─────────────────────────
+    form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+            if (r.value !== 'I' && r.value !== 'S') { simpanDraft(); return; }
+            var id = r.name.match(/\[(\d+)\]/)?.[1];
+            if (!id) { simpanDraft(); return; }
+            if (fotoTersimpan[id]) { simpanDraft(); return; }
+            if (fotoPending[id])   { simpanDraft(); return; }
+            var row  = r.closest('tr');
+            var nama = row ? (row.querySelectorAll('td')[2]?.textContent?.trim() || '') : '';
+            bukaModalBukti(id, nama, r);
         });
     });
-    // Tombol "Tandai semua" juga trigger simpan
+
+    form.querySelectorAll('input[name*="[catatan]"]').forEach(function (inp) {
+        var t;
+        inp.addEventListener('input', function () { clearTimeout(t); t = setTimeout(simpanDraft, 600); });
+    });
+
     document.querySelectorAll('.status-btn-bulk').forEach(function (btn) {
         btn.addEventListener('click', function () { setTimeout(simpanDraft, 50); });
     });
 
-    // ── Submit → hapus draft ──────────────────────────────────────────
-    form.addEventListener('submit', hapusDraft);
+    // ── Validasi submit ───────────────────────────────────────────────
+    form.addEventListener('submit', function (e) {
+        var kurang = [];
+        form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]:checked').forEach(function (r) {
+            if (r.value !== 'S' && r.value !== 'I') return;
+            var id = r.name.match(/\[(\d+)\]/)?.[1];
+            if (!id) return;
+            if (fotoTersimpan[id] || fotoPending[id]) return;
+            var inp = form.querySelector('input[type="file"][name="foto_' + id + '"]');
+            if (inp && (!inp.files || inp.files.length === 0)) kurang.push(id);
+        });
+        if (kurang.length) {
+            e.preventDefault();
+            alert('⚠ ' + kurang.length + ' mahasiswa dengan Sakit/Izin belum ada bukti foto.');
+            return;
+        }
+        hapusDraft();
+    });
 
-    // ── Navigasi keluar → hapus draft ────────────────────────────────
     window.addEventListener('pagehide', function () {
         var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
         if (nav !== 'reload') hapusDraft();
     });
-})();
-
-// ── Bukti Foto: dinamis label & validasi ─────────────────────────
-(function () {
-    // Radio S/I dipilih → ubah warna tombol upload jadi merah
-    document.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
-        r.addEventListener('change', function () {
-            var id  = r.name.match(/\[(\d+)\]/)?.[1];
-            if (!id) return;
-            var lbl = document.getElementById('blabel-' + id);
-            var inp = lbl ? lbl.querySelector('input[type="file"]') : null;
-            if (!lbl || !inp) return;
-            var merah = (r.value === 'S' || r.value === 'I');
-            lbl.style.background   = merah ? '#fef2f2' : '';
-            lbl.style.borderColor  = merah ? '#f87171' : '';
-            lbl.style.color        = merah ? '#dc2626' : '';
-            lbl.childNodes[0].textContent = merah ? '📷 Wajib Upload' : '📷 Upload Foto';
-            inp.required = merah;
-        });
-    });
-
-    // File dipilih → tampilkan nama
-    document.querySelectorAll('.bukti-input').forEach(function (inp) {
-        inp.addEventListener('change', function () {
-            var id   = inp.dataset.mid;
-            var span = document.getElementById('bname-' + id);
-            var lbl  = document.getElementById('blabel-' + id);
-            if (inp.files && inp.files[0]) {
-                if (span) { span.textContent = '✓ ' + inp.files[0].name; span.style.display = 'block'; }
-                if (lbl)  { lbl.style.borderColor = '#16a34a'; lbl.style.color = '#16a34a'; }
-            }
-        });
-    });
-
-    // Validasi submit: cegah jika S/I tanpa foto
-    var formPres = document.querySelector('form[enctype="multipart/form-data"]');
-    if (formPres) {
-        formPres.addEventListener('submit', function (e) {
-            var kurang = [];
-            formPres.querySelectorAll('input[type="radio"][name*="status_kehadiran"]:checked').forEach(function (r) {
-                if (r.value !== 'S' && r.value !== 'I') return;
-                var id  = r.name.match(/\[(\d+)\]/)?.[1];
-                if (!id) return;
-                var inp = formPres.querySelector('input[type="file"][name="foto_' + id + '"]');
-                if (inp && (!inp.files || inp.files.length === 0)) kurang.push(id);
-            });
-            if (kurang.length) {
-                e.preventDefault();
-                alert('⚠ ' + kurang.length + ' mahasiswa dengan Sakit/Izin belum ada bukti foto.\nSilakan upload terlebih dahulu.');
-                // Scroll ke baris pertama yang bermasalah
-                var inp1 = formPres.querySelector('input[type="file"][name="foto_' + kurang[0] + '"]');
-                if (inp1) inp1.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-    }
 })();
 </script>
 </form>
