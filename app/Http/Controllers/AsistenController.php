@@ -212,7 +212,7 @@ class AsistenController extends Controller
 
             // Filter hanya field yang diisi
             // Konversi string kosong → null (bukan dibuang) supaya field yang dikosongkan ikut tersimpan
-            $toNull = fn($x) => ($x === '' || $x === null) ? null : (float) $x;
+            $toNull = fn($x) => ($x === '' || $x === null || $x === '—') ? null : (float) $x;
             // Kolom evaluasi: p1_kegiatan, p1_evaluasi, ... p14_kegiatan, p14_evaluasi
             $evalKeys = [];
             for ($i = 1; $i <= 14; $i++) {
@@ -223,11 +223,22 @@ class AsistenController extends Controller
             $asst = array_map($toNull, array_intersect_key($v, array_flip(['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])));
             $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
+            // Pisahkan: kolom yang diisi (ada nilai) vs yang dikosongkan (null)
+            // Kolom null TETAP disimpan agar penghapusan nilai disengaja bisa tersimpan,
+            // TAPI hanya kalau record sudah ada (update). Saat create, cukup kolom yang terisi.
+            $evalTerisi  = array_filter($eval,  fn($x) => $x !== null);
+            $asstTerisi  = array_filter($asst,  fn($x) => $x !== null);
+            $ujnTerisi   = array_filter($ujn,   fn($x) => $x !== null);
+
             if ($eval) {
-                $evalModel = NilaiEvaluasi::updateOrCreate(
-                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id],
-                    $eval
+                $evalModel = NilaiEvaluasi::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
                 );
+                // Hanya update kolom yang tidak null — kolom kosong tidak menimpa nilai lama
+                foreach ($eval as $kolom => $nilai) {
+                    if ($nilai !== null) $evalModel->{$kolom} = $nilai;
+                }
+                $evalModel->save();
                 // Hitung ulang nilai p1..p14 dari sub-kolom kegiatan/evaluasi
                 // (menyamakan perilaku dengan nilaiAutosave())
                 $evalModel->hitungDanSimpanNilaiPertemuan(
@@ -235,8 +246,24 @@ class AsistenController extends Controller
                     (float) ($praktikum->bobot_evaluasi_praktikum ?? 50)
                 );
             }
-            if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
-            if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
+            if ($asst) {
+                $asstModel = NilaiAsistensi::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
+                );
+                foreach ($asst as $kolom => $nilai) {
+                    if ($nilai !== null) $asstModel->{$kolom} = $nilai;
+                }
+                $asstModel->save();
+            }
+            if ($ujn) {
+                $ujnModel = NilaiUjian::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
+                );
+                foreach ($ujn as $kolom => $nilai) {
+                    if ($nilai !== null) $ujnModel->{$kolom} = $nilai;
+                }
+                $ujnModel->save();
+            }
 
             RekapDetailNilai::hitungDanSimpan($mahasiswaId, $praktikum->id);
         }
@@ -252,7 +279,7 @@ class AsistenController extends Controller
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403);
 
-        $toNull = fn($x) => ($x === '' || $x === null) ? null : (float) $x;
+        $toNull = fn($x) => ($x === '' || $x === null || $x === '—') ? null : (float) $x;
 
         foreach ($request->input('nilai', []) as $mahasiswaId => $v) {
             $mahasiswaId = (int) $mahasiswaId;
@@ -269,18 +296,36 @@ class AsistenController extends Controller
             $ujn  = array_map($toNull, array_intersect_key($v, array_flip(['nilai_MID','nilai_UAS'])));
 
             if ($eval) {
-                $evalModel = NilaiEvaluasi::updateOrCreate(
-                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id],
-                    $eval
+                $evalModel = NilaiEvaluasi::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
                 );
-                // Hitung ulang nilai p1..p14 dari sub-kolom berdasarkan bobot kelas
+                foreach ($eval as $kolom => $nilai) {
+                    if ($nilai !== null) $evalModel->{$kolom} = $nilai;
+                }
+                $evalModel->save();
                 $evalModel->hitungDanSimpanNilaiPertemuan(
                     (float) ($praktikum->bobot_kegiatan ?? 50),
                     (float) ($praktikum->bobot_evaluasi_praktikum ?? 50)
                 );
             }
-            if ($asst) NilaiAsistensi::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $asst);
-            if ($ujn)  NilaiUjian::updateOrCreate(['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id], $ujn);
+            if ($asst) {
+                $asstModel = NilaiAsistensi::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
+                );
+                foreach ($asst as $kolom => $nilai) {
+                    if ($nilai !== null) $asstModel->{$kolom} = $nilai;
+                }
+                $asstModel->save();
+            }
+            if ($ujn) {
+                $ujnModel = NilaiUjian::firstOrNew(
+                    ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
+                );
+                foreach ($ujn as $kolom => $nilai) {
+                    if ($nilai !== null) $ujnModel->{$kolom} = $nilai;
+                }
+                $ujnModel->save();
+            }
 
             RekapDetailNilai::hitungDanSimpan($mahasiswaId, $praktikum->id);
         }

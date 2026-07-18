@@ -83,12 +83,9 @@
                 $bobotKeg = ($praktikum->bobot_kegiatan ?? 50) / 100;
                 $bobotEval= ($praktikum->bobot_evaluasi_praktikum ?? 50) / 100;
                 // Hitung nilai P dari kegiatan dan evaluasi — kosong jika keduanya null
-                if ($kegiatan !== null && $evaluasi !== null) {
-                    $nilaiP = round(($kegiatan * $bobotKeg) + ($evaluasi * $bobotEval), 2);
-                } elseif ($kegiatan !== null) {
-                    $nilaiP = $kegiatan;
-                } elseif ($evaluasi !== null) {
-                    $nilaiP = $evaluasi;
+                if ($kegiatan !== null || $evaluasi !== null) {
+                    // Kosong = 0, selalu kalkulasi dengan bobot
+                    $nilaiP = round((($kegiatan ?? 0) * $bobotKeg) + (($evaluasi ?? 0) * $bobotEval), 2);
                 } else {
                     $nilaiP = null;
                 }
@@ -321,9 +318,9 @@
             if (kegN !== null && evalN !== null) {
                 hasil = Math.round(((kegN * bobotKeg) + (evalN * bobotEval)) * 100) / 100;
             } else if (kegN !== null) {
-                hasil = kegN;
+                hasil = Math.round((kegN * bobotKeg) * 100) / 100;
             } else {
-                hasil = evalN;
+                hasil = Math.round((evalN * bobotEval) * 100) / 100;
             }
             elNilai.value = isNaN(hasil) ? '' : hasil.toFixed(2);
         });
@@ -332,10 +329,12 @@
     // ── Init ──────────────────────────────────────────────────────────
     if (isReload) {
         pulihkanDraft();
-        hitungSemuaNilaiP();
     } else {
         hapusDraft();
     }
+    // Selalu hitung ulang kolom Nilai P saat load — baik refresh maupun
+    // navigasi biasa — agar tampilan konsisten dengan sub-kolom di DB
+    hitungSemuaNilaiP();
 
     // Jalankan initNilaiDisplay SETELAH draft dipulihkan
     // agar asalNilai dibaca dari data-asal (server), bukan dari el.value
@@ -380,9 +379,9 @@
                         if (kegN !== null && evalN !== null) {
                             hasil = Math.round(((kegN * bobotKeg) + (evalN * bobotEval)) * 100) / 100;
                         } else if (kegN !== null) {
-                            hasil = kegN;
+                            hasil = Math.round((kegN * bobotKeg) * 100) / 100;
                         } else {
-                            hasil = evalN;
+                            hasil = Math.round((evalN * bobotEval) * 100) / 100;
                         }
                         elNilai.value = isNaN(hasil) ? '' : hasil.toFixed(2);
                     }

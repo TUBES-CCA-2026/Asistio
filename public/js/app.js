@@ -903,8 +903,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 nilaiEl.value = '';
                 return;
             }
-            var hasil = ((bKegiatan * (vKeg || 0)) + (bEvaluasi * (vEval || 0))) / total;
-            nilaiEl.value = hasil.toFixed(2);
+            // Kosong = 0, selalu kalkulasi dengan bobot
+            var hasil = ((bKegiatan * (vKeg ?? 0)) + (bEvaluasi * (vEval ?? 0))) / total;
+            nilaiEl.value = isNaN(hasil) ? '' : hasil.toFixed(2);
         }
 
         document.querySelectorAll('.input-sub-nilai').forEach(function (el) {
