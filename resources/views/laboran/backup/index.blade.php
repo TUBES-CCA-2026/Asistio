@@ -32,8 +32,10 @@
                 <div class="form-group">
                     <input type="file" name="file_sql" accept=".sql,.txt" class="form-control" required>
                 </div>
-                <button class="btn btn-outline btn-block"
-                    onclick="return confirm('Upload dan langsung pulihkan database dari file ini?\n\nSELURUH data saat ini akan digantikan!')">
+                <button class="btn btn-outline btn-block" type="button"
+                    data-konfirm="Upload dan langsung pulihkan database dari file ini? SELURUH data saat ini akan digantikan."
+                    data-konfirm-judul="Pulihkan dari Upload"
+                    data-konfirm-ya="Ya, Pulihkan">
                     Upload &amp; Pulihkan
                 </button>
             </form>
@@ -96,16 +98,19 @@
                     </a>
                     {{-- Restore --}}
                     <form method="POST" action="{{ route('laboran.backup.pulihkan', $f['nama']) }}">@csrf
-                        <button class="btn btn-sm btn-primary"
-                            onclick="return confirm('Pulihkan database dari:\n{{ $f['nama'] }}\n\nSELURUH data saat ini akan digantikan dengan data dari backup ini.\n\nLanjutkan?')">
+                        <button class="btn btn-sm btn-primary" type="button"
+                            data-konfirm="Pulihkan database dari {{ $f['nama'] }}? SELURUH data saat ini akan digantikan."
+                            data-konfirm-judul="Pulihkan Backup"
+                            data-konfirm-ya="Ya, Pulihkan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
                             Pulihkan
                         </button>
                     </form>
                     {{-- Hapus --}}
                     <form method="POST" action="{{ route('laboran.backup.hapus', $f['nama']) }}">@csrf @method('DELETE')
-                        <button class="btn btn-sm btn-danger"
-                            onclick="return confirm('Hapus file backup {{ $f['nama'] }}?')">
+                        <button class="btn btn-sm btn-danger" type="button"
+                            data-konfirm="Hapus file backup {{ $f['nama'] }}?"
+                            data-konfirm-judul="Hapus Backup">
                             Hapus
                         </button>
                     </form>
