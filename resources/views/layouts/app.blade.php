@@ -57,6 +57,23 @@
 
 </div>{{-- /app-shell --}}
 
+{{-- Modal Konfirmasi Universal (menggantikan confirm() bawaan browser) --}}
+<div id="modalKonfirmUniversal" class="modal-overlay">
+    <div class="modal" style="max-width:400px;">
+        <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+            <span class="modal-title" style="color:#B91C1C;" id="konfirmJudul">Konfirmasi</span>
+            <button type="button" class="modal-close" id="konfirmBtnTutup">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="konfirmPesan" style="font-size:14px;color:#374151;margin:0;"></p>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px;">
+            <button type="button" class="btn btn-outline" id="konfirmBtnBatal">Tidak</button>
+            <button type="button" class="btn btn-danger" id="konfirmBtnYa">Ya, Hapus</button>
+        </div>
+    </div>
+</div>
+
 <script src="{{ asset('js/app.js') }}" defer></script>
 @stack('scripts')
 </body>

@@ -1494,4 +1494,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
     })();
 
+    // ── Modal Konfirmasi Universal (ganti confirm() bawaan browser) ──────
+    (function () {
+        const overlay  = document.getElementById('modalKonfirmUniversal');
+        const elJudul  = document.getElementById('konfirmJudul');
+        const elPesan  = document.getElementById('konfirmPesan');
+        const btnTutup = document.getElementById('konfirmBtnTutup');
+        const btnBatal = document.getElementById('konfirmBtnBatal');
+        const btnYa    = document.getElementById('konfirmBtnYa');
+        if (!overlay) return;
+
+        let targetForm = null;
+
+        function bukaKonfirm(btn) {
+            elPesan.textContent  = btn.dataset.konfirm || 'Yakin ingin melanjutkan?';
+            elJudul.textContent  = btn.dataset.konfirmJudul || 'Konfirmasi';
+            btnYa.textContent    = btn.dataset.konfirmYa || 'Ya, Hapus';
+            targetForm = btn.closest('form');
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupKonfirm() {
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            targetForm = null;
+        }
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-konfirm]');
+            if (!btn) return;
+            e.preventDefault();
+            bukaKonfirm(btn);
+        });
+
+        btnYa.addEventListener('click', function () {
+            tutupKonfirm();
+            if (targetForm) targetForm.submit();
+        });
+
+        btnBatal.addEventListener('click', tutupKonfirm);
+        btnTutup.addEventListener('click', tutupKonfirm);
+        overlay.addEventListener('click', function (e) {
+            if (e.target === this) tutupKonfirm();
+        });
+    })();
+
 });
