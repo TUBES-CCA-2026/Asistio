@@ -127,7 +127,7 @@
         <td>
             <div class="action-group">
             <form method="POST" action="{{ route('laboran.dosen.destroy',$d) }}">@csrf @method('DELETE')
-            <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus dosen {{ $d->nama_dosen }}?')">Hapus</button></form>
+            <button class="btn btn-sm btn-danger" type="button" data-konfirm="Hapus dosen {{ $d->nama_dosen }}?" data-konfirm-judul="Hapus Dosen">Hapus</button></form>
             <div class="dropdown">
                 <button type="button" class="dropdown-toggle" data-dropdown-toggle="dd{{ $d->id }}" title="Opsi lain">&#8942;</button>
                 <div id="dd{{ $d->id }}" class="dropdown-menu">
