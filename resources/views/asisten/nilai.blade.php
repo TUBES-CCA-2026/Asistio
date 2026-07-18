@@ -85,6 +85,7 @@
                     class="form-control form-control-xs input-nilai input-sub-nilai"
                     inputmode="decimal"
                     data-mhs="{{ $m->id }}" data-pertemuan="{{ $i }}" data-sub="kegiatan"
+                    data-asal="{{ $n['evaluasi']->{'p'.$i.'_kegiatan'} ?? '' }}"
                     value="{{ $n['evaluasi']->{'p'.$i.'_kegiatan'} ?? '' }}"
                     placeholder="—">
             </td>
@@ -93,6 +94,7 @@
                     class="form-control form-control-xs input-nilai input-sub-nilai"
                     inputmode="decimal"
                     data-mhs="{{ $m->id }}" data-pertemuan="{{ $i }}" data-sub="evaluasi"
+                    data-asal="{{ $n['evaluasi']->{'p'.$i.'_evaluasi'} ?? '' }}"
                     value="{{ $n['evaluasi']->{'p'.$i.'_evaluasi'} ?? '' }}"
                     placeholder="—">
             </td>
@@ -113,6 +115,7 @@
                 <input type="text" name="nilai[{{ $m->id }}][nilai_asistensi{{ $i }}]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
+                    data-asal="{{ $n['asistensi']->{'nilai_asistensi'.$i} ?? '' }}"
                     value="{{ $n['asistensi']->{'nilai_asistensi'.$i} ?? '' }}"
                     placeholder="—">
             </td>
@@ -122,6 +125,7 @@
                 <input type="text" name="nilai[{{ $m->id }}][nilai_MID]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
+                    data-asal="{{ $n['ujian']->nilai_MID ?? '' }}"
                     value="{{ $n['ujian']->nilai_MID ?? '' }}"
                     placeholder="—">
             </td>
@@ -129,6 +133,7 @@
                 <input type="text" name="nilai[{{ $m->id }}][nilai_UAS]"
                     class="form-control form-control-xs input-nilai"
                     inputmode="decimal"
+                    data-asal="{{ $n['ujian']->nilai_UAS ?? '' }}"
                     value="{{ $n['ujian']->nilai_UAS ?? '' }}"
                     placeholder="—">
             </td>
@@ -183,89 +188,167 @@
 
 <script>
 (function () {
-    const form     = document.querySelector('form[action*="simpan-semua"]');
-    const btn      = document.getElementById('btnSimpanNilai');
-    const label    = btn?.querySelector('.btn-label');
-    const status   = document.getElementById('autosaveStatus');
-    if (!form || !btn) return;
+    var form  = document.querySelector('form[action*="simpan-semua"]');
+    var btn   = document.getElementById('btnSimpanNilai');
+    var badge = document.getElementById('dirtyBadge');
+    var info  = document.getElementById('dirtyInfo');
+    var hintEl= document.getElementById('dirtyHint');
+    if (!form) return;
 
-    const AUTOSAVE_URL = '{{ route('asisten.nilai.autosave', $praktikum) }}';
-    const CSRF         = document.querySelector('meta[name="csrf-token"]')?.content;
-    let timer   = null;
-    let unsaved = false;
+    // Kunci unik per kelas
+    var DRAFT_KEY = 'draft_nilai_{{ $praktikum->id }}';
 
-    function setBtn(state, msg) {
-        const map = {
-            idle:    { bg: 'var(--primary)',  text: 'Simpan Semua Nilai' },
-            saving:  { bg: '#f59e0b',         text: 'Menyimpan…' },
-            saved:   { bg: '#22c55e',         text: msg || 'Tersimpan ✓' },
-            unsaved: { bg: 'var(--primary)',  text: 'Simpan Semua Nilai ●' },
-            error:   { bg: '#ef4444',         text: 'Gagal — Coba Manual ⚠' },
-        };
-        const s = map[state] || map.idle;
-        btn.style.background = s.bg;
-        if (label) label.textContent = s.text;
-    }
+    // Deteksi jenis navigasi SEBELUM apapun dijalankan
+    var navType  = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
+    var isReload = navType === 'reload';
 
-    function showStatus(msg, color) {
-        if (!status) return;
-        status.textContent  = msg;
-        status.style.color  = color || 'var(--text-muted)';
-        status.style.opacity = '1';
-        setTimeout(() => status.style.opacity = '0', 4000);
-    }
-
-    async function autosave() {
-        setBtn('saving');
+    // ── Simpan draft — hanya field yang BERBEDA dari nilai server ─────
+    function simpanDraft() {
+        var draft = {};
+        form.querySelectorAll('.input-nilai').forEach(function (el) {
+            if (!el.name) return;
+            var val  = el.value === '—' ? '' : el.value;
+            var asal = el.dataset.asal || '';
+            // Hanya simpan yang benar-benar berubah
+            if (val !== asal) draft[el.name] = val;
+        });
         try {
-            const res  = await fetch(AUTOSAVE_URL, {
-                method : 'POST',
-                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-                body   : new FormData(form),
-            });
-            const json = await res.json();
-            if (json.success) {
-                unsaved = false;
-                setBtn('saved', '✓ ' + json.pesan);
-                showStatus(json.pesan, '#22c55e');
-                setTimeout(() => setBtn('idle'), 3000);
+            if (Object.keys(draft).length > 0) {
+                sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
             } else {
-                setBtn('error');
-                showStatus('Autosave gagal', '#ef4444');
-                setTimeout(() => setBtn('idle'), 4000);
+                sessionStorage.removeItem(DRAFT_KEY);
             }
-        } catch {
-            setBtn('error');
-            showStatus('Tidak dapat menyimpan — periksa koneksi', '#ef4444');
-            setTimeout(() => setBtn('idle'), 4000);
+        } catch (e) {}
+    }
+
+    // ── Pulihkan draft setelah refresh ───────────────────────────────
+    function pulihkanDraft() {
+        var raw;
+        try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+        if (!raw) return;
+
+        var draft;
+        try { draft = JSON.parse(raw); } catch (e) { return; }
+
+        var jumlahDraft = 0;
+        Object.keys(draft).forEach(function (name) {
+            var el = form.querySelector('[name="' + name + '"]');
+            if (!el || !el.classList.contains('input-nilai')) return;
+
+            var nilaiDraft = draft[name];
+            var asal       = el.dataset.asal || '';
+
+            // Hanya pulihkan jika masih berbeda dari nilai server saat ini
+            if (nilaiDraft === asal) return;
+
+            if (nilaiDraft === '') {
+                el.value = '—';
+                el.classList.add('nilai-kosong');
+            } else {
+                el.value = nilaiDraft;
+                el.classList.remove('nilai-kosong');
+            }
+            el.classList.add('is-draft', 'nilai-dirty');
+            jumlahDraft++;
+        });
+
+        updateUI(jumlahDraft);
+    }
+
+    // ── Hapus draft ───────────────────────────────────────────────────
+    function hapusDraft() {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        form.querySelectorAll('.input-nilai').forEach(function (el) {
+            el.classList.remove('is-draft', 'nilai-dirty');
+        });
+        updateUI(0);
+    }
+
+    // ── Update indikator UI ───────────────────────────────────────────
+    function updateUI(jumlah) {
+        var ada    = jumlah > 0;
+        var revert = document.getElementById('btnRevert');
+        if (badge)  badge.classList.toggle('show', ada);
+        if (hintEl) hintEl.classList.toggle('show', ada);
+        if (revert) revert.classList.toggle('show', ada);
+        if (btn) {
+            btn.style.background = ada ? '#F59E0B' : '';
+            var label = btn.querySelector('.btn-label');
+            if (label) label.textContent = ada ? jumlah + ' nilai belum disimpan' : 'Simpan Semua Nilai';
         }
     }
 
-    // Trigger autosave 2 detik setelah berhenti mengetik
-    document.querySelectorAll('.input-nilai').forEach(el => {
-        el.addEventListener('change', () => {
-            unsaved = true;
-            setBtn('unsaved');
-            clearTimeout(timer);
-            timer = setTimeout(autosave, 2000);
+    function hitungDirty() {
+        return form.querySelectorAll('.input-nilai.is-draft').length;
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────
+    if (isReload) {
+        pulihkanDraft();   // refresh → pulihkan
+    } else {
+        hapusDraft();      // kunjungan baru → bersih
+    }
+
+    // ── Event input: tandai dirty + simpan draft ──────────────────────
+    form.querySelectorAll('.input-nilai').forEach(function (el) {
+        el.addEventListener('input', function () {
+            var sekarang = this.value === '—' ? '' : this.value;
+            var asal     = this.dataset.asal || '';
+            if (sekarang !== asal) {
+                this.classList.add('is-draft', 'nilai-dirty');
+            } else {
+                this.classList.remove('is-draft', 'nilai-dirty');
+                if (sekarang === '') {
+                    this.value = '—';
+                    this.classList.add('nilai-kosong');
+                }
+            }
+            simpanDraft();
+            updateUI(hitungDirty());
         });
     });
 
-    // Autosave periodik setiap 30 detik jika ada perubahan yang belum disimpan
-    setInterval(() => { if (unsaved) autosave(); }, 30000);
-
-    // Peringatan saat user mau menutup tab dengan data belum tersimpan
-    window.addEventListener('beforeunload', e => {
-        if (unsaved) {
-            e.preventDefault();
-            e.returnValue = 'Ada nilai yang belum tersimpan. Yakin ingin meninggalkan halaman?';
-        }
+    // ── Submit → hapus draft ──────────────────────────────────────────
+    form.addEventListener('submit', function () {
+        isReload = true; // cegah beforeunload dialog saat redirect
+        hapusDraft();
     });
 
-    // Klik tombol manual → matikan timer autosave supaya tidak dobel request
-    btn.addEventListener('click', () => {
-        clearTimeout(timer);
-        unsaved = false;
+    // ── Batalkan Perubahan ────────────────────────────────────────────
+    var btnRevert = document.getElementById('btnRevert');
+    if (btnRevert) {
+        btnRevert.addEventListener('click', function () {
+            if (!confirm('Batalkan semua perubahan dan kembalikan ke nilai terakhir yang tersimpan?')) return;
+            form.querySelectorAll('.input-nilai').forEach(function (el) {
+                var asal = el.dataset.asal || '';
+                el.classList.remove('is-draft', 'nilai-dirty');
+                if (asal === '') {
+                    el.value = '—';
+                    el.classList.add('nilai-kosong');
+                } else {
+                    el.value = asal;
+                    el.classList.remove('nilai-kosong');
+                }
+            });
+            hapusDraft();
+        });
+    }
+
+    // ── beforeunload: dialog HANYA saat navigasi keluar, bukan refresh ─
+    window.addEventListener('beforeunload', function (e) {
+        // isReload = true jika: halaman baru saja di-reload, atau submit terjadi
+        if (isReload)         return;
+        if (hitungDirty() === 0) return;
+        e.preventDefault();
+        e.returnValue = 'Ada nilai yang belum disimpan. Yakin ingin meninggalkan halaman?';
+    });
+
+    // Set isReload = true saat user tekan tombol refresh
+    // (keyboard shortcut maupun tombol browser)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.metaKey && e.key === 'r')) {
+            isReload = true;
+        }
     });
 })();
 </script>

@@ -1808,7 +1808,10 @@ img {
 }
 
 /* Input nilai berubah belum disimpan — oranye ala git */
-.input-nilai.nilai-dirty {
+/* is-draft = berubah dari server, belum disimpan (termasuk setelah refresh) */
+/* nilai-dirty = alias, dipakai bersamaan */
+.input-nilai.nilai-dirty,
+.input-nilai.is-draft {
     border-color: #F59E0B !important;
     background-color: #FFFBEB !important;
     box-shadow: 0 0 0 2px rgba(245, 158, 11, .2) !important;
@@ -1907,4 +1910,11 @@ td.td-nilai {
 }
 .btn-revert.show {
     display: flex;
+}
+
+/* ─── DRAFT BELUM DISIMPAN (kuning) ─────────────────────────────── */
+.input-nilai.is-draft {
+    background: #fef9c3 !important;
+    border-color: #f59e0b !important;
+    color: #92400e !important;
 }
