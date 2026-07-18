@@ -1515,12 +1515,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!overlay) return;
 
         let targetForm = null;
+        let targetBtn  = null;
 
         function bukaKonfirm(btn) {
             elPesan.textContent  = btn.dataset.konfirm || 'Yakin ingin melanjutkan?';
             elJudul.textContent  = btn.dataset.konfirmJudul || 'Konfirmasi';
             btnYa.textContent    = btn.dataset.konfirmYa || 'Ya, Hapus';
             targetForm = btn.closest('form');
+            targetBtn  = btn;
             overlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             setTimeout(function () { btnYa.focus(); }, 50);
@@ -1530,6 +1532,7 @@ document.addEventListener('DOMContentLoaded', function () {
             overlay.classList.remove('open');
             document.body.style.overflow = '';
             targetForm = null;
+            targetBtn  = null;
         }
 
         document.addEventListener('click', function (e) {
@@ -1541,7 +1544,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         btnYa.addEventListener('click', function () {
             const formToSubmit = targetForm;
+            const isRevert     = targetBtn && targetBtn.hasAttribute('data-konfirm-revert');
             tutupKonfirm();
+            if (isRevert) {
+                // Aksi lokal (batalkan perubahan nilai) — jangan submit form,
+                // cukup jalankan reset lewat custom event yang sudah ditunggu
+                // oleh listener 'konfirm-revert' di bagian lain app.js
+                document.dispatchEvent(new CustomEvent('konfirm-revert'));
+                return;
+            }
             if (formToSubmit) formToSubmit.submit();
         });
 
