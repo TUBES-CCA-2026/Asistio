@@ -228,7 +228,7 @@
             <td>
                 <form method="POST" action="{{ route('laboran.kelas.mahasiswa.remove',[$kelas,$m]) }}">
                     @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-outline" onclick="return confirm('Keluarkan {{ $m->nama_mahasiswa }} dari kelas ini?')">Keluarkan</button>
+                    <button class="btn btn-sm btn-outline" type="button" data-konfirm="Keluarkan {{ $m->nama_mahasiswa }} dari kelas ini?" data-konfirm-judul="Keluarkan Praktikan" data-konfirm-ya="Ya, Keluarkan">Keluarkan</button>
                 </form>
             </td>
         </tr>
