@@ -1513,6 +1513,7 @@ document.addEventListener('DOMContentLoaded', function () {
             targetForm = btn.closest('form');
             overlay.classList.add('open');
             document.body.style.overflow = 'hidden';
+            setTimeout(function () { btnYa.focus(); }, 50);
         }
 
         function tutupKonfirm() {
@@ -1529,8 +1530,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         btnYa.addEventListener('click', function () {
+            const formToSubmit = targetForm;
             tutupKonfirm();
-            if (targetForm) targetForm.submit();
+            if (formToSubmit) formToSubmit.submit();
         });
 
         btnBatal.addEventListener('click', tutupKonfirm);
@@ -1538,6 +1540,19 @@ document.addEventListener('DOMContentLoaded', function () {
         overlay.addEventListener('click', function (e) {
             if (e.target === this) tutupKonfirm();
         });
+        document.addEventListener('keydown', function (e) {
+            if (!overlay.classList.contains('open')) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                btnYa.click();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                tutupKonfirm();
+            }
+        }, true);
     })();
 
 });
