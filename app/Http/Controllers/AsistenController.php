@@ -48,7 +48,14 @@ class AsistenController extends Controller
         // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi (asistensi_ke)
         $presensiAsistensiMap = PresensiAsistensi::where('praktikum_id', $praktikum->id)
             ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
-        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats','presensiAsistensiMap'));
+        $fotoData = $presensiMap->mapWithKeys(function ($p, $id) {
+            return [(string)$id => [
+                'ada' => (bool)$p->bukti_foto,
+                'url' => $p->bukti_foto ? route('asisten.presensi.bukti.lihat', $p) : null,
+            ]];
+        })->toArray();
+
+        return view('asisten.presensi', compact('praktikum','mahasiswaList','presensiMap','pertemuan','stats','presensiAsistensiMap','fotoData'));
     }
 
     public function presensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
@@ -505,6 +512,55 @@ class AsistenController extends Controller
         $presensiAsistensiAll = PresensiAsistensi::where('praktikum_id', $praktikum->id)
             ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
         return view('asisten.rekap', compact('praktikum','mahasiswaList','presensiAll','rekapNilaiMap','presensiAsistensiAll'));
+    }
+
+    /**
+     * Upload bukti foto presensi via AJAX (terpisah dari simpan presensi).
+     * Dipanggil saat user konfirmasi di modal upload, sebelum submit form presensi.
+     */
+    public function uploadBuktiFoto(Request $request, Praktikum $praktikum): JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $request->validate([
+            'mahasiswa_id' => 'required|integer',
+            'pertemuan_ke' => 'required|integer|min:1|max:14',
+            'foto'         => 'required|file|image|max:5120',
+        ]);
+
+        $mahasiswaId = (int) $request->input('mahasiswa_id');
+        $pertemuan   = (int) $request->input('pertemuan_ke');
+
+        if (!$praktikum->mahasiswa->contains($mahasiswaId)) {
+            return response()->json(['success' => false, 'pesan' => 'Mahasiswa tidak ditemukan di kelas ini.'], 403);
+        }
+
+        $existing = Presensi::where([
+            'mahasiswa_id' => $mahasiswaId,
+            'praktikum_id' => $praktikum->id,
+            'pertemuan_ke' => $pertemuan,
+        ])->first();
+
+        // Hapus foto lama jika ada
+        if ($existing && $existing->bukti_foto) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->bukti_foto);
+        }
+
+        $path = $request->file('foto')->store(
+            "bukti_presensi/{$praktikum->id}/p{$pertemuan}", 'public'
+        );
+
+        $presensi = Presensi::updateOrCreate(
+            ['mahasiswa_id' => $mahasiswaId, 'praktikum_id' => $praktikum->id, 'pertemuan_ke' => $pertemuan],
+            ['bukti_foto' => $path]
+        );
+
+        return response()->json([
+            'success' => true,
+            'pesan'   => 'Bukti foto berhasil diunggah.',
+            'url'     => route('asisten.presensi.bukti.lihat', $presensi),
+            'presensi_id' => $presensi->id,
+        ]);
     }
 
     /** Tampilkan foto bukti presensi */

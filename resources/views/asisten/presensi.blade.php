@@ -33,7 +33,7 @@
         </div>
     </div>
     <div class="table-wrapper"><table class="table">
-        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th><th style="text-align:center;min-width:140px;">Bukti Foto</th></tr></thead>
+        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $i => $m)
         @php
@@ -60,16 +60,8 @@
             </td>
             @endforeach
             <td><input type="text" name="presensi[{{ $m->id }}][catatan]" class="form-control form-control-sm" value="{{ $p?->catatan }}" placeholder="—"></td>
-            <td style="text-align:center;vertical-align:middle;padding:6px;">
-                <input type="file" name="foto_{{ $m->id }}" id="file-input-{{ $m->id }}"
-                       accept="image/*" style="display:none;">
-                @if($punyaFoto)
-                    <a href="{{ route('asisten.presensi.bukti.lihat', $p) }}" target="_blank"
-                       class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;">📎 Lihat</a>
-                @else
-                    <span id="bukti-status-{{ $m->id }}" style="font-size:11px;color:#9ca3af;">—</span>
-                @endif
-            </td>
+            <input type="file" name="foto_{{ $m->id }}" id="file-input-{{ $m->id }}"
+                   accept="image/*" style="display:none;">
         </tr>
         @empty<tr><td colspan="8"><div class="empty-state"><p>Belum ada mahasiswa di kelas ini.</p></div></td></tr>
         @endforelse
@@ -79,12 +71,22 @@
     <div class="card-footer"><button type="submit" class="btn btn-primary">Simpan Presensi Pertemuan {{ $pertemuan }}</button></div>
     @endif
 </div>
+</form>
+
+<script id="foto-data-json" type="application/json">{{ json_encode($fotoData) }}</script>
 <script>
 (function () {
     var form      = document.querySelector('form[enctype="multipart/form-data"]');
     var DRAFT_KEY = 'draft_presensi_{{ $praktikum->id }}_p{{ $pertemuan }}';
+    var UPLOAD_URL = '{{ route('asisten.presensi.bukti.upload', $praktikum) }}';
+    var CSRF       = document.querySelector('meta[name="csrf-token"]')?.content;
+    var PERTEMUAN  = {{ $pertemuan }};
     if (!form) return;
 
+    // ── Data foto dari DB: { "mahasiswaId": { ada, url, presensi_id } } ─
+    var fotoData = JSON.parse(document.getElementById('foto-data-json').textContent);
+
+    // ── Draft helpers ─────────────────────────────────────────────────
     function bacaState() {
         var state = {};
         form.querySelectorAll('input[type="radio"]:checked[name*="status_kehadiran"]').forEach(function (r) {
@@ -121,7 +123,7 @@
         var now = bacaState();
         return Object.keys(now).some(function (id) {
             var db  = stateDB[id] || {};
-            var cur = now[id] || {};
+            var cur = now[id]     || {};
             return cur.status !== db.status || (cur.catatan || '') !== (db.catatan || '');
         });
     }
@@ -154,7 +156,8 @@
         updateIndikator();
     }
 
-    var indEl = null;
+    // ── Indikator "Belum disimpan" di card-header ─────────────────────
+    var indEl      = null;
     var cardHeader = form.querySelector('.card-header');
     if (cardHeader) {
         cardHeader.style.position = 'relative';
@@ -165,33 +168,131 @@
     }
 
     function updateIndikator() {
-        var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) {}
-        var ada = !!raw && adaPerubahan();
+        var ada = !!sessionStorage.getItem(DRAFT_KEY) && adaPerubahan();
         if (indEl) indEl.style.display = ada ? 'inline-flex' : 'none';
     }
 
     pulihkanDraft();
 
-    // ── Foto tersimpan di DB (dari PHP) ──────────────────────────────
-    var fotoTersimpan = @json(
-        collect($presensiMap)->mapWithKeys(fn($p, $id) => [$id => (bool)$p->bukti_foto])
-    );
+    // ── Badge foto di tiap baris ──────────────────────────────────────
+    // Inject kolom "Bukti" ke thead
+    var thead = form.querySelector('table thead tr');
+    if (thead) {
+        var thBukti = document.createElement('th');
+        thBukti.style.cssText = 'text-align:center;width:56px;';
+        thBukti.textContent = 'Bukti';
+        thead.appendChild(thBukti);
+    }
 
-    // ── State foto pending (belum disubmit) ───────────────────────────
-    var fotoPending = {};
+    function renderBadgeFoto(id, nama) {
+        var td = form.querySelector('tr[data-mhs-id="' + id + '"] .td-bukti');
+        if (!td) return;
+        var d = fotoData[id];
+        td.innerHTML = '';
+        if (d && d.ada && d.url) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.title = 'Lihat bukti foto';
+            btn.style.cssText = 'background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;';
+            btn.textContent = '📎 Lihat';
+            btn.addEventListener('click', function () {
+                var status = form.querySelector('input[name="presensi[' + id + '][status_kehadiran]"]:checked')?.value || 'I';
+                bukaModalLihat(id, nama, status, d.url);
+            });
+            td.appendChild(btn);
+        } else {
+            td.innerHTML = '<span style="color:#9ca3af;font-size:11px;">—</span>';
+        }
+    }
 
-    // ── Buat modal upload bukti sekali saja ───────────────────────────
-    var modalEl = document.createElement('div');
-    modalEl.id  = 'modal-bukti';
-    modalEl.className = 'modal-overlay';
-    modalEl.innerHTML = [
+    // Inject td bukti ke tiap baris tbody
+    form.querySelectorAll('tbody tr').forEach(function (tr) {
+        var radio = tr.querySelector('input[type="radio"][name*="status_kehadiran"]');
+        if (!radio) return;
+        var id   = radio.name.match(/\[(\d+)\]/)?.[1];
+        var nama = tr.querySelectorAll('td')[2]?.textContent?.trim() || '';
+        tr.setAttribute('data-mhs-id', id);
+        var tdBukti = document.createElement('td');
+        tdBukti.className = 'td-bukti';
+        tdBukti.style.cssText = 'text-align:center;padding:4px;';
+        tr.appendChild(tdBukti);
+        renderBadgeFoto(id, nama);
+    });
+
+    // ── Modal LIHAT foto ──────────────────────────────────────────────
+    var modalLihat = document.createElement('div');
+    modalLihat.className = 'modal-overlay';
+    modalLihat.innerHTML = [
+        '<div class="modal" style="max-width:420px;">',
+            '<div class="modal-header">',
+                '<span class="modal-title" id="modal-lihat-judul">Bukti Foto</span>',
+                '<button type="button" class="modal-close" id="modal-lihat-tutup">✕</button>',
+            '</div>',
+            '<div class="modal-body" style="text-align:center;">',
+                '<p id="modal-lihat-nama" style="margin:0 0 12px;font-size:13px;font-weight:600;color:#1e293b;"></p>',
+                '<img id="modal-lihat-img" src="" style="max-width:100%;max-height:300px;border-radius:8px;object-fit:contain;border:1px solid #e2e8f0;">',
+                '<div style="margin-top:10px;">',
+                    '<a id="modal-lihat-link" href="" target="_blank" style="font-size:12px;color:#3b82f6;">Buka di tab baru ↗</a>',
+                '</div>',
+            '</div>',
+            '<div style="display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px;">',
+                '<button id="modal-lihat-ganti" type="button" class="btn btn-outline">✏️ Ganti Foto</button>',
+                '<button id="modal-lihat-tutup2" type="button" class="btn btn-primary">Tutup</button>',
+            '</div>',
+        '</div>',
+    ].join('');
+    document.body.appendChild(modalLihat);
+
+    var lihatJudul  = modalLihat.querySelector('#modal-lihat-judul');
+    var lihatNama   = modalLihat.querySelector('#modal-lihat-nama');
+    var lihatImg    = modalLihat.querySelector('#modal-lihat-img');
+    var lihatLink   = modalLihat.querySelector('#modal-lihat-link');
+    var lihatTutup  = modalLihat.querySelector('#modal-lihat-tutup');
+    var lihatTutup2 = modalLihat.querySelector('#modal-lihat-tutup2');
+    var lihatGanti  = modalLihat.querySelector('#modal-lihat-ganti');
+    var lihatMhsId  = null;
+    var lihatNamaStr = '';
+
+    function bukaModalLihat(id, nama, status, url) {
+        lihatMhsId   = id;
+        lihatNamaStr = nama;
+        lihatJudul.textContent = 'Bukti Foto — ' + (status === 'S' ? 'Sakit' : 'Izin');
+        lihatNama.textContent  = nama;
+        lihatImg.src           = url;
+        lihatLink.href         = url;
+        modalLihat.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function tutupModalLihat() {
+        modalLihat.classList.remove('open');
+        document.body.style.overflow = '';
+        lihatMhsId = null;
+    }
+
+    lihatTutup.addEventListener('click',  tutupModalLihat);
+    lihatTutup2.addEventListener('click', tutupModalLihat);
+    modalLihat.addEventListener('click',  function (e) { if (e.target === modalLihat) tutupModalLihat(); });
+
+    lihatGanti.addEventListener('click', function () {
+        var id   = lihatMhsId;
+        var nama = lihatNamaStr;
+        tutupModalLihat();
+        var radioEl = form.querySelector('input[name="presensi[' + id + '][status_kehadiran]"]:checked');
+        setTimeout(function () { bukaModalUpload(id, nama, radioEl, true); }, 100);
+    });
+
+    // ── Modal UPLOAD foto (AJAX — langsung ke server) ─────────────────
+    var modalUpload = document.createElement('div');
+    modalUpload.className = 'modal-overlay';
+    modalUpload.innerHTML = [
         '<div class="modal" style="max-width:440px;">',
             '<div class="modal-header" style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;">',
-                '<span class="modal-title" style="color:#15803D;" id="modal-bukti-judul">Upload Bukti Foto</span>',
-                '<button type="button" class="modal-close" id="modal-bukti-tutup">✕</button>',
+                '<span class="modal-title" style="color:#15803D;" id="modal-upload-judul">Upload Bukti Foto</span>',
+                '<button type="button" class="modal-close" id="modal-upload-tutup">✕</button>',
             '</div>',
             '<div class="modal-body">',
-                '<p id="modal-bukti-nama" style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1e293b;"></p>',
+                '<p id="modal-upload-nama" style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1e293b;"></p>',
                 '<p style="margin:0 0 14px;font-size:13px;color:#64748b;">Upload foto bukti (surat dokter, surat izin, dll.) untuk melanjutkan.</p>',
                 '<div id="modal-drop-area" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;">',
                     '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5" style="margin-bottom:8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>',
@@ -203,63 +304,80 @@
                     '<img id="modal-preview-img" src="" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;border:1px solid #e2e8f0;">',
                     '<p id="modal-preview-name" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p>',
                 '</div>',
+                '<div id="modal-upload-progress" style="display:none;margin-top:12px;">',
+                    '<div style="height:4px;background:#e2e8f0;border-radius:4px;overflow:hidden;">',
+                        '<div id="modal-progress-bar" style="height:100%;background:#22c55e;width:0%;transition:width .3s;"></div>',
+                    '</div>',
+                    '<p id="modal-upload-status" style="margin:6px 0 0;font-size:12px;color:#64748b;text-align:center;">Mengupload…</p>',
+                '</div>',
             '</div>',
             '<div style="display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px;">',
-                '<button id="modal-bukti-batal" type="button" class="btn btn-outline">Batal (kosongkan)</button>',
-                '<button id="modal-bukti-simpan" type="button" class="btn btn-primary" disabled style="opacity:.5;">Konfirmasi</button>',
+                '<button id="modal-upload-batal" type="button" class="btn btn-outline">Batal</button>',
+                '<button id="modal-upload-simpan" type="button" class="btn btn-primary" disabled style="opacity:.5;">Upload & Konfirmasi</button>',
             '</div>',
         '</div>',
     ].join('');
-    document.body.appendChild(modalEl);
+    document.body.appendChild(modalUpload);
 
-    var judulEl     = modalEl.querySelector('#modal-bukti-judul');
-    var namaEl      = modalEl.querySelector('#modal-bukti-nama');
-    var tutupBtn    = modalEl.querySelector('#modal-bukti-tutup');
-    var dropArea    = modalEl.querySelector('#modal-drop-area');
-    var fileInput   = modalEl.querySelector('#modal-file-input');
-    var fileNameEl  = modalEl.querySelector('#modal-file-name');
-    var previewWrap = modalEl.querySelector('#modal-preview-wrap');
-    var previewImg  = modalEl.querySelector('#modal-preview-img');
-    var previewName = modalEl.querySelector('#modal-preview-name');
-    var batalBtn    = modalEl.querySelector('#modal-bukti-batal');
-    var simpanBtn   = modalEl.querySelector('#modal-bukti-simpan');
+    var uploadJudul    = modalUpload.querySelector('#modal-upload-judul');
+    var uploadNama     = modalUpload.querySelector('#modal-upload-nama');
+    var uploadTutup    = modalUpload.querySelector('#modal-upload-tutup');
+    var dropArea       = modalUpload.querySelector('#modal-drop-area');
+    var fileInput      = modalUpload.querySelector('#modal-file-input');
+    var fileNameEl     = modalUpload.querySelector('#modal-file-name');
+    var previewWrap    = modalUpload.querySelector('#modal-preview-wrap');
+    var previewImg     = modalUpload.querySelector('#modal-preview-img');
+    var previewName    = modalUpload.querySelector('#modal-preview-name');
+    var progressWrap   = modalUpload.querySelector('#modal-upload-progress');
+    var progressBar    = modalUpload.querySelector('#modal-progress-bar');
+    var progressStatus = modalUpload.querySelector('#modal-upload-status');
+    var uploadBatal    = modalUpload.querySelector('#modal-upload-batal');
+    var uploadSimpan   = modalUpload.querySelector('#modal-upload-simpan');
 
-    var modalMhsId   = null;
-    var modalRadioEl = null;
+    var uploadMhsId   = null;
+    var uploadNamaStr = '';
+    var uploadRadioEl = null;
+    var uploadIsGanti = false;
+    var uploadFile    = null;
 
-    function bukaModalBukti(mahasiswaId, nama, radioEl) {
-        modalMhsId   = mahasiswaId;
-        modalRadioEl = radioEl;
-        judulEl.textContent = 'Upload Bukti — ' + (radioEl.value === 'S' ? 'Sakit' : 'Izin');
-        namaEl.textContent  = nama;
-        resetPreviewModal();
-        modalEl.classList.add('open');
+    function bukaModalUpload(id, nama, radioEl, isGanti) {
+        uploadMhsId   = id;
+        uploadNamaStr = nama;
+        uploadRadioEl = radioEl;
+        uploadIsGanti = !!isGanti;
+        uploadFile    = null;
+        uploadJudul.textContent = 'Upload Bukti — ' + (radioEl?.value === 'S' ? 'Sakit' : 'Izin');
+        uploadNama.textContent  = nama;
+        resetUpload();
+        modalUpload.classList.add('open');
         document.body.style.overflow = 'hidden';
     }
 
-    function tutupModalBukti(batalkan) {
-        modalEl.classList.remove('open');
+    function tutupModalUpload(batalkan) {
+        modalUpload.classList.remove('open');
         document.body.style.overflow = '';
-        if (batalkan && modalRadioEl) {
-            modalRadioEl.checked = false;
-            delete fotoPending[modalMhsId];
-            var inp = document.getElementById('file-input-' + modalMhsId);
-            if (inp) inp.value = '';
-            updateBuktiStatus(modalMhsId, null);
+        if (batalkan && !uploadIsGanti && uploadRadioEl) {
+            // Kembalikan radio ke kondisi semula
+            uploadRadioEl.checked = false;
             simpanDraft();
         }
-        modalMhsId   = null;
-        modalRadioEl = null;
+        uploadMhsId   = null;
+        uploadNamaStr = '';
+        uploadRadioEl = null;
+        uploadIsGanti = false;
+        uploadFile    = null;
     }
 
-    function resetPreviewModal() {
+    function resetUpload() {
         fileInput.value = '';
         fileNameEl.textContent = 'JPG, PNG, WEBP · Maks 5 MB';
-        previewWrap.style.display = 'none';
-        previewImg.src = '';
+        previewWrap.style.display    = 'none';
+        progressWrap.style.display   = 'none';
+        previewImg.src   = '';
         previewName.textContent = '';
-        simpanBtn.disabled = true;
-        simpanBtn.style.opacity = '.5';
+        progressBar.style.width  = '0%';
+        uploadSimpan.disabled    = true;
+        uploadSimpan.style.opacity = '.5';
         dropArea.style.borderColor = '#cbd5e1';
         dropArea.style.background  = '';
     }
@@ -267,6 +385,7 @@
     function pilihanFile(file) {
         if (!file || !file.type.startsWith('image/')) { alert('File harus berupa gambar.'); return; }
         if (file.size > 5 * 1024 * 1024) { alert('Ukuran file maksimal 5 MB.'); return; }
+        uploadFile = file;
         fileNameEl.textContent = file.name;
         var reader = new FileReader();
         reader.onload = function (e) {
@@ -275,61 +394,98 @@
             previewWrap.style.display = 'block';
         };
         reader.readAsDataURL(file);
-        simpanBtn.disabled = false;
-        simpanBtn.style.opacity = '1';
+        uploadSimpan.disabled      = false;
+        uploadSimpan.style.opacity = '1';
         dropArea.style.borderColor = '#6366f1';
         dropArea.style.background  = '#f5f3ff';
-        fotoPending[modalMhsId] = file;
     }
 
-    dropArea.addEventListener('click', function () { fileInput.click(); });
-    fileInput.addEventListener('change', function () { if (fileInput.files[0]) pilihanFile(fileInput.files[0]); });
+    dropArea.addEventListener('click',    function () { fileInput.click(); });
+    fileInput.addEventListener('change',  function () { if (fileInput.files[0]) pilihanFile(fileInput.files[0]); });
     dropArea.addEventListener('dragover', function (e) { e.preventDefault(); dropArea.style.borderColor = '#6366f1'; dropArea.style.background = '#f5f3ff'; });
-    dropArea.addEventListener('dragleave', function () { dropArea.style.borderColor = '#cbd5e1'; dropArea.style.background = ''; });
-    dropArea.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) pilihanFile(e.dataTransfer.files[0]); });
+    dropArea.addEventListener('dragleave',function ()  { dropArea.style.borderColor = '#cbd5e1'; dropArea.style.background = ''; });
+    dropArea.addEventListener('drop',     function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) pilihanFile(e.dataTransfer.files[0]); });
 
-    simpanBtn.addEventListener('click', function () {
-        if (!fotoPending[modalMhsId]) return;
-        var inp = document.getElementById('file-input-' + modalMhsId);
-        if (inp) {
-            var dt = new DataTransfer();
-            dt.items.add(fotoPending[modalMhsId]);
-            inp.files = dt.files;
-        }
-        updateBuktiStatus(modalMhsId, fotoPending[modalMhsId].name);
-        simpanDraft();
-        modalEl.classList.remove('open');
-        document.body.style.overflow = '';
-        modalMhsId   = null;
-        modalRadioEl = null;
+    // ── Klik "Upload & Konfirmasi" → AJAX ke server ───────────────────
+    uploadSimpan.addEventListener('click', function () {
+        if (!uploadFile || !uploadMhsId) return;
+
+        var id   = uploadMhsId;
+        var nama = uploadNamaStr;
+
+        uploadSimpan.disabled      = true;
+        uploadSimpan.style.opacity = '.5';
+        uploadBatal.disabled       = true;
+        progressWrap.style.display = 'block';
+        progressBar.style.width    = '30%';
+        progressStatus.textContent = 'Mengupload…';
+
+        var fd = new FormData();
+        fd.append('_token',       CSRF);
+        fd.append('mahasiswa_id', id);
+        fd.append('pertemuan_ke', PERTEMUAN);
+        fd.append('foto',         uploadFile);
+
+        fetch(UPLOAD_URL, { method: 'POST', body: fd })
+            .then(function (res) { return res.json(); })
+            .then(function (json) {
+                if (!json.success) throw new Error(json.pesan || 'Upload gagal');
+
+                progressBar.style.width    = '100%';
+                progressStatus.textContent = '✓ Berhasil diupload!';
+                progressStatus.style.color = '#15803d';
+
+                // Update fotoData lokal
+                fotoData[id] = { ada: true, url: json.url };
+
+                // Render ulang badge di baris
+                renderBadgeFoto(id, nama);
+
+                setTimeout(function () {
+                    modalUpload.classList.remove('open');
+                    document.body.style.overflow = '';
+                    uploadMhsId   = null;
+                    uploadNamaStr = '';
+                    uploadRadioEl = null;
+                    uploadIsGanti = false;
+                    uploadFile    = null;
+                    simpanDraft();
+                }, 700);
+            })
+            .catch(function (err) {
+                progressBar.style.width    = '100%';
+                progressBar.style.background = '#ef4444';
+                progressStatus.textContent = '✗ ' + (err.message || 'Gagal upload. Coba lagi.');
+                progressStatus.style.color = '#ef4444';
+                uploadSimpan.disabled      = false;
+                uploadSimpan.style.opacity = '1';
+                uploadBatal.disabled       = false;
+            });
     });
 
-    batalBtn.addEventListener('click', function () { tutupModalBukti(true); });
-    tutupBtn.addEventListener('click',  function () { tutupModalBukti(true); });
-    modalEl.addEventListener('click',   function (e) { if (e.target === modalEl) tutupModalBukti(true); });
+    uploadBatal.addEventListener('click', function () { tutupModalUpload(true); });
+    uploadTutup.addEventListener('click', function () { tutupModalUpload(true); });
+    modalUpload.addEventListener('click', function (e) { if (e.target === modalUpload) tutupModalUpload(true); });
 
-    function updateBuktiStatus(id, namaFile) {
-        var el = document.getElementById('bukti-status-' + id);
-        if (!el) return;
-        if (namaFile) {
-            el.innerHTML = '<span style="color:#16a34a;font-size:11px;">✓ ' + namaFile + '</span>';
-        } else {
-            el.textContent = '—';
-            el.style.color = '#9ca3af';
-        }
-    }
-
-    // ── Intercept radio I dan S → buka modal ─────────────────────────
+    // ── Intercept klik radio I dan S ──────────────────────────────────
     form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
         r.addEventListener('change', function () {
             if (r.value !== 'I' && r.value !== 'S') { simpanDraft(); return; }
             var id = r.name.match(/\[(\d+)\]/)?.[1];
             if (!id) { simpanDraft(); return; }
-            if (fotoTersimpan[id]) { simpanDraft(); return; }
-            if (fotoPending[id])   { simpanDraft(); return; }
+
             var row  = r.closest('tr');
             var nama = row ? (row.querySelectorAll('td')[2]?.textContent?.trim() || '') : '';
-            bukaModalBukti(id, nama, r);
+
+            // Sudah ada foto di server → tampilkan modal lihat
+            if (fotoData[id] && fotoData[id].ada && fotoData[id].url) {
+                bukaModalLihat(id, nama, r.value, fotoData[id].url);
+                simpanDraft();
+                return;
+            }
+
+            // Belum ada foto → minta upload
+            bukaModalUpload(id, nama, r, false);
         });
     });
 
@@ -342,16 +498,15 @@
         btn.addEventListener('click', function () { setTimeout(simpanDraft, 50); });
     });
 
-    // ── Validasi submit ───────────────────────────────────────────────
+    // ── Validasi submit — foto sudah di server, tidak perlu cek file ──
     form.addEventListener('submit', function (e) {
         var kurang = [];
         form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]:checked').forEach(function (r) {
             if (r.value !== 'S' && r.value !== 'I') return;
             var id = r.name.match(/\[(\d+)\]/)?.[1];
             if (!id) return;
-            if (fotoTersimpan[id] || fotoPending[id]) return;
-            var inp = form.querySelector('input[type="file"][name="foto_' + id + '"]');
-            if (inp && (!inp.files || inp.files.length === 0)) kurang.push(id);
+            if (fotoData[id] && fotoData[id].ada) return;
+            kurang.push(id);
         });
         if (kurang.length) {
             e.preventDefault();
@@ -367,7 +522,6 @@
     });
 })();
 </script>
-</form>
 
 <div class="card" style="margin-top:20px;">
     <div class="card-header">

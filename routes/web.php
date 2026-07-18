@@ -82,6 +82,7 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     Route::post('/nilai/{praktikum}/simpan-semua',                    [AsistenController::class,'nilaiSimpanSemua'])->name('nilai.simpan-semua');
     Route::post('/nilai/{praktikum}/autosave',      [AsistenController::class,'nilaiAutosave'])->name('nilai.autosave');
     Route::post('/presensi/{praktikum}/autosave',   [AsistenController::class,'presensiAutosave'])->name('presensi.autosave');
+    Route::post('/presensi/{praktikum}/upload-bukti', [AsistenController::class,'uploadBuktiFoto'])->name('presensi.bukti.upload');
     Route::get('/presensi/bukti/{presensi}',        [AsistenController::class,'lihatBuktiFoto'])->name('presensi.bukti.lihat');
     Route::delete('/presensi/bukti/{presensi}',     [AsistenController::class,'hapusBuktiFoto'])->name('presensi.bukti.hapus');
     Route::post('/nilai/{praktikum}/reset-kolom/{kolom}',             [AsistenController::class,'nilaiResetKolom'])->name('nilai.reset-kolom');
