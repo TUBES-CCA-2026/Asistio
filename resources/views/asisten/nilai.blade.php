@@ -162,8 +162,7 @@
         Batalkan Perubahan
     </button>
     <button type="submit" id="btnSimpanNilai"
-    style="position:fixed;bottom:28px;right:28px;z-index:300;
-           box-shadow:0 4px 16px rgba(0,0,0,.18);
+    style="box-shadow:0 4px 16px rgba(0,0,0,.18);
            display:flex;align-items:center;gap:8px;
            padding:12px 20px;font-size:14px;border-radius:999px;
            transition:background .25s,color .25s;
