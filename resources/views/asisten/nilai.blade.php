@@ -315,24 +315,22 @@
     });
 
     // ── Batalkan Perubahan ────────────────────────────────────────────
-    var btnRevert = document.getElementById('btnRevert');
-    if (btnRevert) {
-        btnRevert.addEventListener('click', function () {
-            if (!confirm('Batalkan semua perubahan dan kembalikan ke nilai terakhir yang tersimpan?')) return;
-            form.querySelectorAll('.input-nilai').forEach(function (el) {
-                var asal = el.dataset.asal || '';
-                el.classList.remove('is-draft', 'nilai-dirty');
-                if (asal === '') {
-                    el.value = '—';
-                    el.classList.add('nilai-kosong');
-                } else {
-                    el.value = asal;
-                    el.classList.remove('nilai-kosong');
-                }
-            });
-            hapusDraft();
+    // Konfirmasi ditangani oleh modal universal di app.js (data-konfirm)
+    // Blade hanya perlu mendengarkan event 'konfirm-revert' yang dikirim modal
+    document.addEventListener('konfirm-revert', function () {
+        form.querySelectorAll('.input-nilai').forEach(function (el) {
+            var asal = el.dataset.asal || '';
+            el.classList.remove('is-draft', 'nilai-dirty');
+            if (asal === '') {
+                el.value = '—';
+                el.classList.add('nilai-kosong');
+            } else {
+                el.value = asal;
+                el.classList.remove('nilai-kosong');
+            }
         });
-    }
+        hapusDraft();
+    });
 
     // ── beforeunload: dialog HANYA saat navigasi keluar, bukan refresh ─
     window.addEventListener('beforeunload', function (e) {
