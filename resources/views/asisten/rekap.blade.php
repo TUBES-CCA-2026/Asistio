@@ -38,7 +38,7 @@
 <div class="card mb-4">
     <div class="card-header"><span class="card-title">Rekap Presensi</span></div>
     <div style="overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;"><table class="table" style="min-width:800px;">
-        <thead><tr><th>NIM</th><th>Nama</th>@for($i=1;$i<=14;$i++)<th style="text-align:center;width:32px;">P{{ $i }}</th>@endfor<th>H</th><th>A</th></tr></thead>
+        <thead><tr><th>NIM</th><th>Nama</th>@for($i=1;$i<=14;$i++)<th style="text-align:center;width:32px;">P{{ $i }}</th>@endfor<th>H</th><th>A</th><th style="text-align:center;">Bukti</th></tr></thead>
         <tbody>
         @foreach($mahasiswaList as $m)
         @php
@@ -59,6 +59,17 @@
             @endfor
             <td style="font-weight:700;color:var(--status-h);">{{ $pp->where('status_kehadiran','H')->count() }}</td>
             <td style="font-weight:700;color:var(--status-a);">{{ $pp->where('status_kehadiran','A')->count() }}</td>
+            <td style="text-align:center;padding:4px;">
+                @php $fotoList = $pp->whereIn('status_kehadiran',['S','I'])->filter(fn($x)=>$x->bukti_foto); @endphp
+                @if($fotoList->count())
+                    <button type="button" onclick="bukaModal('{{ $m->nama_mahasiswa }}',{{ json_encode($fotoList->map(fn($x)=>['p'=>$x->pertemuan_ke,'s'=>$x->status_kehadiran,'url'=>route('asisten.presensi.bukti.lihat',$x)])->values()) }})"
+                            class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;">
+                        📎 {{ $fotoList->count() }}
+                    </button>
+                @else
+                    <span style="color:#9ca3af;font-size:12px;">—</span>
+                @endif
+            </td>
         </tr>
         @endforeach
         </tbody>
@@ -90,4 +101,38 @@
         </tbody>
     </table></div>
 </div>
+{{-- Modal Bukti Foto --}}
+<div id="fotoModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px 20px;max-width:460px;width:95%;max-height:88vh;overflow-y:auto;position:relative;">
+        <button onclick="tutupModal()" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;">✕</button>
+        <p id="modalNama" style="margin:0 0 14px;font-weight:600;font-size:14px;color:#1e293b;"></p>
+        <div id="modalIsi"></div>
+    </div>
+</div>
+<script>
+function bukaModal(nama, items) {
+    document.getElementById('modalNama').textContent = '📎 Bukti Foto — ' + nama;
+    var isi = document.getElementById('modalIsi');
+    isi.innerHTML = '';
+    items.forEach(function(item) {
+        var badge = item.s === 'S' ? '🤒 Sakit' : '📝 Izin';
+        var div = document.createElement('div');
+        div.style.cssText = 'margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;';
+        div.innerHTML = '<div style="padding:7px 12px;background:#f8fafc;font-size:12px;font-weight:600;border-bottom:1px solid #e5e7eb;">Pertemuan ' + item.p + ' · ' + badge + '</div>'
+            + '<div style="padding:10px;text-align:center;">'
+            + '<a href="' + item.url + '" target="_blank">'
+            + '<img src="' + item.url + '" style="max-width:100%;max-height:260px;border-radius:6px;object-fit:contain;" onerror="this.style.display=\'none\'">'
+            + '</a>'
+            + '<div style="margin-top:6px;"><a href="' + item.url + '" target="_blank" style="font-size:11px;color:#3b82f6;">Buka di tab baru ↗</a></div>'
+            + '</div>';
+        isi.appendChild(div);
+    });
+    var m = document.getElementById('fotoModal');
+    m.style.display = 'flex';
+}
+function tutupModal() { document.getElementById('fotoModal').style.display = 'none'; }
+document.getElementById('fotoModal').addEventListener('click', function(e) { if(e.target===this) tutupModal(); });
+document.addEventListener('keydown', function(e) { if(e.key==='Escape') tutupModal(); });
+</script>
+
 @endsection

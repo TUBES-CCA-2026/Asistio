@@ -58,11 +58,51 @@ class AsistenController extends Controller
         $pertemuan = max(1, min($request->integer('pertemuan', 1), 14));
         $request->validate(['presensi'=>'array','presensi.*.status_kehadiran'=>'nullable|in:H,I,S,A']);
         foreach ($request->input('presensi',[]) as $mahasiswaId => $data) {
-            // Lewati mahasiswa yang status kehadirannya belum dipilih (tidak dipaksa default 'Hadir')
             if (empty($data['status_kehadiran'])) continue;
+
+            $status  = $data['status_kehadiran'];
+            $fotoKey = "foto_{$mahasiswaId}";
+            $adaFileBaru = $request->hasFile($fotoKey) && $request->file($fotoKey)->isValid();
+
+            // Ambil data lama dari DB
+            $existing = Presensi::where([
+                'mahasiswa_id' => $mahasiswaId,
+                'praktikum_id' => $praktikum->id,
+                'pertemuan_ke' => $pertemuan,
+            ])->first();
+
+            // Validasi: Sakit/Izin wajib punya foto (baru atau sudah ada di DB)
+            if (in_array($status, ['S','I']) && !$adaFileBaru && (!$existing || !$existing->bukti_foto)) {
+                return back()->withErrors([
+                    "foto_{$mahasiswaId}" => "Bukti foto wajib diunggah untuk mahasiswa ID {$mahasiswaId} (status Sakit/Izin)."
+                ])->withInput();
+            }
+
+            $updateData = [
+                'status_kehadiran' => $status,
+                'catatan'          => $data['catatan'] ?? null,
+            ];
+
+            // Upload foto baru
+            if ($adaFileBaru) {
+                // Hapus foto lama jika ada
+                if ($existing && $existing->bukti_foto) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->bukti_foto);
+                }
+                $updateData['bukti_foto'] = $request->file($fotoKey)->store(
+                    "bukti_presensi/{$praktikum->id}/p{$pertemuan}", 'public'
+                );
+            }
+
+            // Jika status berubah ke H/A, hapus foto lama
+            if (!in_array($status, ['S','I']) && $existing && $existing->bukti_foto) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->bukti_foto);
+                $updateData['bukti_foto'] = null;
+            }
+
             Presensi::updateOrCreate(
                 ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id,'pertemuan_ke'=>$pertemuan],
-                ['status_kehadiran'=>$data['status_kehadiran'],'catatan'=>$data['catatan']??null]
+                $updateData
             );
         }
         return back()->with('success',"Presensi pertemuan {$pertemuan} disimpan.");
@@ -357,13 +397,44 @@ class AsistenController extends Controller
             return response()->json(['success' => false, 'pesan' => 'Mahasiswa tidak ada di kelas ini.'], 403);
         }
 
+        // Jika pilih S/I, wajib sudah ada foto di DB
+        if (in_array($status, ['S','I'])) {
+            $existing = Presensi::where([
+                'mahasiswa_id' => $mahasiswaId,
+                'praktikum_id' => $praktikum->id,
+                'pertemuan_ke' => $pertemuan,
+            ])->first();
+            if (!$existing || !$existing->bukti_foto) {
+                return response()->json([
+                    'success'    => false,
+                    'pesan'      => 'Upload bukti foto dulu sebelum memilih Sakit/Izin.',
+                    'butuh_foto' => true,
+                ], 422);
+            }
+        }
+
+        $updateData = ['status_kehadiran' => $status, 'catatan' => $catatan];
+
+        // Jika berubah ke H/A, hapus foto lama
+        if (!in_array($status, ['S','I'])) {
+            $old = Presensi::where([
+                'mahasiswa_id' => $mahasiswaId,
+                'praktikum_id' => $praktikum->id,
+                'pertemuan_ke' => $pertemuan,
+            ])->first();
+            if ($old && $old->bukti_foto) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($old->bukti_foto);
+                $updateData['bukti_foto'] = null;
+            }
+        }
+
         Presensi::updateOrCreate(
             [
                 'mahasiswa_id' => $mahasiswaId,
                 'praktikum_id' => $praktikum->id,
                 'pertemuan_ke' => $pertemuan,
             ],
-            ['status_kehadiran' => $status, 'catatan' => $catatan]
+            $updateData
         );
 
         return response()->json([
@@ -434,6 +505,24 @@ class AsistenController extends Controller
         $presensiAsistensiAll = PresensiAsistensi::where('praktikum_id', $praktikum->id)
             ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
         return view('asisten.rekap', compact('praktikum','mahasiswaList','presensiAll','rekapNilaiMap','presensiAsistensiAll'));
+    }
+
+    /** Tampilkan foto bukti presensi */
+    public function lihatBuktiFoto(\App\Models\Presensi $presensi): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($presensi->praktikum), 403);
+        abort_unless($presensi->bukti_foto, 404, 'Tidak ada bukti foto.');
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($presensi->bukti_foto);
+    }
+
+    /** Hapus foto bukti presensi */
+    public function hapusBuktiFoto(\App\Models\Presensi $presensi): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($presensi->praktikum), 403);
+        abort_unless($presensi->bukti_foto, 404);
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($presensi->bukti_foto);
+        $presensi->update(['bukti_foto' => null]);
+        return back()->with('success', 'Bukti foto berhasil dihapus.');
     }
 
     /** Form ganti password sendiri */

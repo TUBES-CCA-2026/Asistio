@@ -3,7 +3,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Presensi extends Model {
     protected $table    = 'presensi';
-    protected $fillable = ['mahasiswa_id','praktikum_id','pertemuan_ke','status_kehadiran','catatan'];
+    protected $fillable = ['mahasiswa_id','praktikum_id','pertemuan_ke','status_kehadiran','catatan','bukti_foto'];
     public function mahasiswa()  { return $this->belongsTo(Mahasiswa::class); }
     public function praktikum()  { return $this->belongsTo(Praktikum::class); }
     public static function statusOptions(): array {

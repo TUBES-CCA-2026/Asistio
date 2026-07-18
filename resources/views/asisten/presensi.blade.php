@@ -21,7 +21,7 @@
     <div class="stat-card"><div class="stat-body"><div class="stat-value" style="color:var(--status-h)">{{ $stats['hadir'] }}</div><div class="stat-label">Hadir</div></div></div>
     <div class="stat-card"><div class="stat-body"><div class="stat-value" style="color:var(--status-a)">{{ $stats['alpa'] }}</div><div class="stat-label">Alpha</div></div></div>
 </div>
-<form method="POST" action="{{ route('asisten.presensi.simpan', $praktikum) }}">@csrf
+<form method="POST" action="{{ route('asisten.presensi.simpan', $praktikum) }}" enctype="multipart/form-data">@csrf
 <input type="hidden" name="pertemuan" value="{{ $pertemuan }}">
 <div class="card">
     <div class="card-header">
@@ -33,13 +33,14 @@
         </div>
     </div>
     <div class="table-wrapper"><table class="table">
-        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th></tr></thead>
+        <thead><tr><th>#</th><th>NIM</th><th>Nama</th><th style="text-align:center;">H</th><th style="text-align:center;">I</th><th style="text-align:center;">S</th><th style="text-align:center;">A</th><th>Catatan</th><th style="text-align:center;min-width:140px;">Bukti Foto</th></tr></thead>
         <tbody>
         @forelse($mahasiswaList as $i => $m)
         @php
             $p = $presensiMap[$m->id] ?? null;
             $status = $p?->status_kehadiran;
             $alpaTinggi = $m->melebihiBatasAlpaDiKelas($praktikum->id);
+            $punyaFoto = $p && $p->bukti_foto;
         @endphp
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
             <td>{{ str_pad($i+1,2,'0',STR_PAD_LEFT) }}</td>
@@ -59,6 +60,27 @@
             </td>
             @endforeach
             <td><input type="text" name="presensi[{{ $m->id }}][catatan]" class="form-control form-control-sm" value="{{ $p?->catatan }}" placeholder="—"></td>
+            <td style="text-align:center;vertical-align:middle;padding:6px;">
+                @if($punyaFoto)
+                    <a href="{{ route('asisten.presensi.bukti.lihat', $p) }}" target="_blank"
+                       class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;">📎 Lihat</a>
+                    <label class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px;cursor:pointer;margin-left:2px;" title="Ganti foto">
+                        ✏️ Ganti
+                        <input type="file" name="foto_{{ $m->id }}" accept="image/*"
+                               class="bukti-input" data-mid="{{ $m->id }}" style="display:none;">
+                    </label>
+                @else
+                    <label class="btn btn-sm btn-outline bukti-label" id="blabel-{{ $m->id }}"
+                           style="font-size:11px;padding:3px 8px;cursor:pointer;{{ in_array($status,['S','I']) ? 'background:#fef2f2;border-color:#f87171;color:#dc2626;' : '' }}"
+                           title="Wajib untuk Sakit/Izin">
+                        📷 {{ in_array($status,['S','I']) ? 'Wajib Upload' : 'Upload Foto' }}
+                        <input type="file" name="foto_{{ $m->id }}" accept="image/*"
+                               class="bukti-input" data-mid="{{ $m->id }}"
+                               style="display:none;" {{ in_array($status,['S','I']) ? 'required' : '' }}>
+                    </label>
+                    <span id="bname-{{ $m->id }}" style="display:none;font-size:10px;color:#16a34a;display:block;margin-top:2px;"></span>
+                @endif
+            </td>
         </tr>
         @empty<tr><td colspan="8"><div class="empty-state"><p>Belum ada mahasiswa di kelas ini.</p></div></td></tr>
         @endforelse
@@ -196,6 +218,61 @@
         var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
         if (nav !== 'reload') hapusDraft();
     });
+})();
+
+// ── Bukti Foto: dinamis label & validasi ─────────────────────────
+(function () {
+    // Radio S/I dipilih → ubah warna tombol upload jadi merah
+    document.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+            var id  = r.name.match(/\[(\d+)\]/)?.[1];
+            if (!id) return;
+            var lbl = document.getElementById('blabel-' + id);
+            var inp = lbl ? lbl.querySelector('input[type="file"]') : null;
+            if (!lbl || !inp) return;
+            var merah = (r.value === 'S' || r.value === 'I');
+            lbl.style.background   = merah ? '#fef2f2' : '';
+            lbl.style.borderColor  = merah ? '#f87171' : '';
+            lbl.style.color        = merah ? '#dc2626' : '';
+            lbl.childNodes[0].textContent = merah ? '📷 Wajib Upload' : '📷 Upload Foto';
+            inp.required = merah;
+        });
+    });
+
+    // File dipilih → tampilkan nama
+    document.querySelectorAll('.bukti-input').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+            var id   = inp.dataset.mid;
+            var span = document.getElementById('bname-' + id);
+            var lbl  = document.getElementById('blabel-' + id);
+            if (inp.files && inp.files[0]) {
+                if (span) { span.textContent = '✓ ' + inp.files[0].name; span.style.display = 'block'; }
+                if (lbl)  { lbl.style.borderColor = '#16a34a'; lbl.style.color = '#16a34a'; }
+            }
+        });
+    });
+
+    // Validasi submit: cegah jika S/I tanpa foto
+    var formPres = document.querySelector('form[enctype="multipart/form-data"]');
+    if (formPres) {
+        formPres.addEventListener('submit', function (e) {
+            var kurang = [];
+            formPres.querySelectorAll('input[type="radio"][name*="status_kehadiran"]:checked').forEach(function (r) {
+                if (r.value !== 'S' && r.value !== 'I') return;
+                var id  = r.name.match(/\[(\d+)\]/)?.[1];
+                if (!id) return;
+                var inp = formPres.querySelector('input[type="file"][name="foto_' + id + '"]');
+                if (inp && (!inp.files || inp.files.length === 0)) kurang.push(id);
+            });
+            if (kurang.length) {
+                e.preventDefault();
+                alert('⚠ ' + kurang.length + ' mahasiswa dengan Sakit/Izin belum ada bukti foto.\nSilakan upload terlebih dahulu.');
+                // Scroll ke baris pertama yang bermasalah
+                var inp1 = formPres.querySelector('input[type="file"][name="foto_' + kurang[0] + '"]');
+                if (inp1) inp1.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
 })();
 </script>
 </form>
