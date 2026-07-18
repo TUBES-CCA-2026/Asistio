@@ -701,6 +701,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.addEventListener('konfirm-revert', function () {
+            // Jika halaman nilai (asisten/laboran) dengan sistem draft baru,
+            // biarkan listener di blade yang menangani revert via data-asal.
+            // Di sini hanya tangani halaman lain yang pakai sistem lama (data-asalNilai).
+            var pakaiSistemBaru = !!document.querySelector('.input-nilai[data-asal]');
+            if (pakaiSistemBaru) {
+                // Sistem baru di blade nilai.blade.php yang handle,
+                // kita hanya perlu update dirty hint lama agar indikator hilang
+                updateDirtyHint();
+                return;
+            }
             document.querySelectorAll('.input-nilai').forEach(function (el) {
                 var asal = el.dataset.asalNilai || '';
                 el.classList.remove('nilai-dirty');
@@ -718,8 +728,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initNilaiDisplay() {
         document.querySelectorAll('.input-nilai').forEach(function (el) {
-            // Simpan nilai asal dari server ke dataset
-            var asalServer = el.value.trim();
+            // Jika elemen sudah punya data-asal (sistem baru di nilai.blade.php),
+            // gunakan itu sebagai sumber kebenaran, bukan el.value saat ini
+            // (karena el.value mungkin sudah diubah oleh pulihkanDraft())
+            var asalServer = el.dataset.asal !== undefined
+                ? el.dataset.asal
+                : el.value.trim();
             el.dataset.asalNilai = asalServer;
 
             // Tampilkan "—" jika kosong
@@ -797,8 +811,16 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
-    initNilaiDisplay();
-    updateDirtyHint();
+    // Ekspor untuk dipanggil dari blade setelah draft dipulihkan
+    window._initNilaiDisplay = initNilaiDisplay;
+    window._updateDirtyHint  = updateDirtyHint;
+
+    // Hanya jalankan otomatis jika BUKAN halaman nilai dengan sistem draft baru
+    // (halaman tersebut memanggil sendiri setelah pulihkanDraft())
+    if (!document.querySelector('form[action*="simpan-semua"] .input-nilai[data-asal]')) {
+        initNilaiDisplay();
+        updateDirtyHint();
+    }
 // ── LIVE TOTAL BOBOT ─────────────────────────────────────────────
     document.querySelectorAll('[id^="formBobot"]').forEach(function (form) {
         var kelasId    = form.id.replace('formBobot','');

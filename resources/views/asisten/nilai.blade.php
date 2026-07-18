@@ -78,7 +78,20 @@
             {{-- Nilai P1–P14: Kegiatan | Evaluasi | Nilai (read-only) --}}
             @for($i = 1; $i <= 14; $i++)
             @php
-                $nilaiP = $n['evaluasi']->{'p'.$i} ?? null;
+                $kegiatan = $n['evaluasi']->{'p'.$i.'_kegiatan'} ?? null;
+                $evaluasi = $n['evaluasi']->{'p'.$i.'_evaluasi'} ?? null;
+                $bobotKeg = ($praktikum->bobot_kegiatan ?? 50) / 100;
+                $bobotEval= ($praktikum->bobot_evaluasi_praktikum ?? 50) / 100;
+                // Hitung nilai P dari kegiatan dan evaluasi — kosong jika keduanya null
+                if ($kegiatan !== null && $evaluasi !== null) {
+                    $nilaiP = round(($kegiatan * $bobotKeg) + ($evaluasi * $bobotEval), 2);
+                } elseif ($kegiatan !== null) {
+                    $nilaiP = $kegiatan;
+                } elseif ($evaluasi !== null) {
+                    $nilaiP = $evaluasi;
+                } else {
+                    $nilaiP = null;
+                }
             @endphp
             <td class="td-nilai" style="border-left:2px solid var(--border);">
                 <input type="text" name="nilai[{{ $m->id }}][p{{ $i }}_kegiatan]"
@@ -282,14 +295,57 @@
         return form.querySelectorAll('.input-nilai.is-draft').length;
     }
 
-    // ── Init ──────────────────────────────────────────────────────────
-    if (isReload) {
-        pulihkanDraft();   // refresh → pulihkan
-    } else {
-        hapusDraft();      // kunjungan baru → bersih
+    // ── Hitung ulang kolom Nilai P dari kegiatan & evaluasi ───────────
+    function hitungSemuaNilaiP() {
+        var bobotKeg  = parseFloat(form.dataset.bobotKegiatan  || 50) / 100;
+        var bobotEval = parseFloat(form.dataset.bobotEvaluasi  || 50) / 100;
+
+        form.querySelectorAll('.input-sub-nilai[data-sub="kegiatan"]').forEach(function (elKeg) {
+            var mhs       = elKeg.dataset.mhs;
+            var pertemuan = elKeg.dataset.pertemuan;
+            var elEval    = form.querySelector('.input-sub-nilai[data-mhs="' + mhs + '"][data-pertemuan="' + pertemuan + '"][data-sub="evaluasi"]');
+            var elNilai   = document.getElementById('nilai_p' + pertemuan + '_' + mhs);
+            if (!elNilai) return;
+
+            var keg  = elKeg.value  === '—' ? '' : elKeg.value.trim();
+            var eval_ = elEval ? (elEval.value === '—' ? '' : elEval.value.trim()) : '';
+
+            if (keg === '' && eval_ === '') {
+                elNilai.value = '';
+                return;
+            }
+            var kegN  = keg  !== '' ? parseFloat(keg)  : null;
+            var evalN = eval_ !== '' ? parseFloat(eval_) : null;
+
+            var hasil;
+            if (kegN !== null && evalN !== null) {
+                hasil = Math.round(((kegN * bobotKeg) + (evalN * bobotEval)) * 100) / 100;
+            } else if (kegN !== null) {
+                hasil = kegN;
+            } else {
+                hasil = evalN;
+            }
+            elNilai.value = isNaN(hasil) ? '' : hasil.toFixed(2);
+        });
     }
 
-    // ── Event input: tandai dirty + simpan draft ──────────────────────
+    // ── Init ──────────────────────────────────────────────────────────
+    if (isReload) {
+        pulihkanDraft();
+        hitungSemuaNilaiP();
+    } else {
+        hapusDraft();
+    }
+
+    // Jalankan initNilaiDisplay SETELAH draft dipulihkan
+    // agar asalNilai dibaca dari data-asal (server), bukan dari el.value
+    // yang sudah terisi draft
+    if (window._initNilaiDisplay) {
+        window._initNilaiDisplay();
+        window._updateDirtyHint();
+    }
+
+    // ── Event input: tandai dirty + simpan draft + hitung Nilai P ─────
     form.querySelectorAll('.input-nilai').forEach(function (el) {
         el.addEventListener('input', function () {
             var sekarang = this.value === '—' ? '' : this.value;
@@ -301,6 +357,35 @@
                 if (sekarang === '') {
                     this.value = '—';
                     this.classList.add('nilai-kosong');
+                }
+            }
+            // Hitung ulang kolom Nilai P jika yang diubah adalah kegiatan/evaluasi
+            if (this.classList.contains('input-sub-nilai')) {
+                var mhs       = this.dataset.mhs;
+                var pertemuan = this.dataset.pertemuan;
+                var bobotKeg  = parseFloat(form.dataset.bobotKegiatan || 50) / 100;
+                var bobotEval = parseFloat(form.dataset.bobotEvaluasi || 50) / 100;
+                var elKeg  = form.querySelector('.input-sub-nilai[data-mhs="' + mhs + '"][data-pertemuan="' + pertemuan + '"][data-sub="kegiatan"]');
+                var elEval = form.querySelector('.input-sub-nilai[data-mhs="' + mhs + '"][data-pertemuan="' + pertemuan + '"][data-sub="evaluasi"]');
+                var elNilai = document.getElementById('nilai_p' + pertemuan + '_' + mhs);
+                if (elNilai && elKeg && elEval) {
+                    var keg   = elKeg.value  === '—' ? '' : elKeg.value.trim();
+                    var eval_ = elEval.value === '—' ? '' : elEval.value.trim();
+                    if (keg === '' && eval_ === '') {
+                        elNilai.value = '';
+                    } else {
+                        var kegN  = keg   !== '' ? parseFloat(keg)   : null;
+                        var evalN = eval_ !== '' ? parseFloat(eval_)  : null;
+                        var hasil;
+                        if (kegN !== null && evalN !== null) {
+                            hasil = Math.round(((kegN * bobotKeg) + (evalN * bobotEval)) * 100) / 100;
+                        } else if (kegN !== null) {
+                            hasil = kegN;
+                        } else {
+                            hasil = evalN;
+                        }
+                        elNilai.value = isNaN(hasil) ? '' : hasil.toFixed(2);
+                    }
                 }
             }
             simpanDraft();
@@ -330,6 +415,7 @@
             }
         });
         hapusDraft();
+        hitungSemuaNilaiP();   // ← hitung ulang kolom Nilai P ke nilai asli setelah revert
     });
 
     // ── beforeunload: dialog HANYA saat navigasi keluar, bukan refresh ─
