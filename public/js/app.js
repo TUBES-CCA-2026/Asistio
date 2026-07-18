@@ -689,8 +689,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Tombol batalkan perubahan — kembalikan semua ke nilai asal
     var btnRevert = document.getElementById('btnRevert');
     if (btnRevert) {
-        btnRevert.addEventListener('click', function () {
-            if (!confirm('Batalkan semua perubahan dan kembalikan ke nilai terakhir yang tersimpan?')) return;
+        btnRevert.setAttribute('data-konfirm', 'Batalkan semua perubahan dan kembalikan ke nilai terakhir yang tersimpan?');
+        btnRevert.setAttribute('data-konfirm-judul', 'Batalkan Perubahan');
+        btnRevert.setAttribute('data-konfirm-ya', 'Ya, Batalkan');
+        btnRevert.setAttribute('data-konfirm-revert', '1');
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-konfirm-revert]');
+            if (!btn) return;
+            // Ditangani oleh modal universal — tunggu konfirmasi via custom event
+        });
+
+        document.addEventListener('konfirm-revert', function () {
             document.querySelectorAll('.input-nilai').forEach(function (el) {
                 var asal = el.dataset.asalNilai || '';
                 el.classList.remove('nilai-dirty');
