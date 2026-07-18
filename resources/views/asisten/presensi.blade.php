@@ -175,13 +175,27 @@
     pulihkanDraft();
 
     // ── Badge foto di tiap baris ──────────────────────────────────────
-    // Inject kolom "Bukti" ke thead
+    // Inject kolom "Bukti" ke thead — hanya tampil jika ada yg temporary
     var thead = form.querySelector('table thead tr');
+    var thBukti = null;
     if (thead) {
-        var thBukti = document.createElement('th');
+        thBukti = document.createElement('th');
         thBukti.style.cssText = 'text-align:center;width:56px;';
         thBukti.textContent = 'Bukti';
+        thBukti.style.display = 'none'; // sembunyikan dulu, tampil jika ada temporary
         thead.appendChild(thBukti);
+    }
+
+    function adaFotoTemporary() {
+        return Object.values(fotoData).some(function (d) { return d && d.ada && d.temporary; });
+    }
+
+    function updateKolomBukti() {
+        var ada = adaFotoTemporary();
+        if (thBukti) thBukti.style.display = ada ? '' : 'none';
+        form.querySelectorAll('.td-bukti').forEach(function (td) {
+            td.style.display = ada ? '' : 'none';
+        });
     }
 
     function renderBadgeFoto(id, nama) {
@@ -189,20 +203,25 @@
         if (!td) return;
         var d = fotoData[id];
         td.innerHTML = '';
-        if (d && d.ada && d.url) {
+        // Hanya tampilkan tombol "Lihat" jika foto masih temporary (belum di-save)
+        if (d && d.ada && d.url && d.temporary) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.title = 'Lihat bukti foto';
-            btn.style.cssText = 'background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;';
-            btn.textContent = '📎 Lihat';
+            btn.title = 'Lihat bukti foto (belum disimpan)';
+            btn.style.cssText = 'background:#fef9c3;border:1px solid #fde68a;color:#92400e;border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;';
+            btn.textContent = '📎 Lihat*';
             btn.addEventListener('click', function () {
                 var status = form.querySelector('input[name="presensi[' + id + '][status_kehadiran]"]:checked')?.value || 'I';
                 bukaModalLihat(id, nama, status, d.url);
             });
             td.appendChild(btn);
+        } else if (d && d.ada && d.url && !d.temporary) {
+            // Sudah permanen — tidak tampilkan tombol (kolom tersembunyi)
+            td.innerHTML = '';
         } else {
             td.innerHTML = '<span style="color:#9ca3af;font-size:11px;">—</span>';
         }
+        updateKolomBukti();
     }
 
     // Inject td bukti ke tiap baris tbody
@@ -214,10 +233,11 @@
         tr.setAttribute('data-mhs-id', id);
         var tdBukti = document.createElement('td');
         tdBukti.className = 'td-bukti';
-        tdBukti.style.cssText = 'text-align:center;padding:4px;';
+        tdBukti.style.cssText = 'text-align:center;padding:4px;display:none;';
         tr.appendChild(tdBukti);
         renderBadgeFoto(id, nama);
     });
+    updateKolomBukti();
 
     // ── Modal LIHAT foto ──────────────────────────────────────────────
     var modalLihat = document.createElement('div');
@@ -427,7 +447,12 @@
         fd.append('foto',         uploadFile);
 
         fetch(UPLOAD_URL, { method: 'POST', body: fd })
-            .then(function (res) { return res.json(); })
+            .then(function (res) {
+                if (!res.ok && res.headers.get('content-type')?.includes('text/html')) {
+                    throw new Error('Server error ' + res.status + '. Pastikan migration sudah dijalankan (php artisan migrate).');
+                }
+                return res.json();
+            })
             .then(function (json) {
                 if (!json.success) throw new Error(json.pesan || 'Upload gagal');
 
@@ -435,8 +460,8 @@
                 progressStatus.textContent = '✓ Berhasil diupload!';
                 progressStatus.style.color = '#15803d';
 
-                // Update fotoData lokal
-                fotoData[id] = { ada: true, url: json.url };
+                // Update fotoData lokal — tandai sebagai temporary sampai form di-submit
+                fotoData[id] = { ada: true, url: json.url, temporary: true };
 
                 // Render ulang badge di baris
                 renderBadgeFoto(id, nama);
@@ -467,25 +492,110 @@
     uploadTutup.addEventListener('click', function () { tutupModalUpload(true); });
     modalUpload.addEventListener('click', function (e) { if (e.target === modalUpload) tutupModalUpload(true); });
 
-    // ── Intercept klik radio I dan S ──────────────────────────────────
+    // ── Modal konfirmasi ganti status dari I/S ke status lain ────────
+    var modalKonfirmGanti = document.createElement('div');
+    modalKonfirmGanti.className = 'modal-overlay';
+    modalKonfirmGanti.innerHTML = [
+        '<div class="modal" style="max-width:400px;">',
+            '<div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">',
+                '<span class="modal-title" style="color:#991B1B;">⚠ Ganti Status</span>',
+                '<button type="button" class="modal-close" id="konfirm-ganti-tutup">✕</button>',
+            '</div>',
+            '<div class="modal-body">',
+                '<p id="konfirm-ganti-pesan" style="margin:0;font-size:14px;color:#374151;line-height:1.6;"></p>',
+            '</div>',
+            '<div style="display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px;">',
+                '<button id="konfirm-ganti-batal" type="button" class="btn btn-outline">Batal</button>',
+                '<button id="konfirm-ganti-ya" type="button" class="btn" style="background:#ef4444;color:#fff;border:none;">Ya, Ganti Status</button>',
+            '</div>',
+        '</div>',
+    ].join('');
+    document.body.appendChild(modalKonfirmGanti);
+
+    var konfirmGantiYa    = modalKonfirmGanti.querySelector('#konfirm-ganti-ya');
+    var konfirmGantiBatal = modalKonfirmGanti.querySelector('#konfirm-ganti-batal');
+    var konfirmGantiTutup = modalKonfirmGanti.querySelector('#konfirm-ganti-tutup');
+    var konfirmGantiPesan = modalKonfirmGanti.querySelector('#konfirm-ganti-pesan');
+    var konfirmGantiCallback = null;
+    var konfirmGantiBatalCallback = null;
+
+    function bukaModalKonfirmGanti(pesan, onYa, onBatal) {
+        konfirmGantiPesan.innerHTML = pesan;
+        konfirmGantiCallback       = onYa;
+        konfirmGantiBatalCallback  = onBatal;
+        modalKonfirmGanti.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function tutupModalKonfirmGanti(isBatal) {
+        modalKonfirmGanti.classList.remove('open');
+        document.body.style.overflow = '';
+        if (isBatal && konfirmGantiBatalCallback) konfirmGantiBatalCallback();
+        konfirmGantiCallback       = null;
+        konfirmGantiBatalCallback  = null;
+    }
+
+    konfirmGantiYa.addEventListener('click',    function () { var cb = konfirmGantiCallback; tutupModalKonfirmGanti(false); if (cb) cb(); });
+    konfirmGantiBatal.addEventListener('click', function () { tutupModalKonfirmGanti(true); });
+    konfirmGantiTutup.addEventListener('click', function () { tutupModalKonfirmGanti(true); });
+    modalKonfirmGanti.addEventListener('click', function (e) { if (e.target === modalKonfirmGanti) tutupModalKonfirmGanti(true); });
+
+    // ── Intercept klik radio — semua status ───────────────────────────
     form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
         r.addEventListener('change', function () {
-            if (r.value !== 'I' && r.value !== 'S') { simpanDraft(); return; }
             var id = r.name.match(/\[(\d+)\]/)?.[1];
             if (!id) { simpanDraft(); return; }
 
-            var row  = r.closest('tr');
-            var nama = row ? (row.querySelectorAll('td')[2]?.textContent?.trim() || '') : '';
+            var row      = r.closest('tr');
+            var nama     = row ? (row.querySelectorAll('td')[2]?.textContent?.trim() || '') : '';
+            var adaFoto  = fotoData[id] && fotoData[id].ada && fotoData[id].url;
+            var statusLama = null;
+            row.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (rr) {
+                if (rr !== r && rr.defaultChecked) statusLama = rr.value;
+            });
 
-            // Sudah ada foto di server → tampilkan modal lihat
-            if (fotoData[id] && fotoData[id].ada && fotoData[id].url) {
-                bukaModalLihat(id, nama, r.value, fotoData[id].url);
-                simpanDraft();
+            // Dari I/S ke H/A — perlu konfirmasi karena ada/akan ada bukti
+            if ((statusLama === 'I' || statusLama === 'S') && (r.value === 'H' || r.value === 'A')) {
+                var radioSebelum = r;
+                // Kembalikan dulu ke status lama secara visual
+                row.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (rr) {
+                    rr.checked = (rr.value === statusLama);
+                });
+                bukaModalKonfirmGanti(
+                    'Status mahasiswa <strong>' + nama + '</strong> akan diubah dari <strong>' + (statusLama === 'I' ? 'Izin' : 'Sakit') + '</strong> ke <strong>' + (r.value === 'H' ? 'Hadir' : 'Alpha') + '</strong>.<br><br>' +
+                    (adaFoto ? '⚠ Bukti foto yang sudah diupload <strong>akan dihapus</strong>.' : ''),
+                    function () {
+                        // User setuju → ganti status, hapus foto dari tampilan
+                        radioSebelum.checked = true;
+                        if (adaFoto) {
+                            // Hapus foto dari fotoData lokal (server bersihkan saat submit)
+                            fotoData[id] = { ada: false, temporary: false, url: null };
+                            renderBadgeFoto(id, nama);
+                        }
+                        simpanDraft();
+                    },
+                    function () {
+                        // User batal → tidak ada perubahan, sudah dikembalikan ke statusLama
+                    }
+                );
                 return;
             }
 
-            // Belum ada foto → minta upload
-            bukaModalUpload(id, nama, r, false);
+            // Dari status lain ke I/S
+            if (r.value === 'I' || r.value === 'S') {
+                // Sudah ada foto (temporary atau permanen) → tampilkan modal lihat
+                if (adaFoto) {
+                    bukaModalLihat(id, nama, r.value, fotoData[id].url);
+                    simpanDraft();
+                    return;
+                }
+                // Belum ada foto → minta upload
+                bukaModalUpload(id, nama, r, false);
+                return;
+            }
+
+            // H atau A tanpa riwayat I/S → simpan draft biasa
+            simpanDraft();
         });
     });
 
@@ -498,7 +608,7 @@
         btn.addEventListener('click', function () { setTimeout(simpanDraft, 50); });
     });
 
-    // ── Validasi submit — foto sudah di server, tidak perlu cek file ──
+    // ── Validasi submit ───────────────────────────────────────────────
     form.addEventListener('submit', function (e) {
         var kurang = [];
         form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]:checked').forEach(function (r) {
@@ -513,6 +623,11 @@
             alert('⚠ ' + kurang.length + ' mahasiswa dengan Sakit/Izin belum ada bukti foto.');
             return;
         }
+        // Setelah submit: semua foto jadi permanen — sembunyikan kolom Bukti
+        Object.keys(fotoData).forEach(function (id) {
+            if (fotoData[id]) fotoData[id].temporary = false;
+        });
+        updateKolomBukti();
         hapusDraft();
     });
 

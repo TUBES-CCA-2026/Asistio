@@ -50,8 +50,9 @@ class AsistenController extends Controller
             ->get()->groupBy('mahasiswa_id')->map(fn($rows) => $rows->keyBy('asistensi_ke'));
         $fotoData = $presensiMap->mapWithKeys(function ($p, $id) {
             return [(string)$id => [
-                'ada' => (bool)$p->bukti_foto,
-                'url' => $p->bukti_foto ? route('asisten.presensi.bukti.lihat', $p) : null,
+                'ada'       => (bool)$p->bukti_foto,
+                'temporary' => (bool)$p->foto_is_temporary,
+                'url'       => $p->bukti_foto ? route('asisten.presensi.bukti.lihat', $p) : null,
             ]];
         })->toArray();
 
@@ -104,7 +105,13 @@ class AsistenController extends Controller
             // Jika status berubah ke H/A, hapus foto lama
             if (!in_array($status, ['S','I']) && $existing && $existing->bukti_foto) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->bukti_foto);
-                $updateData['bukti_foto'] = null;
+                $updateData['bukti_foto']        = null;
+                $updateData['foto_is_temporary'] = false;
+            }
+
+            // Saat form disimpan, foto tidak lagi temporary
+            if (in_array($status, ['S','I'])) {
+                $updateData['foto_is_temporary'] = false;
             }
 
             Presensi::updateOrCreate(
@@ -431,7 +438,8 @@ class AsistenController extends Controller
             ])->first();
             if ($old && $old->bukti_foto) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($old->bukti_foto);
-                $updateData['bukti_foto'] = null;
+                $updateData['bukti_foto']        = null;
+                $updateData['foto_is_temporary'] = false;
             }
         }
 
@@ -552,14 +560,15 @@ class AsistenController extends Controller
 
         $presensi = Presensi::updateOrCreate(
             ['mahasiswa_id' => $mahasiswaId, 'praktikum_id' => $praktikum->id, 'pertemuan_ke' => $pertemuan],
-            ['bukti_foto' => $path]
+            ['bukti_foto' => $path, 'foto_is_temporary' => true, 'foto_uploaded_at' => now()]
         );
 
         return response()->json([
-            'success' => true,
-            'pesan'   => 'Bukti foto berhasil diunggah.',
-            'url'     => route('asisten.presensi.bukti.lihat', $presensi),
-            'presensi_id' => $presensi->id,
+            'success'    => true,
+            'pesan'      => 'Bukti foto berhasil diunggah.',
+            'url'        => route('asisten.presensi.bukti.lihat', $presensi),
+            'presensi_id'=> $presensi->id,
+            'temporary'  => true,
         ]);
     }
 
