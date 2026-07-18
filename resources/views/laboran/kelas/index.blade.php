@@ -158,7 +158,7 @@
             <div style="display:flex;gap:6px;">
             <a href="{{ route('laboran.kelas.show',$k) }}" class="btn btn-sm btn-outline">Edit</a>
             <form method="POST" action="{{ route('laboran.kelas.destroy',$k) }}">@csrf @method('DELETE')
-            <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus kelas ini?')">Hapus</button></form>
+            <button class="btn btn-sm btn-danger" type="button" data-konfirm="Hapus kelas ini?" data-konfirm-judul="Hapus Kelas">Hapus</button></form>
             </div>
         </td>
     </tr>
