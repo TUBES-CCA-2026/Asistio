@@ -70,81 +70,135 @@
 </div>
 <script>
 (function () {
-    const form       = document.getElementById('formPresensi');
-    const CSRF       = document.querySelector('meta[name="csrf-token"]')?.content;
-    const URL_SAVE   = '{{ route('asisten.presensi.autosave', $praktikum) }}';
-    const PERTEMUAN  = {{ $pertemuan }};
+    var form     = document.querySelector('form[action*="presensi"][action*="simpan"]');
+    var DRAFT_KEY = 'draft_presensi_{{ $praktikum->id }}_p{{ $pertemuan }}';
+    if (!form) return;
 
-    // Status badge kecil per baris
-    function tandaiStatus(tr, state) {
-        let badge = tr.querySelector('.autosave-badge');
-        if (!badge) {
-            badge = document.createElement('span');
-            badge.className = 'autosave-badge';
-            badge.style.cssText = 'font-size:10px;margin-left:6px;transition:opacity .3s;';
-            const nama = tr.querySelector('td:first-child .fw-600');
-            if (nama) nama.after(badge);
-        }
-        const map = {
-            saving: { text: '⏳', color: '#f59e0b' },
-            saved:  { text: '✓',  color: '#22c55e' },
-            error:  { text: '⚠',  color: '#ef4444' },
-        };
-        const s = map[state] || {};
-        badge.textContent   = s.text || '';
-        badge.style.color   = s.color || '';
-        badge.style.opacity = '1';
-        if (state === 'saved') setTimeout(() => badge.style.opacity = '0', 2500);
+    var navType  = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
+    var isReload = navType === 'reload';
+
+    // ── Baca seluruh state form ke objek ─────────────────────────────
+    function bacaState() {
+        var state = {};
+        form.querySelectorAll('input[type="radio"]:checked[name*="status_kehadiran"]').forEach(function (r) {
+            var id = r.name.match(/\[(\d+)\]/)?.[1];
+            if (id) { state[id] = state[id] || {}; state[id].status = r.value; }
+        });
+        form.querySelectorAll('input[name*="[catatan]"]').forEach(function (inp) {
+            var id = inp.name.match(/\[(\d+)\]/)?.[1];
+            if (id) { state[id] = state[id] || {}; state[id].catatan = inp.value; }
+        });
+        return state;
     }
 
-    // Simpan satu baris presensi via AJAX
-    async function simpanBaris(radio) {
-        const tr         = radio.closest('tr');
-        const namaField  = radio.name; // presensi[{mahasiswaId}][status_kehadiran]
-        const mahasiswaId = namaField.match(/\[(\d+)\]/)?.[1];
-        if (!mahasiswaId) return;
-
-        const catatan = tr.querySelector('input[name*="[catatan]"]')?.value ?? '';
-        tandaiStatus(tr, 'saving');
-
-        try {
-            const res  = await fetch(URL_SAVE, {
-                method : 'POST',
-                headers: {
-                    'X-CSRF-TOKEN' : CSRF,
-                    'Content-Type' : 'application/json',
-                    'Accept'       : 'application/json',
-                },
-                body: JSON.stringify({
-                    mahasiswa_id      : parseInt(mahasiswaId),
-                    pertemuan_ke      : PERTEMUAN,
-                    status_kehadiran  : radio.value,
-                    catatan           : catatan,
-                }),
-            });
-            const json = await res.json();
-            tandaiStatus(tr, json.success ? 'saved' : 'error');
-        } catch {
-            tandaiStatus(tr, 'error');
-        }
+    // ── Baca state DB (dari value awal HTML) ──────────────────────────
+    function bacaStateDB() {
+        var state = {};
+        // Status: cek radio yang awalnya checked (dari PHP)
+        form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
+            var id = r.name.match(/\[(\d+)\]/)?.[1];
+            if (!id) return;
+            if (!state[id]) state[id] = { status: null, catatan: '' };
+            if (r.defaultChecked) state[id].status = r.value;
+        });
+        form.querySelectorAll('input[name*="[catatan]"]').forEach(function (inp) {
+            var id = inp.name.match(/\[(\d+)\]/)?.[1];
+            if (!id) return;
+            if (!state[id]) state[id] = { status: null, catatan: '' };
+            state[id].catatan = inp.defaultValue || '';
+        });
+        return state;
     }
 
-    // Simpan segera saat radio berubah
-    form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(r => {
-        r.addEventListener('change', function () { simpanBaris(this); });
+    var stateDB = bacaStateDB();
+
+    // ── Cek apakah ada perubahan dari DB ─────────────────────────────
+    function adaPerubahan() {
+        var now = bacaState();
+        return Object.keys(now).some(function (id) {
+            var db  = stateDB[id] || {};
+            var cur = now[id] || {};
+            return cur.status !== db.status || (cur.catatan || '') !== (db.catatan || '');
+        });
+    }
+
+    // ── Simpan ke sessionStorage ──────────────────────────────────────
+    function simpanDraft() {
+        try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(bacaState())); } catch (e) {}
+        updateIndikator();
+    }
+
+    // ── Restore dari sessionStorage ───────────────────────────────────
+    function pulihkanDraft() {
+        var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+        if (!raw) return;
+        var draft; try { draft = JSON.parse(raw); } catch (e) { return; }
+        Object.keys(draft).forEach(function (id) {
+            var d = draft[id];
+            if (d.status) {
+                var r = form.querySelector('input[type="radio"][name="presensi[' + id + '][status_kehadiran]"][value="' + d.status + '"]');
+                if (r) r.checked = true;
+            }
+            if (d.catatan !== undefined) {
+                var inp = form.querySelector('input[name="presensi[' + id + '][catatan]"]');
+                if (inp) inp.value = d.catatan;
+            }
+        });
+        updateIndikator();
+    }
+
+    // ── Hapus draft ───────────────────────────────────────────────────
+    function hapusDraft() {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        updateIndikator();
+    }
+
+    // ── Indikator "Belum disimpan" di card-header ─────────────────────
+    var indEl = null;
+    var cardHeader = form.querySelector('.card-header');
+    if (cardHeader) {
+        cardHeader.style.position = 'relative';
+        indEl = document.createElement('span');
+        indEl.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:3px 10px;';indEl.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:3px 10px;position:absolute;left:50%;transform:translateX(-50%);';
+        indEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Belum disimpan';
+        cardHeader.appendChild(indEl);
+    }
+
+    function updateIndikator() {
+        var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) {}
+        var ada = !!raw && adaPerubahan();
+        if (indEl) indEl.style.display = ada ? 'inline-flex' : 'none';
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────
+    if (isReload) {
+        pulihkanDraft();
+    } else {
+        hapusDraft();
+    }
+
+    // ── Dengarkan perubahan ───────────────────────────────────────────
+    form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
+        r.addEventListener('change', simpanDraft);
+    });
+    form.querySelectorAll('input[name*="[catatan]"]').forEach(function (inp) {
+        var t;
+        inp.addEventListener('input', function () {
+            clearTimeout(t); t = setTimeout(simpanDraft, 600);
+        });
+    });
+    // Tombol "Tandai semua" juga trigger simpan
+    document.querySelectorAll('.status-btn-bulk').forEach(function (btn) {
+        btn.addEventListener('click', function () { setTimeout(simpanDraft, 50); });
     });
 
-    // Simpan catatan 1.5s setelah berhenti mengetik
-    form.querySelectorAll('input[name*="[catatan]"]').forEach(inp => {
-        let t;
-        inp.addEventListener('input', function () {
-            clearTimeout(t);
-            t = setTimeout(() => {
-                const tr = this.closest('tr');
-                const radio = tr.querySelector('input[type="radio"]:checked');
-                if (radio) simpanBaris(radio);
-            }, 1500);
-        });
+    // ── Submit → hapus draft ──────────────────────────────────────────
+    form.addEventListener('submit', hapusDraft);
+
+    // ── Navigasi keluar → hapus draft ────────────────────────────────
+    window.addEventListener('pagehide', function () {
+        var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
+        if (nav !== 'reload') hapusDraft();
     });
 })();
 </script>
@@ -192,6 +246,123 @@
         @endforeach
     </div>
 </div>
+<script>
+(function () {
+    var PRAKTIKUM_ID = {{ $praktikum->id }};
+    var navType  = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
+    var isReload = navType === 'reload';
+
+    function draftKey(ke) { return 'draft_asistensi_' + PRAKTIKUM_ID + '_ke' + ke; }
+
+    // ── State awal dari DB (defaultChecked) ───────────────────────────
+    function stateDB(ke) {
+        var panel = document.querySelector('[data-asistensi-panel="' + ke + '"]');
+        var state = {};
+        if (!panel) return state;
+        panel.querySelectorAll('input[type="checkbox"][name*="[hadir]"]').forEach(function (cb) {
+            var id = cb.name.match(/\[(\d+)\]/)?.[1];
+            if (id) state[id] = cb.defaultChecked;
+        });
+        return state;
+    }
+
+    function simpanDraft(ke) {
+        var panel = document.querySelector('[data-asistensi-panel="' + ke + '"]');
+        if (!panel) return;
+        var state = {};
+        panel.querySelectorAll('input[type="checkbox"][name*="[hadir]"]').forEach(function (cb) {
+            var id = cb.name.match(/\[(\d+)\]/)?.[1];
+            if (id) state[id] = cb.checked;
+        });
+        try { sessionStorage.setItem(draftKey(ke), JSON.stringify(state)); } catch (e) {}
+        updateIndikator(ke);
+    }
+
+    function pulihkanDraft(ke) {
+        var raw; try { raw = sessionStorage.getItem(draftKey(ke)); } catch (e) { return; }
+        if (!raw) return;
+        var draft; try { draft = JSON.parse(raw); } catch (e) { return; }
+        var panel = document.querySelector('[data-asistensi-panel="' + ke + '"]');
+        if (!panel) return;
+        Object.keys(draft).forEach(function (id) {
+            var cb = panel.querySelector('input[type="checkbox"][name="presensi[' + id + '][hadir]"]');
+            if (cb) cb.checked = draft[id];
+        });
+        updateIndikator(ke);
+    }
+
+    function hapusDraft(ke) {
+        try { sessionStorage.removeItem(draftKey(ke)); } catch (e) {}
+        updateIndikator(ke);
+    }
+
+    function adaPerubahanAsistensi(ke) {
+        var raw; try { raw = sessionStorage.getItem(draftKey(ke)); } catch (e) { return false; }
+        if (!raw) return false;
+        var draft; try { draft = JSON.parse(raw); } catch (e) { return false; }
+        var db = stateDB(ke);
+        return Object.keys(draft).some(function (id) { return draft[id] !== db[id]; });
+    }
+
+    // ── Indikator per tab & footer ────────────────────────────────────
+    function updateIndikator(ke) {
+        var ada = adaPerubahanAsistensi(ke);
+
+        // Titik di tombol tab
+        var btn = document.querySelector('.asistensi-tab-btn[data-asistensi="' + ke + '"]');
+        if (btn) {
+            var dot = btn.querySelector('.draft-dot');
+            if (ada && !dot) {
+                dot = document.createElement('span');
+                dot.className = 'draft-dot';
+                dot.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:4px;vertical-align:middle;';
+                btn.appendChild(dot);
+            } else if (!ada && dot) {
+                dot.remove();
+            }
+        }
+
+        // Teks di footer
+        var ind = document.getElementById('asistensiInd' + ke);
+        if (ind) ind.style.display = ada ? 'inline-flex' : 'none';
+    }
+
+    // Inject indikator ke footer tiap panel
+    [1, 2, 3].forEach(function (ke) {
+        var panel  = document.querySelector('[data-asistensi-panel="' + ke + '"]');
+        var footer = panel?.querySelector('.card-footer');
+        if (!footer) return;
+        footer.style.position = 'relative';
+        var ind = document.createElement('span');
+        ind.id = 'asistensiInd' + ke;
+        ind.style.cssText = 'display:none;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#f59e0b;position:absolute;left:50%;transform:translateX(-50%);';
+        ind.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Belum disimpan';
+        footer.insertBefore(ind, footer.firstChild);
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────
+    [1, 2, 3].forEach(function (ke) {
+        if (isReload) { pulihkanDraft(ke); } else { hapusDraft(ke); }
+    });
+
+    // ── Dengarkan perubahan checkbox ──────────────────────────────────
+    [1, 2, 3].forEach(function (ke) {
+        var panel = document.querySelector('[data-asistensi-panel="' + ke + '"]');
+        if (!panel) return;
+        panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+            cb.addEventListener('change', function () { simpanDraft(ke); });
+        });
+        var formAsist = panel.querySelector('form');
+        if (formAsist) formAsist.addEventListener('submit', function () { hapusDraft(ke); });
+    });
+
+    // ── Navigasi keluar → hapus semua draft ───────────────────────────
+    window.addEventListener('pagehide', function () {
+        var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
+        if (nav !== 'reload') [1, 2, 3].forEach(hapusDraft);
+    });
+})();
+</script>
 <script>
 document.querySelectorAll('.asistensi-tab-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
