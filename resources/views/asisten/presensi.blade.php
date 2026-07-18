@@ -171,11 +171,7 @@
     }
 
     // ── Init ──────────────────────────────────────────────────────────
-    if (isReload) {
-        pulihkanDraft();
-    } else {
-        hapusDraft();
-    }
+    pulihkanDraft();
 
     // ── Dengarkan perubahan ───────────────────────────────────────────
     form.querySelectorAll('input[type="radio"][name*="status_kehadiran"]').forEach(function (r) {
@@ -299,9 +295,7 @@
     function adaPerubahanAsistensi(ke) {
         var raw; try { raw = sessionStorage.getItem(draftKey(ke)); } catch (e) { return false; }
         if (!raw) return false;
-        var draft; try { draft = JSON.parse(raw); } catch (e) { return false; }
-        var db = stateDB(ke);
-        return Object.keys(draft).some(function (id) { return draft[id] !== db[id]; });
+        try { var draft = JSON.parse(raw); return Object.keys(draft).length > 0; } catch (e) { return false; }
     }
 
     // ── Indikator per tab & footer ────────────────────────────────────
@@ -341,8 +335,10 @@
     });
 
     // ── Init ──────────────────────────────────────────────────────────
+    // Selalu restore draft saat load — hapus hanya saat navigasi masuk
+    // dari halaman lain (pagehide sudah handle itu)
     [1, 2, 3].forEach(function (ke) {
-        if (isReload) { pulihkanDraft(ke); } else { hapusDraft(ke); }
+        pulihkanDraft(ke);
     });
 
     // ── Dengarkan perubahan checkbox ──────────────────────────────────
