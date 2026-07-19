@@ -14,7 +14,14 @@
 @else
 <div class="grid grid-2">
 @foreach($kelasList as $kelas)
-<div class="course-card">
+<div class="course-card"
+    id="bobot-{{ $kelas->id }}"
+    data-kode="{{ strtolower($kelas->mataKuliah?->kode_mk ?? '') }}"
+    data-nama="{{ strtolower($kelas->nama_kelas ?? '') }}"
+    data-mk="{{ strtolower($kelas->mataKuliah?->nama_mk ?? '') }}"
+    data-jadwal="{{ strtolower($kelas->jadwal ?? '') }}"
+    data-ruangan="{{ strtolower($kelas->ruangan?->nama_ruangan ?? '') }}"
+    data-mhs="{{ $kelas->mahasiswa_count ?? 0 }}">
     <div class="course-card-header">
         <div class="course-card-code">{{ $kelas->mataKuliah?->kode_mk }}</div>
         <div class="course-card-name">{{ $kelas->mataKuliah?->nama_mk }}</div>
@@ -36,6 +43,8 @@
     </div>
 </div>
 
+{{-- Anchor untuk sidebar link --}}
+<div id="anchor-bobot-{{ $kelas->id }}" style="display:none;"></div>
 {{-- Modal Pembobotan --}}
 <div id="modalBobot{{ $kelas->id }}" class="modal-overlay">
     <div class="modal" style="max-width:420px;">

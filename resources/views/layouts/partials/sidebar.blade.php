@@ -88,6 +88,21 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                         Nilai
                     </a>
+                    {{-- Bobot --}}
+                    <a href="{{ route('asisten.dashboard') }}#bobot-{{ $kelasId }}"
+                       class=""
+                       id="sidebar-bobot-{{ $kelasId }}"
+                       onclick="
+                           var modal = document.getElementById('modalBobot{{ $kelasId }}');
+                           if (modal) {
+                               event.preventDefault();
+                               modal.classList.add('open');
+                               document.body.style.overflow = 'hidden';
+                           }
+                       ">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        Bobot
+                    </a>
                     {{-- Rekap --}}
                     <a href="{{ route('asisten.rekap', $kelas) }}"
                        class="{{ request()->routeIs('asisten.rekap') && $isKelasAktif ? 'active' : '' }}">

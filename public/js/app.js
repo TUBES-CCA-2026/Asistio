@@ -93,6 +93,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // ── Auto buka modal bobot dari anchor #bobot-{id} ─────────
+    (function () {
+        var hash = window.location.hash;
+        if (!hash || !hash.startsWith('#bobot-')) return;
+        var kelasId = hash.replace('#bobot-', '');
+        var modal   = document.getElementById('modalBobot' + kelasId);
+        var card    = document.getElementById('bobot-' + kelasId);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (modal) {
+            setTimeout(function () {
+                modal.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }, 400);
+        }
+    })();
+
     // ── Sidebar kelas dropdown (asisten) ─────────────────────
     document.querySelectorAll('.nav-kelas-toggle').forEach(function (btn) {
         btn.addEventListener('click', function () {
