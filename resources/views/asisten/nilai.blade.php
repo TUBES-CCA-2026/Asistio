@@ -196,9 +196,9 @@
 
 </form>
 
-{{-- Tombol floating Reset Semua Nilai (kiri bawah — terpisah dari form Simpan) --}}
+{{-- Tombol floating Reset Semua Nilai (kanan atas — terpisah dari form Simpan) --}}
 <button type="button" data-modal-open="modalResetSemuaNilai"
-    style="position:fixed;bottom:28px;left:28px;z-index:300;
+    style="position:fixed;top:88px;right:28px;z-index:300;
            box-shadow:0 4px 16px rgba(0,0,0,.18);
            display:flex;align-items:center;gap:8px;
            padding:12px 20px;font-size:14px;border-radius:999px;
