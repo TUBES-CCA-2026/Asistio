@@ -505,6 +505,44 @@ class AsistenController extends Controller
         return back()->with('success', "Nilai pertemuan {$pertemuan} semua mahasiswa direset ke 0.");
     }
 
+    /** Reset SEMUA nilai (P1–P14 + sub kegiatan/evaluasi, Asistensi 1–3, MID, UAS) untuk seluruh mahasiswa di kelas ini sekaligus */
+    public function nilaiResetSemua(Praktikum $praktikum): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
+        $mahasiswaIds = $praktikum->mahasiswa->pluck('id');
+        if ($mahasiswaIds->isEmpty()) {
+            return back()->with('error', 'Belum ada mahasiswa di kelas ini.');
+        }
+
+        // Reset P1–P14 beserta sub-kolom Kegiatan & Evaluasi Praktikum
+        $updateEvaluasi = [];
+        for ($i = 1; $i <= 14; $i++) {
+            $updateEvaluasi["p{$i}"]          = 0;
+            $updateEvaluasi["p{$i}_kegiatan"] = 0;
+            $updateEvaluasi["p{$i}_evaluasi"] = 0;
+        }
+        NilaiEvaluasi::where('praktikum_id', $praktikum->id)->update($updateEvaluasi);
+
+        // Reset Asistensi 1–3
+        NilaiAsistensi::where('praktikum_id', $praktikum->id)->update([
+            'nilai_asistensi1' => 0,
+            'nilai_asistensi2' => 0,
+            'nilai_asistensi3' => 0,
+        ]);
+
+        // Reset MID & UAS
+        NilaiUjian::where('praktikum_id', $praktikum->id)->update([
+            'nilai_MID' => 0,
+            'nilai_UAS' => 0,
+        ]);
+
+        // Hitung ulang rekap nilai akhir seluruh mahasiswa di kelas ini
+        $praktikum->mahasiswa->each(fn($m) => RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id));
+
+        return back()->with('success', "Semua nilai mahasiswa di kelas {$praktikum->nama_kelas} berhasil direset ke 0.");
+    }
+
     /** Rekap nilai, presensi, dan absensi asistensi per kelas */
     public function rekap(Praktikum $praktikum): View   
     {

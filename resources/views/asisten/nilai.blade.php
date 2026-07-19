@@ -196,6 +196,67 @@
 
 </form>
 
+{{-- Tombol floating Reset Semua Nilai (kiri bawah — terpisah dari form Simpan) --}}
+<button type="button" data-modal-open="modalResetSemuaNilai"
+    style="position:fixed;bottom:28px;left:28px;z-index:300;
+           box-shadow:0 4px 16px rgba(0,0,0,.18);
+           display:flex;align-items:center;gap:8px;
+           padding:12px 20px;font-size:14px;border-radius:999px;
+           background:#DC2626;color:#fff;border:none;cursor:pointer;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round"
+        d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
+    </svg>
+    Reset Semua Nilai
+</button>
+
+{{-- Modal Reset Semua Nilai --}}
+<div id="modalResetSemuaNilai" class="modal-overlay"><div class="modal" style="max-width:440px;">
+    <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <span class="modal-title" style="color:#B91C1C;">⚠ Reset Semua Nilai — Kelas {{ $praktikum->nama_kelas }}</span>
+        <button data-modal-close="modalResetSemuaNilai" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+        <p style="font-size:14px;color:#374151;margin:0 0 12px;">Tindakan ini akan mereset <strong>seluruh nilai mahasiswa</strong> di kelas ini ke 0, meliputi:</p>
+        <ul style="font-size:13px;color:#6B7280;margin:0 0 16px;padding-left:20px;line-height:1.8;">
+            <li>Nilai Kegiatan & Evaluasi Praktikum, P1–P14</li>
+            <li>Nilai Asistensi 1, 2, dan 3</li>
+            <li>Nilai MID dan UAS</li>
+            <li>Rekap nilai akhir (dihitung ulang otomatis)</li>
+        </ul>
+        <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#B91C1C;">
+            <strong>Tindakan ini tidak dapat dibatalkan.</strong> Berlaku untuk semua mahasiswa di kelas ini. Data presensi tidak ikut terhapus.
+        </div>
+        <p style="font-size:13px;color:#374151;margin:0 0 8px;">Ketik <strong>RESET SEMUA</strong> untuk konfirmasi:</p>
+        <input type="text" id="konfirmasiResetNilai" class="form-control" placeholder="RESET SEMUA" autocomplete="off">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:16px;">
+        <button type="button" data-modal-close="modalResetSemuaNilai" class="btn btn-outline">Batal</button>
+        <form method="POST" action="{{ route('asisten.nilai.reset-semua', $praktikum) }}" id="formResetSemuaNilai">
+            @csrf
+            <button type="submit" id="btnKonfirmResetNilai" class="btn btn-danger" disabled>Reset Semua</button>
+        </form>
+    </div>
+</div></div>
+<script>
+(function () {
+    var input = document.getElementById('konfirmasiResetNilai');
+    var btn   = document.getElementById('btnKonfirmResetNilai');
+    var frm   = document.getElementById('formResetSemuaNilai');
+    if (!input) return;
+    input.addEventListener('input', function () {
+        btn.disabled = input.value.trim() !== 'RESET SEMUA';
+    });
+    frm.addEventListener('submit', function (e) {
+        if (input.value.trim() !== 'RESET SEMUA') { e.preventDefault(); return; }
+        btn.disabled = true; btn.textContent = 'Mereset…';
+    });
+    document.getElementById('modalResetSemuaNilai')?.addEventListener('modal-close', function () {
+        input.value = ''; btn.disabled = true;
+    });
+})();
+</script>
+
 <script>
 (function () {
     var form  = document.querySelector('form[action*="simpan-semua"]');
