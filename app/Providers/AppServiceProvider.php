@@ -20,10 +20,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Gunakan view pagination custom (vendor/pagination/asistio.blade.php)
-        // sebagai pengganti default Tailwind, karena project ini tidak memakai Tailwind.
-        // Tanpa ini, tombol Previous/Next tampil sebagai ikon SVG raksasa tak ber-style.
         Paginator::defaultView('pagination::asistio');
         Paginator::defaultSimpleView('pagination::asistio');
+
+        // Kirim daftar kelas ke sidebar asisten tanpa mengubah controller
+        \Illuminate\Support\Facades\View::composer(
+            'layouts.partials.sidebar',
+            function ($view) {
+                if (auth()->check() && auth()->user()->role_name === 'asisten') {
+                    $asisten = auth()->user()->asisten;
+                    $sidebarKelas = $asisten
+                        ? $asisten->semuaPraktikum()->sortBy('nama_kelas')
+                        : collect();
+                } else {
+                    $sidebarKelas = collect();
+                }
+                $view->with('sidebarKelas', $sidebarKelas);
+            }
+        );
     }
 }

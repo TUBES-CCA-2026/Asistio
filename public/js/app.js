@@ -93,6 +93,28 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // ── Sidebar kelas dropdown (asisten) ─────────────────────
+    document.querySelectorAll('.nav-kelas-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id  = btn.getAttribute('data-kelas-id');
+            var sub = document.getElementById('sub-' + id);
+            if (!sub) return;
+            var isOpen = sub.classList.contains('open');
+            // Tutup semua dropdown lain dulu
+            document.querySelectorAll('.nav-kelas-sub.open').forEach(function (el) {
+                el.classList.remove('open');
+            });
+            document.querySelectorAll('.nav-kelas-toggle.open').forEach(function (el) {
+                el.classList.remove('open');
+            });
+            // Toggle yang diklik
+            if (!isOpen) {
+                sub.classList.add('open');
+                btn.classList.add('open');
+            }
+        });
+    });
+
     // ── Alert dismiss ──────────────────────────────────────────
     document.querySelectorAll('.alert-close').forEach(btn => {
         btn.addEventListener('click', () => {

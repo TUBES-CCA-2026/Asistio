@@ -210,6 +210,98 @@ img {
     color: #475569;
 }
 
+/* ─── Sidebar kelas dropdown (asisten) ──────────────────────────── */
+.nav-kelas-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    transition: all .15s;
+    justify-content: space-between;
+}
+.nav-kelas-toggle:hover {
+    background: rgba(255,255,255,.06);
+    color: #E2E8F0;
+}
+.nav-kelas-toggle.active-kelas {
+    background: rgba(6,182,212,.15);
+    color: #67E8F9;
+}
+.nav-kelas-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+.nav-kelas-nama {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12.5px;
+}
+.nav-kelas-mk {
+    font-size: 10px;
+    color: #64748B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nav-kelas-chevron {
+    flex-shrink: 0;
+    transition: transform .2s;
+    opacity: .5;
+}
+.nav-kelas-toggle.open .nav-kelas-chevron {
+    transform: rotate(90deg);
+    opacity: 1;
+}
+.nav-kelas-sub {
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px 0 4px 36px;
+}
+.nav-kelas-sub.open {
+    display: flex;
+}
+.nav-kelas-sub a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    color: #94A3B8;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all .15s;
+}
+.nav-kelas-sub a:hover {
+    background: rgba(255,255,255,.06);
+    color: #E2E8F0;
+}
+.nav-kelas-sub a.active {
+    background: var(--primary);
+    color: #fff;
+}
+.nav-kelas-sub a svg {
+    flex-shrink: 0;
+    opacity: .7;
+}
+.nav-kelas-sub a.active svg {
+    opacity: 1;
+}
+
 .sidebar-footer {
     padding: 12px;
     border-top: 1px solid rgba(255, 255, 255, .08);
