@@ -163,7 +163,7 @@
                 <div class="avatar avatar-sm">{{ $m->initials }}</div>
                 <span class="fw-600">{{ $m->nama_mahasiswa }}</span>
                 @if($adaAlpa)
-                    <span class="badge-alpa-alert" title="Ada kelas dengan alpa ≥ {{ \App\Models\Mahasiswa::BATAS_ALPA }}">⚠ Alpa</span>
+                    <span class="badge-alpa-alert" title="Ada kelas dengan tidak hadir (A/I/S) ≥ {{ \App\Models\Mahasiswa::BATAS_ALPA }}">⚠ Tdk Hadir</span>
                 @endif
             </div>
         </td>

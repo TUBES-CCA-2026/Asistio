@@ -68,8 +68,8 @@
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                     <span class="fw-600 fs-13">{{ $m->nama_mahasiswa }}</span>
                     @if($adaAlpa)
-                        <span class="badge-alpa-alert" title="{{ $jmlAlpa }}x Alpha — melebihi batas {{ $batasAlpa }}">
-                            ⚠ {{ $jmlAlpa }}x Alpa
+                        <span class="badge-alpa-alert" title="{{ $jmlAlpa }}x Tidak Hadir (A/I/S) — melebihi batas {{ $batasAlpa }}">
+                            ⚠ {{ $jmlAlpa }}x Tdk Hadir
                         </span>
                     @endif
                 </div>

@@ -38,11 +38,11 @@ class Mahasiswa extends Model {
         return strtoupper(substr($w[0], 0, 1) . (isset($w[1]) ? substr($w[1], 0, 1) : ''));
     }
 
-    // Jumlah alpa di kelas tertentu
+    // Jumlah tidak hadir (A + I + S) di kelas tertentu
     public function jumlahAlpaDiKelas(int $praktikumId): int {
         return $this->presensi()
             ->where('praktikum_id', $praktikumId)
-            ->where('status_kehadiran', 'A')
+            ->whereIn('status_kehadiran', ['A', 'I', 'S'])
             ->count();
     }
 

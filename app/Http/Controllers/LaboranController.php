@@ -41,13 +41,12 @@ class LaboranController extends Controller
         $kelasTanpaMahasiswa = Praktikum::doesntHave('mahasiswa')->count();
 
         // ── Presensi ──────────────────────────────────────────────────
-        $totalPresensi  = \App\Models\Presensi::count();
-        $totalAlpa      = \App\Models\Presensi::where('status_kehadiran','A')->count();
+        $totalAlpa      = \App\Models\Presensi::whereIn('status_kehadiran',['A','I','S'])->count();
         $totalHadir     = \App\Models\Presensi::where('status_kehadiran','H')->count();
         $totalIzin      = \App\Models\Presensi::where('status_kehadiran','I')->count();
         $totalSakit     = \App\Models\Presensi::where('status_kehadiran','S')->count();
         $mahasiswaAlpa  = Mahasiswa::whereHas('presensi', function($q) {
-            $q->where('status_kehadiran','A')
+            $q->whereIn('status_kehadiran',['A','I','S'])
               ->groupBy('mahasiswa_id','praktikum_id')
               ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
         })->count();
@@ -846,9 +845,9 @@ class LaboranController extends Controller
                 });
             })
             ->when($filterError, function ($query) {
-                // Mahasiswa yang melebihi batas alpa di minimal 1 kelas
+                // Mahasiswa yang melebihi batas tidak hadir (A/I/S) di minimal 1 kelas
                 $query->whereHas('presensi', function ($p) {
-                    $p->where('status_kehadiran', 'A')
+                    $p->whereIn('status_kehadiran', ['A','I','S'])
                       ->groupBy('praktikum_id')
                       ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
                 });
@@ -859,7 +858,7 @@ class LaboranController extends Controller
 
         // Hitung total mahasiswa bermasalah untuk label tombol
         $jumlahError = Mahasiswa::whereHas('presensi', function ($p) {
-            $p->where('status_kehadiran', 'A')
+            $p->whereIn('status_kehadiran', ['A','I','S'])
               ->groupBy('praktikum_id')
               ->havingRaw('COUNT(*) >= ?', [Mahasiswa::BATAS_ALPA]);
         })->count();

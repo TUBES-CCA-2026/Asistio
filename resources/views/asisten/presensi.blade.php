@@ -19,7 +19,7 @@
 <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
     <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ $stats['total'] }}</div><div class="stat-label">Mahasiswa</div></div></div>
     <div class="stat-card"><div class="stat-body"><div class="stat-value" style="color:var(--status-h)">{{ $stats['hadir'] }}</div><div class="stat-label">Hadir</div></div></div>
-    <div class="stat-card"><div class="stat-body"><div class="stat-value" style="color:var(--status-a)">{{ $stats['alpa'] }}</div><div class="stat-label">Alpha</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value" style="color:var(--status-a)">{{ $stats['alpa'] }}</div><div class="stat-label">Tidak Hadir</div></div></div>
 </div>
 <form method="POST" action="{{ route('asisten.presensi.simpan', $praktikum) }}" enctype="multipart/form-data">@csrf
 <input type="hidden" name="pertemuan" value="{{ $pertemuan }}">
@@ -29,7 +29,7 @@
         <div style="display:flex;gap:6px;align-items:center;">
             <span class="fs-12 text-muted">Tandai semua:</span>
             <button type="button" class="btn btn-sm btn-outline status-btn-bulk" data-status="H">Hadir</button>
-            <button type="button" class="btn btn-sm btn-outline status-btn-bulk" data-status="A">Alpha</button>
+            <button type="button" class="btn btn-sm btn-outline status-btn-bulk" data-status="A">Alpa</button>
         </div>
     </div>
     <div class="table-wrapper"><table class="table">
@@ -48,7 +48,7 @@
             <td class="fw-500">
                 {{ $m->nama_mahasiswa }}
                 @if($alpaTinggi)
-                    <span class="badge-alpa-alert" title="Sudah alpa {{ $m->jumlah_alpa }}x — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Alpa {{ $m->jumlah_alpa }}×</span>
+                    <span class="badge-alpa-alert" title="Tidak hadir {{ $m->jumlahAlpaDiKelas($praktikum->id) }}x (A/I/S) — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Tdk Hadir {{ $m->jumlahAlpaDiKelas($praktikum->id) }}×</span>
                 @endif
             </td>
             @foreach(['H','I','S','A'] as $s)

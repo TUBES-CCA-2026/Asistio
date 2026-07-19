@@ -109,9 +109,9 @@
     <div class="card">
         <div class="card-header">
             <span class="card-title">Presensi per Pertemuan</span>
-            @php $totalAlpa = $presensiList->where('status_kehadiran','A')->count(); @endphp
+            @php $totalAlpa = $presensiList->whereIn('status_kehadiran',['A','I','S'])->count(); @endphp
             @if($totalAlpa >= 4)
-            <span class="badge badge-danger">{{ $totalAlpa }} Alpha</span>
+            <span class="badge badge-danger">{{ $totalAlpa }} Tdk Hadir</span>
             @endif
         </div>
         <div class="card-body" style="padding:0;">
@@ -125,7 +125,7 @@
                     <td style="text-align:center;">
                         @if($p)
                         <select name="presensi[{{ $p->id }}][status_kehadiran]" class="form-select form-select-sm">
-                            @foreach(['H'=>'Hadir','I'=>'Izin','S'=>'Sakit','A'=>'Alpha'] as $val => $lbl)
+                            @foreach(['H'=>'Hadir','I'=>'Izin','S'=>'Sakit','A'=>'Alpa'] as $val => $lbl)
                             <option value="{{ $val }}" {{ $p->status_kehadiran === $val ? 'selected' : '' }}>{{ $lbl }}</option>
                             @endforeach
                         </select>

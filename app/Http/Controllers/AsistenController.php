@@ -42,7 +42,7 @@ class AsistenController extends Controller
         $stats = [
             'total' => $mahasiswaList->count(),
             'hadir' => $presensiMap->where('status_kehadiran','H')->count(),
-            'alpa'  => $presensiMap->where('status_kehadiran','A')->count(),
+            'alpa'  => $presensiMap->whereIn('status_kehadiran',['A','I','S'])->count(),
         ];
         ;
         // Absensi sesi Asistensi 1/2/3, dikelompokkan per mahasiswa lalu per sesi (asistensi_ke)

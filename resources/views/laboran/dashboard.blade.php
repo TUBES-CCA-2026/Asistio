@@ -102,11 +102,11 @@
                 <span class="info-list-value">{{ number_format($totalSakit) }}</span>
             </div>
             <div class="info-list-item">
-                <span class="info-list-label">❌ Alpha</span>
+                <span class="info-list-label">❌ Tidak Hadir (A/I/S)</span>
                 <span class="info-list-value" style="color:#EF4444;">{{ number_format($totalAlpa) }}</span>
             </div>
             <div class="info-list-item" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px;">
-                <span class="info-list-label">⚠ Mahasiswa ≥ {{ \App\Models\Mahasiswa::BATAS_ALPA }}x Alpha</span>
+                <span class="info-list-label">⚠ Mahasiswa ≥ {{ \App\Models\Mahasiswa::BATAS_ALPA }}x Tidak Hadir</span>
                 <span class="info-list-value" style="color:#EF4444;">{{ $mahasiswaAlpa }}</span>
             </div>
         </div>
@@ -141,7 +141,7 @@
                 <span class="info-list-value" style="color:{{ $asistenTanpaKelas>0?'#F59E0B':'#22C55E' }};">{{ $asistenTanpaKelas }}</span>
             </div>
             <div class="info-list-item" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px;">
-                <span class="info-list-label">Mahasiswa Alpha Berlebih</span>
+                <span class="info-list-label">Mahasiswa Tidak Hadir Berlebih</span>
                 <span class="info-list-value" style="color:{{ $mahasiswaAlpa>0?'#EF4444':'#22C55E' }};">{{ $mahasiswaAlpa }}</span>
             </div>
         </div>
