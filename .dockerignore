@@ -1,0 +1,15 @@
+/vendor
+/node_modules
+/.git
+/.github
+/.idea
+/.vscode
+/.phpunit.cache
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+.env
+*.log
+Thumbs.db
+.DS_Store

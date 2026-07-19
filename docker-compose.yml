@@ -1,0 +1,84 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: asistio_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    # ──────────────────────────────────────────────────────────────────────
+    # Variabel di sini MENIMPA nilai .env (Laravel pakai createImmutable).
+    # .env-mu tidak perlu diubah sama sekali untuk XAMPP; Docker pakai blok ini.
+    # ──────────────────────────────────────────────────────────────────────
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db          # ← pakai nama service, bukan 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: asistio_db
+      DB_USERNAME: asistio
+      DB_PASSWORD: asistio_secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - asistio_net
+
+  webserver:
+    image: nginx:stable-alpine
+    container_name: asistio_webserver
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - asistio_net
+
+  db:
+    image: mysql:8.4
+    container_name: asistio_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: asistio_db
+      MYSQL_USER: asistio
+      MYSQL_PASSWORD: asistio_secret
+      MYSQL_ROOT_PASSWORD: root_secret
+    ports:
+      # 3307 di host supaya tidak bentrok dengan MySQL XAMPP yang ada di 3306
+      - "3307:3306"
+    volumes:
+      - asistio_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_secret"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - asistio_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: asistio_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root_secret
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    networks:
+      - asistio_net
+
+volumes:
+  asistio_db_data:
+
+networks:
+  asistio_net:
+    driver: bridge
