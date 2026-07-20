@@ -288,13 +288,12 @@ class AsistenController extends Controller
                 $evalModel = NilaiEvaluasi::firstOrNew(
                     ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
                 );
-                // Hanya update kolom yang tidak null — kolom kosong tidak menimpa nilai lama
+                // Simpan SEMUA kolom termasuk yang null (dikosongkan/direset)
+                // agar penghapusan nilai yang disengaja benar-benar tersimpan
                 foreach ($eval as $kolom => $nilai) {
-                    if ($nilai !== null) $evalModel->{$kolom} = $nilai;
+                    $evalModel->{$kolom} = $nilai;
                 }
                 $evalModel->save();
-                // Hitung ulang nilai p1..p14 dari sub-kolom kegiatan/evaluasi
-                // (menyamakan perilaku dengan nilaiAutosave())
                 $evalModel->hitungDanSimpanNilaiPertemuan(
                     (float) ($praktikum->bobot_kegiatan ?? 50),
                     (float) ($praktikum->bobot_evaluasi_praktikum ?? 50)
@@ -305,7 +304,7 @@ class AsistenController extends Controller
                     ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
                 );
                 foreach ($asst as $kolom => $nilai) {
-                    if ($nilai !== null) $asstModel->{$kolom} = $nilai;
+                    $asstModel->{$kolom} = $nilai;
                 }
                 $asstModel->save();
             }
@@ -314,7 +313,7 @@ class AsistenController extends Controller
                     ['mahasiswa_id'=>$mahasiswaId,'praktikum_id'=>$praktikum->id]
                 );
                 foreach ($ujn as $kolom => $nilai) {
-                    if ($nilai !== null) $ujnModel->{$kolom} = $nilai;
+                    $ujnModel->{$kolom} = $nilai;
                 }
                 $ujnModel->save();
             }
