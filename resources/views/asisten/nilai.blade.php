@@ -16,8 +16,22 @@
         {{-- Baris 1: label kolom --}}
         <tr>
             <th>Mahasiswa</th>
-            @for($i = 1; $i <= 14; $i++)
-            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);">P{{ $i }}</th>
+            @for($i = 1; $i <= $jumlahPertemuan; $i++)
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);" id="{{ $i === $jumlahPertemuan ? 'thUltimatePertemuan' : '' }}">
+                @if($i === $jumlahPertemuan && $jumlahPertemuan < 14)
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <button type="button" id="btnTambahPertemuan"
+                        style="background:var(--primary);color:#fff;border:none;border-radius:8px;
+                               padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;"
+                        title="Tambah satu pertemuan">
+                        + P{{ $jumlahPertemuan + 1 }}
+                    </button>
+                    <span>P{{ $i }}</span>
+                </div>
+                @else
+                P{{ $i }}
+                @endif
+            </th>
             @endfor
             <th style="text-align:center;">Asist 1</th>
             <th style="text-align:center;">Asist 2</th>
@@ -75,8 +89,8 @@
                 </div>
                 <div class="fs-11 text-muted">{{ $m->nim_mahasiswa }}</div>
             </td>
-            {{-- Nilai P1–P14: Kegiatan | Evaluasi | Nilai (read-only) --}}
-            @for($i = 1; $i <= 14; $i++)
+            {{-- Nilai P1–jumlahPertemuan: Kegiatan | Evaluasi | Nilai (read-only) --}}
+            @for($i = 1; $i <= $jumlahPertemuan; $i++)
             @php
                 $kegiatan = $n['evaluasi']->{'p'.$i.'_kegiatan'} ?? null;
                 $evaluasi = $n['evaluasi']->{'p'.$i.'_evaluasi'} ?? null;
@@ -119,6 +133,8 @@
                     tabindex="-1">
             </td>
             @endfor
+            {{-- Kolom baru disisipkan sebelum Asistensi via JS --}}
+
             {{-- Nilai Asistensi 1–3 --}}
             @foreach([1,2,3] as $i)
             <td class="td-nilai">
@@ -253,6 +269,224 @@
     });
     document.getElementById('modalResetSemuaNilai')?.addEventListener('modal-close', function () {
         input.value = ''; btn.disabled = true;
+    });
+})();
+</script>
+
+<script>
+// ── Tambah Pertemuan ────────────────────────────────────────────────────────
+(function () {
+    var btn = document.getElementById('btnTambahPertemuan');
+    if (!btn) return;
+
+    // Draft pertemuan sementara — berapa pertemuan yang sudah ditambah tapi belum di-save ke DB
+    var DRAFT_KEY_P  = 'draft_pertemuan_{{ $praktikum->id }}';
+    var jumlahSaatIni = {{ $jumlahPertemuan }};
+
+    // Restore draft pertemuan saat refresh
+    var navType = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
+    if (navType === 'reload') {
+        try {
+            var draftP = JSON.parse(sessionStorage.getItem(DRAFT_KEY_P) || 'null');
+            if (draftP && draftP.jumlah > jumlahSaatIni) {
+                // Tambahkan kolom sementara tanpa kirim ke server
+                for (var p = jumlahSaatIni + 1; p <= draftP.jumlah; p++) {
+                    tambahKolomClient(p, true);
+                }
+                jumlahSaatIni = draftP.jumlah;
+                updateTombolTambah();
+            }
+        } catch (e) {}
+    } else {
+        // Navigasi masuk — bersihkan draft pertemuan
+        try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
+    }
+
+    function updateTombolTambah() {
+        // Perbarui isi th pertemuan terakhir: tombol di atas + label di bawah
+        var thLast = document.getElementById('thUltimatePertemuan');
+        if (!thLast) return;
+        if (jumlahSaatIni >= 14) {
+            thLast.innerHTML = '<span>P' + jumlahSaatIni + '</span>';
+        } else {
+            thLast.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">'
+                + '<button type="button" id="btnTambahPertemuan" '
+                + 'style="background:var(--primary);color:#fff;border:none;border-radius:8px;'
+                + 'padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;" '
+                + 'title="Tambah satu pertemuan">+ P' + (jumlahSaatIni + 1) + '</button>'
+                + '<span>P' + jumlahSaatIni + '</span>'
+                + '</div>';
+            document.getElementById('btnTambahPertemuan')
+                .addEventListener('click', handleTambah);
+        }
+    }
+
+    function tambahKolomClient(nPertemuan, isDraft) {
+        // Tambah th di thead — sisipkan sebelum th Asist 1
+        var theadRow = document.querySelector('form table thead tr:first-child');
+        var thAsist1 = theadRow ? Array.from(theadRow.querySelectorAll('th')).find(function(t) {
+            return t.textContent.trim() === 'Asist 1';
+        }) : null;
+        if (theadRow && thAsist1) {
+            // Hapus id dari th pertemuan terakhir sebelumnya, beri id baru ke th baru ini
+            var oldLast = document.getElementById('thUltimatePertemuan');
+            if (oldLast) { oldLast.removeAttribute('id'); oldLast.innerHTML = 'P' + (nPertemuan - 1); }
+            var th = document.createElement('th');
+            th.colSpan = 3;
+            th.id = 'thUltimatePertemuan';
+            th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
+            th.textContent = 'P' + nPertemuan;
+            if (isDraft) th.style.opacity = '0.7';
+            theadRow.insertBefore(th, thAsist1);
+        }
+
+        // Tambah td di setiap baris tbody
+        var tbody = document.querySelector('form table tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach(function (tr) {
+            var mhsId = tr.querySelector('.input-nilai')?.name?.match(/\[(\d+)\]/)?.[1];
+            if (!mhsId) return;
+
+            // Sisipkan sebelum td asistensi pertama (input nilai_asistensi1)
+            var tdAsistensi = tr.querySelector('td input[name*="nilai_asistensi1"]')?.closest('td');
+            var tdTambah = tdAsistensi || null;
+            if (!tdTambah) return;
+
+            // Kolom Kegiatan
+            var tdKeg = document.createElement('td');
+            tdKeg.className = 'td-nilai';
+            tdKeg.style.borderLeft = '2px solid var(--border)';
+            var inpKeg = document.createElement('input');
+            inpKeg.type = 'text';
+            inpKeg.name = 'nilai[' + mhsId + '][p' + nPertemuan + '_kegiatan]';
+            inpKeg.className = 'form-control form-control-xs input-nilai input-sub-nilai';
+            inpKeg.setAttribute('inputmode', 'decimal');
+            inpKeg.dataset.mhs = mhsId;
+            inpKeg.dataset.pertemuan = nPertemuan;
+            inpKeg.dataset.sub = 'kegiatan';
+            inpKeg.dataset.asal = '';
+            inpKeg.placeholder = '—';
+            tdKeg.appendChild(inpKeg);
+            tr.insertBefore(tdKeg, tdTambah);
+
+            // Kolom Evaluasi
+            var tdEval = document.createElement('td');
+            tdEval.className = 'td-nilai';
+            var inpEval = document.createElement('input');
+            inpEval.type = 'text';
+            inpEval.name = 'nilai[' + mhsId + '][p' + nPertemuan + '_evaluasi]';
+            inpEval.className = 'form-control form-control-xs input-nilai input-sub-nilai';
+            inpEval.setAttribute('inputmode', 'decimal');
+            inpEval.dataset.mhs = mhsId;
+            inpEval.dataset.pertemuan = nPertemuan;
+            inpEval.dataset.sub = 'evaluasi';
+            inpEval.dataset.asal = '';
+            inpEval.placeholder = '—';
+            tdEval.appendChild(inpEval);
+            tr.insertBefore(tdEval, tdTambah);
+
+            // Kolom Nilai (readonly)
+            var tdNilai = document.createElement('td');
+            tdNilai.className = 'td-nilai';
+            tdNilai.style.background = 'var(--bg-page)';
+            var inpNilai = document.createElement('input');
+            inpNilai.type = 'text';
+            inpNilai.id = 'nilai_p' + nPertemuan + '_' + mhsId;
+            inpNilai.className = 'form-control form-control-xs';
+            inpNilai.style.cssText = 'background:transparent;cursor:default;text-align:center;font-weight:600;';
+            inpNilai.readOnly = true;
+            inpNilai.placeholder = '—';
+            inpNilai.tabIndex = -1;
+            tdNilai.appendChild(inpNilai);
+            tr.insertBefore(tdNilai, tdTambah);
+
+            // Pasang event listener pada input baru (agar terintegrasi dengan sistem dirty/draft)
+            [inpKeg, inpEval].forEach(function (inp) {
+                inp.addEventListener('input', function () {
+                    if (window._initNilaiDisplay) {
+                        // Trigger sistem dirty
+                        var ev = new Event('input', { bubbles: true });
+                        // Langsung dispatch ke listener yang sudah dipasang
+                    }
+                    // Hitung nilai P
+                    var bKeg  = parseFloat(document.querySelector('form[action*="simpan-semua"]')?.dataset.bobotKegiatan || 50) / 100;
+                    var bEval = parseFloat(document.querySelector('form[action*="simpan-semua"]')?.dataset.bobotEvaluasi || 50) / 100;
+                    var vKeg  = inpKeg.value === '—' ? '' : inpKeg.value.trim();
+                    var vEval = inpEval.value === '—' ? '' : inpEval.value.trim();
+                    var elP   = document.getElementById('nilai_p' + nPertemuan + '_' + mhsId);
+                    if (!elP) return;
+                    if (vKeg === '' && vEval === '') { elP.value = ''; return; }
+                    var kN = vKeg  !== '' ? parseFloat(vKeg)  : null;
+                    var eN = vEval !== '' ? parseFloat(vEval) : null;
+                    var total = bKeg + bEval;
+                    if (total <= 0) return;
+                    elP.value = (((bKeg * (kN ?? 0)) + (bEval * (eN ?? 0))) / total).toFixed(2);
+                });
+            });
+        });
+    }
+
+    function handleTambah() {
+        var nBaru = jumlahSaatIni + 1;
+        if (nBaru > 14) return;
+
+        // Langsung tambah kolom di DOM (sementara, belum ke DB)
+        tambahKolomClient(nBaru, true);
+        jumlahSaatIni = nBaru;
+
+        // Simpan draft pertemuan ke sessionStorage
+        try {
+            sessionStorage.setItem(DRAFT_KEY_P, JSON.stringify({ jumlah: nBaru }));
+        } catch (e) {}
+
+        updateTombolTambah();
+
+        // Re-init sistem nilai pada input baru
+        if (window._initNilaiDisplay) window._initNilaiDisplay();
+
+        // Kirim ke server untuk simpan permanen (background)
+        fetch('{{ route('asisten.nilai.tambah-pertemuan', $praktikum) }}', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content
+                    || document.querySelector('input[name=_token]')?.value || '',
+            },
+            body: JSON.stringify({}),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+            if (json.success) {
+                // Server berhasil simpan — hapus draft pertemuan (sudah permanen)
+                try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
+                // Update header jadi tidak buram
+                document.querySelectorAll('thead th').forEach(function (th) {
+                    if (th.textContent.trim() === 'P' + json.jumlah) th.style.opacity = '1';
+                });
+            }
+        })
+        .catch(function () {
+            // Tetap biarkan pertemuan di DOM (sudah ada di draft sessionStorage)
+            // akan retry otomatis saat user save form utama
+        });
+    }
+
+    btn.addEventListener('click', handleTambah);
+
+    // Hapus draft pertemuan saat form nilai di-submit
+    var formNilai = document.querySelector('form[action*="simpan-semua"]');
+    if (formNilai) {
+        formNilai.addEventListener('submit', function () {
+            try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
+        });
+    }
+
+    // Hapus draft pertemuan saat navigasi keluar
+    window.addEventListener('pagehide', function () {
+        var navT = (performance.getEntriesByType('navigation')[0] || {}).type;
+        if (navT !== 'reload') {
+            try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
+        }
     });
 })();
 </script>

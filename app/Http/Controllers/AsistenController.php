@@ -160,7 +160,8 @@ class AsistenController extends Controller
             $alpaMap[$m->id] = $m->jumlahAlpaDiKelas($praktikum->id);
         }
         $batasAlpa = Mahasiswa::BATAS_ALPA;
-        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa'));
+        $jumlahPertemuan = max(1, (int) ($praktikum->jumlah_pertemuan ?? 1));
+        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa','jumlahPertemuan'));
     }
 
     /** Simpan bobot penilaian untuk satu kelas */
@@ -323,6 +324,22 @@ class AsistenController extends Controller
 
         return back()->with('success', 'Nilai semua mahasiswa berhasil disimpan.');
     }
+    /** Tambah satu pertemuan ke kelas (max 14) */
+    public function tambahPertemuan(Request $request, Praktikum $praktikum): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $sekarang = (int) ($praktikum->jumlah_pertemuan ?? 1);
+        if ($sekarang >= 14) {
+            return response()->json(['success' => false, 'pesan' => 'Maksimal 14 pertemuan.', 'jumlah' => $sekarang]);
+        }
+
+        $baru = $sekarang + 1;
+        $praktikum->update(['jumlah_pertemuan' => $baru]);
+
+        return response()->json(['success' => true, 'jumlah' => $baru, 'pesan' => "Pertemuan {$baru} ditambahkan."]);
+    }
+
     /**
      * Autosave nilai via AJAX — identik dengan nilaiSimpanSemua
      * tapi return JSON (tidak redirect) sehingga halaman tidak reload.

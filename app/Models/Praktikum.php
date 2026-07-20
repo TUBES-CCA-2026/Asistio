@@ -29,7 +29,9 @@ class Praktikum extends Model {
     ];
     protected $fillable = [
         'bobot_kehadiran','bobot_kegiatan','bobot_evaluasi_praktikum',
-        'bobot_praktikum','bobot_asistensi','bobot_mid','bobot_uas','mata_kuliah_id','nama_kelas','jadwal','hari','jam_mulai','jam_selesai','ruangan_id','dosen_id','asisten_id','asisten2_id'];
+        'bobot_praktikum','bobot_asistensi','bobot_mid','bobot_uas',
+        'mata_kuliah_id','nama_kelas','jumlah_pertemuan','jadwal',
+        'hari','jam_mulai','jam_selesai','ruangan_id','dosen_id','asisten_id','asisten2_id'];
     public function mataKuliah() { return $this->belongsTo(MataKuliah::class); }
     public function ruangan()    { return $this->belongsTo(Ruangan::class); }
     public function dosen()      { return $this->belongsTo(Dosen::class); }
