@@ -123,6 +123,28 @@ class AsistenController extends Controller
     }
 
     /** Simpan absensi sesi Asistensi (1, 2, atau 3) — terpisah dari presensi praktikum P1-P14 */
+    /** Reset semua status presensi mahasiswa ke nol (kosong) untuk satu pertemuan tertentu */
+    public function presensiResetSemua(Praktikum $praktikum, int $pertemuan): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+
+        $pertemuan = max(1, min($pertemuan, 14));
+
+        $presensiList = Presensi::where('praktikum_id', $praktikum->id)
+            ->where('pertemuan_ke', $pertemuan)->get();
+
+        foreach ($presensiList as $p) {
+            if ($p->bukti_foto) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($p->bukti_foto);
+            }
+        }
+        Presensi::where('praktikum_id', $praktikum->id)
+            ->where('pertemuan_ke', $pertemuan)->delete();
+
+        return back()->with('success', "Semua status presensi pertemuan {$pertemuan} berhasil direset ke 0.");
+    }
+
+    /** Simpan absensi sesi Asistensi (1, 2, atau 3) — terpisah dari presensi praktikum P1-P14 */
     public function presensiAsistensiSimpan(Request $request, Praktikum $praktikum): RedirectResponse
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
@@ -140,6 +162,18 @@ class AsistenController extends Controller
             );
         }
         return back()->with('success',"Absensi Asistensi {$asistensiKe} disimpan.");
+    }
+
+    /** Reset semua absensi Hadir mahasiswa ke kosong untuk satu sesi Asistensi tertentu (1, 2, atau 3) */
+    public function presensiAsistensiResetSemua(Praktikum $praktikum, int $asistensi_ke): RedirectResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
+        abort_unless(in_array($asistensi_ke, [1,2,3]), 404);
+
+        PresensiAsistensi::where('praktikum_id', $praktikum->id)
+            ->where('asistensi_ke', $asistensi_ke)->delete();
+
+        return back()->with('success', "Semua absensi Asistensi {$asistensi_ke} berhasil direset ke 0.");
     }
 
     /** Nilai per kelas (Praktikum) */

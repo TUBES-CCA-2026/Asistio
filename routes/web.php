@@ -74,6 +74,8 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     Route::get('/presensi/{praktikum}',                               [AsistenController::class,'presensi'])->name('presensi');
     Route::post('/presensi/{praktikum}/simpan',                       [AsistenController::class,'presensiSimpan'])->name('presensi.simpan');
     Route::post('/presensi/{praktikum}/asistensi', [AsistenController::class,'presensiAsistensiSimpan'])->name('presensi.asistensi.simpan');
+    Route::delete('/presensi/{praktikum}/reset-semua/{pertemuan}', [AsistenController::class,'presensiResetSemua'])->name('presensi.reset-semua');
+    Route::delete('/presensi/{praktikum}/asistensi/{asistensi_ke}/reset-semua', [AsistenController::class,'presensiAsistensiResetSemua'])->name('presensi.asistensi.reset-semua');
     // Nilai per kelas (Praktikum)
     Route::get('/nilai/{praktikum}',                                  [AsistenController::class,'nilai'])->name('nilai');
     Route::post('/nilai/{praktikum}/mahasiswa/{mahasiswa}',           [AsistenController::class,'nilaiSimpan'])->name('nilai.simpan');
