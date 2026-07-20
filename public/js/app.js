@@ -650,17 +650,56 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-reset-field]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var field = this.getAttribute('data-reset-field');
+            var adaYangBerubah = false;
+
             document.querySelectorAll('.input-nilai[name*="[' + field + ']"]')
                 .forEach(function (input) {
-                    var asalVal = input.dataset.asalNilai || '';
-                    // Nilai asal bukan nol/kosong → reset ke '' = berubah → dirty
-                    input.value = '';
-                    cekDirtyInput(input);
-                    // Tampilkan "—" visual
-                    input.value = '';
-                    input.classList.remove('nilai-kosong');
+                    // Gunakan data-asal (sistem baru) atau data-asalNilai (sistem lama)
+                    var asalNilai = input.dataset.asal !== undefined
+                        ? input.dataset.asal
+                        : (input.dataset.asalNilai || '');
+                    var nilaiSekarang = input.value === '—' ? '' : input.value;
+
+                    // Field sudah kosong dari server DAN sekarang juga kosong → skip
+                    if (asalNilai === '' && nilaiSekarang === '') return;
+
+                    // Kosongkan field
+                    input.value = '—';
+                    input.classList.add('nilai-kosong');
+                    input.classList.remove('nilai-dirty', 'nilai-error', 'is-draft');
+
+                    // Tandai dirty hanya jika nilai asli bukan kosong
+                    if (asalNilai !== '') {
+                        input.classList.add('is-draft', 'nilai-dirty');
+                        adaYangBerubah = true;
+                    }
+                    // asalNilai kosong → kembali ke kondisi asal → tidak dirty
                 });
-            updateDirtyHint();
+
+            // Simpan draft agar bisa di-revert
+            if (adaYangBerubah) {
+                if (typeof window._simpanDraftNilai === 'function') {
+                    window._simpanDraftNilai();
+                }
+            }
+
+            // Update indikator dirty — coba kedua sistem
+            if (typeof window._updateDirtyHint === 'function') {
+                window._updateDirtyHint();
+            }
+            // Update indikator sistem baru (updateUI di blade nilai.blade.php)
+            if (typeof window._updateNilaiUI === 'function') {
+                window._updateNilaiUI();
+            }
+
+            // Hitung ulang nilai pertemuan dan NA
+            if (typeof window._hitungNASemua === 'function') {
+                window._hitungNASemua();
+            }
+            // Hitung ulang nilai P readonly (kolom tengah per pertemuan)
+            if (typeof window._hitungNilaiPertemuan === 'function') {
+                window._hitungNilaiPertemuan();
+            }
         });
     });
 

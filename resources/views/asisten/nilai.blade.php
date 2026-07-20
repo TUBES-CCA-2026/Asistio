@@ -291,6 +291,7 @@
             }
         } catch (e) {}
     }
+    window._simpanDraftNilai = simpanDraft;
 
     // ── Pulihkan draft setelah refresh ───────────────────────────────
     function pulihkanDraft() {
@@ -348,10 +349,11 @@
             if (label) label.textContent = ada ? jumlah + ' nilai belum disimpan' : 'Simpan Semua Nilai';
         }
     }
-
     function hitungDirty() {
         return form.querySelectorAll('.input-nilai.is-draft').length;
     }
+
+    window._updateNilaiUI = function () { updateUI(hitungDirty()); };
 
     // ── Hitung ulang kolom Nilai P dari kegiatan & evaluasi ───────────
     function hitungSemuaNilaiP() {
@@ -386,6 +388,10 @@
             elNilai.value = isNaN(hasil) ? '' : hasil.toFixed(2);
         });
     }
+
+    // Ekspos agar handler reset di app.js bisa memanggilnya
+    window._hitungNilaiPertemuan = hitungSemuaNilaiP;
+    window._hitungNASemua        = hitungSemuaNilaiP;
 
     // ── Init ──────────────────────────────────────────────────────────
     if (isReload) {
