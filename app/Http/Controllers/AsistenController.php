@@ -474,9 +474,9 @@ class AsistenController extends Controller
         ][$kolom];
 
         if (in_array($kolom, ['nilai_asistensi1','nilai_asistensi2','nilai_asistensi3'])) {
-            NilaiAsistensi::where('praktikum_id', $praktikum->id)->update([$kolom => 0]);
+            NilaiAsistensi::where('praktikum_id', $praktikum->id)->update([$kolom => null]);
         } else {
-            NilaiUjian::where('praktikum_id', $praktikum->id)->update([$kolom => 0]);
+            NilaiUjian::where('praktikum_id', $praktikum->id)->update([$kolom => null]);
         }
 
         $praktikum->mahasiswa->each(fn($m) => RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id));
@@ -492,9 +492,13 @@ class AsistenController extends Controller
 
         $kolom = 'p' . $pertemuan;
 
-        // Nol-kan kolom pertemuan pada semua mahasiswa yang punya record NilaiEvaluasi
+        // Reset kolom pertemuan ke null pada semua mahasiswa
         NilaiEvaluasi::where('praktikum_id', $praktikum->id)
-            ->update([$kolom => 0]);
+            ->update([
+                $kolom              => null,
+                $kolom . '_kegiatan' => null,
+                $kolom . '_evaluasi' => null,
+            ]);
 
         // Hitung ulang rekap semua mahasiswa di kelas ini
         $praktikum->mahasiswa->each(function ($m) use ($praktikum) {
@@ -514,26 +518,26 @@ class AsistenController extends Controller
             return back()->with('error', 'Belum ada mahasiswa di kelas ini.');
         }
 
-        // Reset P1–P14 beserta sub-kolom Kegiatan & Evaluasi Praktikum
+        // Reset P1–P14 beserta sub-kolom Kegiatan & Evaluasi Praktikum ke null
         $updateEvaluasi = [];
         for ($i = 1; $i <= 14; $i++) {
-            $updateEvaluasi["p{$i}"]          = 0;
-            $updateEvaluasi["p{$i}_kegiatan"] = 0;
-            $updateEvaluasi["p{$i}_evaluasi"] = 0;
+            $updateEvaluasi["p{$i}"]          = null;
+            $updateEvaluasi["p{$i}_kegiatan"] = null;
+            $updateEvaluasi["p{$i}_evaluasi"] = null;
         }
         NilaiEvaluasi::where('praktikum_id', $praktikum->id)->update($updateEvaluasi);
 
-        // Reset Asistensi 1–3
+        // Reset Asistensi 1–3 ke null
         NilaiAsistensi::where('praktikum_id', $praktikum->id)->update([
-            'nilai_asistensi1' => 0,
-            'nilai_asistensi2' => 0,
-            'nilai_asistensi3' => 0,
+            'nilai_asistensi1' => null,
+            'nilai_asistensi2' => null,
+            'nilai_asistensi3' => null,
         ]);
 
-        // Reset MID & UAS
+        // Reset MID & UAS ke null
         NilaiUjian::where('praktikum_id', $praktikum->id)->update([
-            'nilai_MID' => 0,
-            'nilai_UAS' => 0,
+            'nilai_MID' => null,
+            'nilai_UAS' => null,
         ]);
 
         // Hitung ulang rekap nilai akhir seluruh mahasiswa di kelas ini

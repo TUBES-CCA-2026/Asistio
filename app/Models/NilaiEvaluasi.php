@@ -31,10 +31,8 @@ class NilaiEvaluasi extends Model {
             } elseif ($eval !== null) {
                 $vals[] = $eval;
             }
-            // Fallback ke kolom lama jika kolom baru kosong
-            elseif ($this->{'p'.$i} !== null) {
-                $vals[] = $this->{'p'.$i};
-            }
+            // Kolom lama (p1-p14) tidak digunakan sebagai fallback
+            // karena sudah digantikan oleh p_kegiatan dan p_evaluasi
         }
         return count($vals) ? round(array_sum($vals) / count($vals), 2) : null;
     }
