@@ -41,10 +41,11 @@ class LaboranController extends Controller
         $kelasTanpaMahasiswa = Praktikum::doesntHave('mahasiswa')->count();
 
         // ── Presensi ──────────────────────────────────────────────────
-        $totalAlpa      = \App\Models\Presensi::whereIn('status_kehadiran',['A','I','S'])->count();
+        $totalPresensi  = \App\Models\Presensi::count();
         $totalHadir     = \App\Models\Presensi::where('status_kehadiran','H')->count();
         $totalIzin      = \App\Models\Presensi::where('status_kehadiran','I')->count();
         $totalSakit     = \App\Models\Presensi::where('status_kehadiran','S')->count();
+        $totalAlpa      = \App\Models\Presensi::whereIn('status_kehadiran',['A','I','S'])->count();
         $mahasiswaAlpa  = Mahasiswa::whereHas('presensi', function($q) {
             $q->whereIn('status_kehadiran',['A','I','S'])
               ->groupBy('mahasiswa_id','praktikum_id')
