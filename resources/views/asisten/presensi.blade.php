@@ -73,7 +73,7 @@
 </div>
 </form>
 
-<script id="foto-data-json" type="application/json">{{ json_encode($fotoData) }}</script>
+<script id="foto-data-json" type="application/json">{!! json_encode($fotoData) !!}</script>
 <script>
 (function () {
     var form      = document.querySelector('form[enctype="multipart/form-data"]');
@@ -631,10 +631,11 @@
         hapusDraft();
     });
 
-    window.addEventListener('pagehide', function () {
-        var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
-        if (nav !== 'reload') hapusDraft();
-    });
+    // Catatan: draft sengaja TIDAK dihapus otomatis saat pagehide/navigasi keluar.
+    // sessionStorage sudah otomatis hilang sendiri saat tab ditutup, dan kalau
+    // user balik lagi ke pertemuan yang sama, draft yang belum sempat disimpan
+    // akan otomatis dipulihkan — termasuk saat refresh (F5) tidak sengaja.
+    // Draft hanya dihapus secara eksplisit saat submit berhasil (di atas).
 })();
 </script>
 
@@ -773,8 +774,7 @@
     });
 
     // ── Init ──────────────────────────────────────────────────────────
-    // Selalu restore draft saat load — hapus hanya saat navigasi masuk
-    // dari halaman lain (pagehide sudah handle itu)
+    // Selalu restore draft saat load, termasuk setelah refresh tidak sengaja
     [1, 2, 3].forEach(function (ke) {
         pulihkanDraft(ke);
     });
@@ -790,11 +790,9 @@
         if (formAsist) formAsist.addEventListener('submit', function () { hapusDraft(ke); });
     });
 
-    // ── Navigasi keluar → hapus semua draft ───────────────────────────
-    window.addEventListener('pagehide', function () {
-        var nav = (performance.getEntriesByType('navigation')[0] || {}).type;
-        if (nav !== 'reload') [1, 2, 3].forEach(hapusDraft);
-    });
+    // Catatan: draft sengaja TIDAK dihapus otomatis saat pagehide/navigasi
+    // keluar (lihat penjelasan di script presensi utama di atas) — supaya
+    // refresh (F5) tidak sengaja tidak menghapus draft yang belum disimpan.
 })();
 </script>
 <script>
