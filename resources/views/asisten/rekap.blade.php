@@ -11,8 +11,9 @@
         <tbody>
         @forelse($mahasiswaList as $m)
         @php
-            $r = $rekapNilaiMap[$m->id] ?? null;
-            $jumlahAlpaPertemuan = $pp->where('status_kehadiran','A')->count();
+            $r    = $rekapNilaiMap[$m->id] ?? null;
+            $pp   = $presensiAll[$m->id] ?? collect();
+            $alpa = $pp->where('status_kehadiran','A')->count();
             $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA;
         @endphp
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
@@ -26,7 +27,7 @@
             <td style="text-align:center;">@if($r?->nilai_huruf)<span class="grade-badge badge-{{ strtolower($r->nilai_huruf) }}">{{ $r->nilai_huruf }}</span>@else—@endif</td>
             <td style="text-align:center;">
                 {{ $m->persentaseHadirDiKelas($praktikum->id) }}
-                @if($alpa >= 4)<span class="badge badge-danger ml-1">{{ $alpa }}α</span>@endif
+                @if($alpa >= \App\Models\Mahasiswa::BATAS_ALPA)<span class="badge badge-danger ml-1">{{ $alpa }}α</span>@endif
             </td>
         </tr>
         @empty<tr><td colspan="9"><div class="empty-state"><p>Belum ada data.</p></div></td></tr>
