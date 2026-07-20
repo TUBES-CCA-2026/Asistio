@@ -17,21 +17,7 @@
         <tr>
             <th>Mahasiswa</th>
             @for($i = 1; $i <= $jumlahPertemuan; $i++)
-            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);" id="{{ $i === $jumlahPertemuan ? 'thUltimatePertemuan' : '' }}">
-                @if($i === $jumlahPertemuan && $jumlahPertemuan < 14)
-                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-                    <button type="button" id="btnTambahPertemuan"
-                        style="background:var(--primary);color:#fff;border:none;border-radius:8px;
-                               padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;"
-                        title="Tambah satu pertemuan">
-                        + P{{ $jumlahPertemuan + 1 }}
-                    </button>
-                    <span>P{{ $i }}</span>
-                </div>
-                @else
-                P{{ $i }}
-                @endif
-            </th>
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);" id="{{ $i === $jumlahPertemuan ? 'thUltimatePertemuan' : '' }}">P{{ $i }}</th>
             @endfor
             <th style="text-align:center;">Asist 1</th>
             <th style="text-align:center;">Asist 2</th>
@@ -43,7 +29,7 @@
         {{-- Baris 2: tombol reset kolom (hanya ubah nilai di layar, belum simpan ke DB) --}}
         <tr>
             <th></th>
-            @for($i = 1; $i <= 14; $i++)
+            @for($i = 1; $i <= $jumlahPertemuan; $i++)
             <th style="text-align:center;padding:1px;border-left:2px solid var(--border);">
                 <button type="button" class="btn-reset-mini"
                     data-reset-field="p{{ $i }}_kegiatan"
@@ -212,6 +198,17 @@
 
 </form>
 
+{{-- Tombol Tambah Pertemuan — mengambang di atas kolom pertemuan terakhir --}}
+@if($jumlahPertemuan < 14)
+<button type="button" id="btnTambahPertemuan"
+    style="position:fixed;z-index:400;display:none;
+           background:var(--primary);color:#fff;border:none;border-radius:20px;
+           padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;
+           box-shadow:0 3px 12px rgba(0,0,0,.2);white-space:nowrap;
+           transform:translateX(-50%);"
+    title="Tambah satu pertemuan">+ P{{ $jumlahPertemuan + 1 }}</button>
+@endif
+
 {{-- Tombol floating Reset Semua Nilai (kanan atas — terpisah dari form Simpan) --}}
 <button type="button" data-modal-open="modalResetSemuaNilai"
     style="position:fixed;top:88px;right:28px;z-index:300;
@@ -279,6 +276,29 @@
     var btn = document.getElementById('btnTambahPertemuan');
     if (!btn) return;
 
+    function posisikanTombol() {
+        var thLast = document.getElementById('thUltimatePertemuan');
+        if (!thLast) { btn.style.display = 'none'; return; }
+        var rect = thLast.getBoundingClientRect();
+        // Sembunyikan jika th tidak terlihat di viewport
+        if (rect.right < 0 || rect.left > window.innerWidth) {
+            btn.style.display = 'none';
+            return;
+        }
+        // Tengah-kan tombol secara horizontal di atas th, tepat di atas tabel
+        var centerX = rect.left + rect.width / 2;
+        var topY    = rect.top - 36; // 36px di atas th (di luar tabel)
+        btn.style.left    = centerX + 'px';
+        btn.style.top     = Math.max(60, topY) + 'px';
+        btn.style.display = 'block';
+    }
+
+    // Posisikan ulang saat load, scroll (horizontal maupun vertikal), dan resize
+    window.addEventListener('load', posisikanTombol);
+    window.addEventListener('scroll', posisikanTombol, true);
+    window.addEventListener('resize', posisikanTombol);
+    setTimeout(posisikanTombol, 100);
+
     // Draft pertemuan sementara — berapa pertemuan yang sudah ditambah tapi belum di-save ke DB
     var DRAFT_KEY_P  = 'draft_pertemuan_{{ $praktikum->id }}';
     var jumlahSaatIni = {{ $jumlahPertemuan }};
@@ -303,41 +323,71 @@
     }
 
     function updateTombolTambah() {
-        // Perbarui isi th pertemuan terakhir: tombol di atas + label di bawah
-        var thLast = document.getElementById('thUltimatePertemuan');
-        if (!thLast) return;
         if (jumlahSaatIni >= 14) {
-            thLast.innerHTML = '<span>P' + jumlahSaatIni + '</span>';
+            btn.style.display = 'none';
         } else {
-            thLast.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">'
-                + '<button type="button" id="btnTambahPertemuan" '
-                + 'style="background:var(--primary);color:#fff;border:none;border-radius:8px;'
-                + 'padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;" '
-                + 'title="Tambah satu pertemuan">+ P' + (jumlahSaatIni + 1) + '</button>'
-                + '<span>P' + jumlahSaatIni + '</span>'
-                + '</div>';
-            document.getElementById('btnTambahPertemuan')
-                .addEventListener('click', handleTambah);
+            btn.textContent = '+ P' + (jumlahSaatIni + 1);
+            posisikanTombol();
         }
     }
 
     function tambahKolomClient(nPertemuan, isDraft) {
-        // Tambah th di thead — sisipkan sebelum th Asist 1
-        var theadRow = document.querySelector('form table thead tr:first-child');
-        var thAsist1 = theadRow ? Array.from(theadRow.querySelectorAll('th')).find(function(t) {
-            return t.textContent.trim() === 'Asist 1';
-        }) : null;
-        if (theadRow && thAsist1) {
-            // Hapus id dari th pertemuan terakhir sebelumnya, beri id baru ke th baru ini
-            var oldLast = document.getElementById('thUltimatePertemuan');
-            if (oldLast) { oldLast.removeAttribute('id'); oldLast.innerHTML = 'P' + (nPertemuan - 1); }
-            var th = document.createElement('th');
-            th.colSpan = 3;
-            th.id = 'thUltimatePertemuan';
-            th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
-            th.textContent = 'P' + nPertemuan;
-            if (isDraft) th.style.opacity = '0.7';
-            theadRow.insertBefore(th, thAsist1);
+        // Tambah th di thead baris 1 — sisipkan sebelum th Asist 1
+        var theadRows = document.querySelectorAll('form table thead tr');
+        var theadRow1 = theadRows[0] || null;
+        var theadRow2 = theadRows[1] || null;
+
+        if (theadRow1) {
+            var thAsist1 = Array.from(theadRow1.querySelectorAll('th')).find(function(t) {
+                return t.textContent.trim() === 'Asist 1';
+            });
+            if (thAsist1) {
+                var oldLast = document.getElementById('thUltimatePertemuan');
+                if (oldLast) oldLast.removeAttribute('id');
+                var th = document.createElement('th');
+                th.colSpan = 3;
+                th.id = 'thUltimatePertemuan';
+                th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
+                th.textContent = 'P' + nPertemuan;
+                if (isDraft) th.style.opacity = '0.7';
+                theadRow1.insertBefore(th, thAsist1);
+            }
+        }
+
+        // Tambah th tombol reset di thead baris 2 — sisipkan sebelum th Reset Asist 1
+        if (theadRow2) {
+            // Cari th yang mengandung tombol data-reset-field="nilai_asistensi1"
+            var thResetAsist1 = Array.from(theadRow2.querySelectorAll('th')).find(function(t) {
+                return t.querySelector('button[data-reset-field="nilai_asistensi1"]');
+            });
+            if (thResetAsist1) {
+                var thKeg = document.createElement('th');
+                thKeg.style.cssText = 'text-align:center;padding:1px;border-left:2px solid var(--border);';
+                var btnKeg = document.createElement('button');
+                btnKeg.type = 'button';
+                btnKeg.className = 'btn-reset-mini';
+                btnKeg.dataset.resetField = 'p' + nPertemuan + '_kegiatan';
+                btnKeg.title = 'Set semua nilai Kegiatan P' + nPertemuan + ' menjadi kosong';
+                btnKeg.textContent = 'Keg';
+                thKeg.appendChild(btnKeg);
+                theadRow2.insertBefore(thKeg, thResetAsist1);
+
+                var thEval = document.createElement('th');
+                thEval.style.cssText = 'text-align:center;padding:1px;';
+                var btnEval = document.createElement('button');
+                btnEval.type = 'button';
+                btnEval.className = 'btn-reset-mini';
+                btnEval.dataset.resetField = 'p' + nPertemuan + '_evaluasi';
+                btnEval.title = 'Set semua nilai Evaluasi P' + nPertemuan + ' menjadi kosong';
+                btnEval.textContent = 'Eval';
+                thEval.appendChild(btnEval);
+                theadRow2.insertBefore(thEval, thResetAsist1);
+
+                var thNilaiH = document.createElement('th');
+                thNilaiH.style.cssText = 'text-align:center;padding:2px 1px;font-size:10px;font-weight:500;color:var(--text-muted);';
+                thNilaiH.textContent = 'Nilai';
+                theadRow2.insertBefore(thNilaiH, thResetAsist1);
+            }
         }
 
         // Tambah td di setiap baris tbody
