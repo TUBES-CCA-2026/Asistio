@@ -48,7 +48,7 @@
             <td class="fw-500">
                 {{ $m->nama_mahasiswa }}
                 @if($alpaTinggi)
-                    <span class="badge-alpa-alert" title="Tidak hadir {{ $m->jumlahAlpaDiKelas($praktikum->id) }}x (A/I/S) — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Tdk Hadir {{ $m->jumlahAlpaDiKelas($praktikum->id) }}×</span>
+                    <span class="badge-alpa-alert" title="Alpa {{ $m->jumlahAlpaDiKelas($praktikum->id) }}x di kelas ini — sudah mencapai batas {{ \App\Models\Mahasiswa::BATAS_ALPA }}x">⚠ Alpa {{ $m->jumlahAlpaDiKelas($praktikum->id) }}×</span>
                 @endif
             </td>
             @foreach(['H','I','S','A'] as $s)

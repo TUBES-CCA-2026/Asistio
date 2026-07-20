@@ -12,7 +12,7 @@
         @forelse($mahasiswaList as $m)
         @php
             $r = $rekapNilaiMap[$m->id] ?? null;
-            $alpa = $m->jumlahAlpaDiKelas($praktikum->id);
+            $jumlahAlpaPertemuan = $pp->where('status_kehadiran','A')->count();
             $alpaTinggi = $alpa >= \App\Models\Mahasiswa::BATAS_ALPA;
         @endphp
         <tr class="{{ $alpaTinggi ? 'row-alpa-alert' : '' }}">
@@ -43,7 +43,7 @@
         @foreach($mahasiswaList as $m)
         @php
             $pp = $presensiAll[$m->id] ?? collect();
-            $jumlahAlpaPertemuan = $pp->whereIn('status_kehadiran',['A','I','S'])->count();
+            $jumlahAlpaPertemuan = $pp->where('status_kehadiran','A')->count();
             $alpaTinggiPertemuan = $jumlahAlpaPertemuan >= \App\Models\Mahasiswa::BATAS_ALPA;
         @endphp
         <tr class="{{ $alpaTinggiPertemuan ? 'row-alpa-alert' : '' }}">
@@ -51,7 +51,7 @@
             <td>
                 {{ $m->nama_mahasiswa }}
                 @if($alpaTinggiPertemuan)
-                    <span class="badge-alpa-alert" title="Tidak hadir {{ $jumlahAlpaPertemuan }}x (A/I/S) — sudah mencapai/melewati batas {{ \App\Models\Mahasiswa::BATAS_ALPA }} pertemuan">⚠ Tdk Hadir {{ $jumlahAlpaPertemuan }}×</span>
+                    <span class="badge-alpa-alert" title="Alpa {{ $jumlahAlpaPertemuan }}x di kelas ini — sudah mencapai batas {{ \App\Models\Mahasiswa::BATAS_ALPA }}x">⚠ Alpa {{ $jumlahAlpaPertemuan }}×</span>
                 @endif
             </td>
             @for($j=1;$j<=14;$j++)@php $ps=$pp[$j]??null; @endphp

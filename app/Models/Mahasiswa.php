@@ -39,10 +39,15 @@ class Mahasiswa extends Model {
     }
 
     // Jumlah tidak hadir (A + I + S) di kelas tertentu
+    /**
+     * Hitung jumlah ALPA (status A saja) di kelas tertentu.
+     * Izin (I) dan Sakit (S) tidak dihitung — itu ketidakhadiran
+     * dengan keterangan yang sah dan tidak seharusnya memicu "error".
+     */
     public function jumlahAlpaDiKelas(int $praktikumId): int {
         return $this->presensi()
             ->where('praktikum_id', $praktikumId)
-            ->whereIn('status_kehadiran', ['A', 'I', 'S'])
+            ->where('status_kehadiran', 'A')
             ->count();
     }
 
