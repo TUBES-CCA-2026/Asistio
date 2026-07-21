@@ -39,6 +39,7 @@ class Praktikum extends Model {
     public function asisten2() { return $this->belongsTo(Asisten::class, 'asisten2_id'); }
     public function mahasiswa() { return $this->belongsToMany(Mahasiswa::class, 'mahasiswa_praktikum')->orderBy('nim_mahasiswa'); }
     public function presensi()   { return $this->hasMany(Presensi::class); }
+    public function pertemuan()  { return $this->hasMany(Pertemuan::class)->orderBy('pertemuan_ke'); }
     public function nilaiAsistensi() { return $this->hasMany(NilaiAsistensi::class); }
     public function nilaiUjian()     { return $this->hasMany(NilaiUjian::class); }
     public function nilaiEvaluasi()  { return $this->hasMany(NilaiEvaluasi::class); }
@@ -48,6 +49,6 @@ class Praktikum extends Model {
     // (mis. dipanggil untuk setiap mahasiswa di halaman/export rekap kelas yang sama).
     private ?int $jumlahPertemuanCache = null;
     public function getJumlahPertemuanAttribute(): int {
-        return $this->jumlahPertemuanCache ??= ($this->presensi()->max('pertemuan_ke') ?? 0);
+        return $this->jumlahPertemuanCache ??= ($this->pertemuan()->max('pertemuan_ke') ?? 0);
     }
 }

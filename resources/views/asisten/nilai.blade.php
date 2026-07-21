@@ -11,13 +11,28 @@
       data-bobot-evaluasi="{{ $praktikum->bobot_evaluasi_praktikum ?? 50 }}">
 @csrf
 <div class="card"><div class="table-wrapper" style="overflow-x:auto;">
-    <table class="table" style="min-width:1900px;">
+    <table class="table" style="min-width:{{ max(900, 200 + $jumlahPertemuan * 140 + 400) }}px;">
         <thead>
         {{-- Baris 1: label kolom --}}
         <tr>
             <th>Mahasiswa</th>
             @for($i = 1; $i <= $jumlahPertemuan; $i++)
-            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);">P{{ $i }}</th>
+            @php $pi = $pertemuanInfo[$i] ?? null; @endphp
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);min-width:120px;">
+                <div style="font-weight:700;">P{{ $i }}</div>
+                @if($pi)
+                <div style="font-size:10px;color:var(--text-muted);font-weight:400;">{{ $pi->hari }}, {{ $pi->tanggal?->isoFormat('D MMM Y') }}</div>
+                @endif
+                <input type="text"
+                    class="input-materi-pertemuan"
+                    data-ke="{{ $i }}"
+                    value="{{ $pi?->materi ?? '' }}"
+                    placeholder="Tulis materi..."
+                    style="width:100%;margin-top:3px;font-size:10px;font-weight:400;
+                           border:1px dashed var(--border);border-radius:4px;
+                           padding:2px 5px;background:transparent;color:var(--text-muted);
+                           text-align:center;outline:none;cursor:text;">
+            </th>
             @endfor
             <th style="text-align:center;">Asist 1</th>
             <th style="text-align:center;">Asist 2</th>
@@ -338,7 +353,7 @@
             var draftP = JSON.parse(sessionStorage.getItem(DRAFT_KEY_P) || 'null');
             if (draftP && draftP.jumlah > jumlahSaatIni) {
                 for (var p = jumlahSaatIni + 1; p <= draftP.jumlah; p++) {
-                    tambahKolomClient(p, true);
+                    tambahKolomClient(p, '', '', true);
                 }
                 jumlahSaatIni = draftP.jumlah;
             }
@@ -355,7 +370,7 @@
     if (tableWrapperEl) tableWrapperEl.addEventListener('scroll', posisikanTombolTambah);
     window.addEventListener('resize', posisikanTombolTambah);
 
-    function tambahKolomClient(nPertemuan, isDraft) {
+    function tambahKolomClient(nPertemuan, hari, tanggal, isDraft) {
         // Tambah th di thead baris 1 — sisipkan sebelum th Asist 1
         var theadRows = document.querySelectorAll('form table thead tr');
         var theadRow1 = theadRows[0] || null;
@@ -374,7 +389,10 @@
                 var th = document.createElement('th');
                 th.colSpan = 3;
                 th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
-                th.textContent = 'P' + nPertemuan;
+                th.innerHTML = '<div style="font-weight:700;">P' + nPertemuan + '</div>'
+                    + (hari ? '<div style="font-size:10px;color:var(--text-muted);font-weight:400;">' + hari + (tanggal ? ', ' + tanggal : '') + '</div>' : '')
+                    + '<input type="text" class="input-materi-pertemuan" data-ke="' + nPertemuan + '" value="" placeholder="Tulis materi..."'
+                    + ' style="width:100%;margin-top:3px;font-size:10px;font-weight:400;border:1px dashed var(--border);border-radius:4px;padding:2px 5px;background:transparent;color:var(--text-muted);text-align:center;outline:none;cursor:text;">';
                 if (isDraft) th.style.opacity = '0.7';
                 theadRow1.insertBefore(th, thAsist1);
             }
@@ -506,46 +524,53 @@
         var nBaru = jumlahSaatIni + 1;
         if (nBaru > 14) return;
 
-        // Langsung tambah kolom di DOM (sementara, belum ke DB)
-        tambahKolomClient(nBaru, true);
-        jumlahSaatIni = nBaru;
-
-        // Simpan draft pertemuan ke sessionStorage
-        try {
-            sessionStorage.setItem(DRAFT_KEY_P, JSON.stringify({ jumlah: nBaru }));
-        } catch (e) {}
-
-        updateTombolTambah();
-
-        // Re-init sistem nilai pada input baru
-        if (window._initNilaiDisplay) window._initNilaiDisplay();
-
-        // Kirim ke server untuk simpan permanen (background)
+        // Langsung kirim ke server dulu, lalu tampilkan kolom setelah dapat respons
         fetch('{{ route('asisten.nilai.tambah-pertemuan', $praktikum) }}', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content
-                    || document.querySelector('input[name=_token]')?.value || '',
+                'X-CSRF-TOKEN': document.querySelector('input[name=_token]')?.value || '',
             },
             body: JSON.stringify({}),
         })
         .then(function (r) { return r.json(); })
         .then(function (json) {
-            if (json.success) {
-                // Server berhasil simpan — hapus draft pertemuan (sudah permanen)
-                try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
-                // Update header jadi tidak buram
-                document.querySelectorAll('thead th').forEach(function (th) {
-                    if (th.textContent.trim() === 'P' + json.jumlah) th.style.opacity = '1';
-                });
-            }
+            if (!json.success) return;
+            tambahKolomClient(json.jumlah, json.hari, json.tanggal, false);
+            jumlahSaatIni = json.jumlah;
+            updateTombolTambah();
+            if (window._initNilaiDisplay) window._initNilaiDisplay();
+            // Fokus ke input materi kolom baru
+            setTimeout(function() {
+                var inputs = document.querySelectorAll('.input-materi-pertemuan');
+                if (inputs.length) inputs[inputs.length - 1].focus();
+            }, 100);
         })
         .catch(function () {
-            // Tetap biarkan pertemuan di DOM (sudah ada di draft sessionStorage)
-            // akan retry otomatis saat user save form utama
+            alert('Gagal menambah pertemuan. Periksa koneksi.');
         });
     }
+
+    // ── Simpan materi inline saat blur atau Enter ─────────────────────
+    document.addEventListener('blur', function(e) {
+        if (!e.target.classList.contains('input-materi-pertemuan')) return;
+        var ke  = e.target.dataset.ke;
+        var val = e.target.value.trim();
+        fetch('{{ route('asisten.nilai.pertemuan.materi', ['praktikum' => $praktikum->id, 'ke' => '__KE__']) }}'.replace('__KE__', ke), {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name=_token]')?.value || '',
+            },
+            body: JSON.stringify({ materi: val }),
+        });
+    }, true);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        if (!e.target.classList.contains('input-materi-pertemuan')) return;
+        e.target.blur();
+    });
 
     // Hapus draft pertemuan saat form nilai di-submit
     var formNilai = document.querySelector('form[action*="simpan-semua"]');

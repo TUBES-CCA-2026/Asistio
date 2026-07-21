@@ -1,6 +1,6 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{Praktikum,Mahasiswa,Presensi,PresensiAsistensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai};
+use App\Models\{Praktikum,Mahasiswa,Presensi,PresensiAsistensi,NilaiAsistensi,NilaiUjian,NilaiEvaluasi,RekapDetailNilai,Pertemuan};
 use Illuminate\Http\{Request, RedirectResponse, JsonResponse};
 use Illuminate\Support\Facades\{Auth,Hash};
 use Illuminate\View\View;
@@ -193,9 +193,10 @@ class AsistenController extends Controller
             ];
             $alpaMap[$m->id] = $m->jumlahAlpaDiKelas($praktikum->id);
         }
-        $batasAlpa = Mahasiswa::BATAS_ALPA;
-        $jumlahPertemuan = max(1, (int) ($praktikum->jumlah_pertemuan ?? 1));
-        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa','jumlahPertemuan'));
+        $batasAlpa       = Mahasiswa::BATAS_ALPA;
+        $jumlahPertemuan = (int) $praktikum->jumlah_pertemuan;
+        $pertemuanInfo   = $praktikum->pertemuan()->get()->keyBy('pertemuan_ke');
+        return view('asisten.nilai', compact('praktikum','mahasiswaList','nilaiMap','alpaMap','batasAlpa','jumlahPertemuan','pertemuanInfo'));
     }
 
     /** Simpan bobot penilaian untuk satu kelas */
@@ -358,20 +359,43 @@ class AsistenController extends Controller
 
         return back()->with('success', 'Nilai semua mahasiswa berhasil disimpan.');
     }
-    /** Tambah satu pertemuan ke kelas (max 14) */
+
+    /** Tambah satu pertemuan ke kelas (max 14) — langsung simpan tanggal hari ini */
     public function tambahPertemuan(Request $request, Praktikum $praktikum): \Illuminate\Http\JsonResponse
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403);
 
-        $sekarang = (int) ($praktikum->jumlah_pertemuan ?? 1);
+        $sekarang = (int) $praktikum->jumlah_pertemuan;
         if ($sekarang >= 14) {
             return response()->json(['success' => false, 'pesan' => 'Maksimal 14 pertemuan.', 'jumlah' => $sekarang]);
         }
 
-        $baru = $sekarang + 1;
-        $praktikum->update(['jumlah_pertemuan' => $baru]);
+        $baru    = $sekarang + 1;
+        $hariIni = now()->locale('id')->isoFormat('dddd');
+        $tgl     = now()->toDateString();
 
-        return response()->json(['success' => true, 'jumlah' => $baru, 'pesan' => "Pertemuan {$baru} ditambahkan."]);
+        Pertemuan::updateOrCreate(
+            ['praktikum_id' => $praktikum->id, 'pertemuan_ke' => $baru],
+            ['hari' => $hariIni, 'tanggal' => $tgl, 'materi' => '']
+        );
+
+        return response()->json([
+            'success' => true,
+            'jumlah'  => $baru,
+            'hari'    => $hariIni,
+            'tanggal' => now()->isoFormat('D MMMM YYYY'),
+            'materi'  => '',
+            'pesan'   => "Pertemuan {$baru} ditambahkan.",
+        ]);
+    }
+
+    /** Simpan materi pertemuan secara inline (AJAX) */
+    public function simpanMateriPertemuan(Request $request, Praktikum $praktikum, int $ke): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+        $p = Pertemuan::where(['praktikum_id' => $praktikum->id, 'pertemuan_ke' => $ke])->firstOrFail();
+        $p->update(['materi' => $request->input('materi', '')]);
+        return response()->json(['success' => true]);
     }
 
     /**
