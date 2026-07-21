@@ -73,6 +73,13 @@
 </div>
 </form>
 
+@if($mahasiswaList->count() > 0)
+<form method="POST" action="{{ route('asisten.presensi.reset-semua',[$praktikum,$pertemuan]) }}" style="margin-top:12px;">@csrf @method('DELETE')
+<button class="btn btn-sm btn-danger" type="button"
+  data-konfirm="Reset semua status presensi pertemuan {{ $pertemuan }} menjadi 0? Tindakan ini tidak dapat dibatalkan."
+  data-konfirm-judul="Reset Semua Presensi Pertemuan {{ $pertemuan }}">Reset Semua</button></form>
+@endif
+
 <script id="foto-data-json" type="application/json">{!! json_encode($fotoData) !!}</script>
 <script>
 (function () {
@@ -677,6 +684,17 @@
                 <div class="card-footer"><button type="submit" class="btn btn-primary">Simpan Absensi Asistensi {{ $ke }}</button></div>
                 @endif
             </form>
+            @if($mahasiswaList->count() > 0)
+            <div style="padding:12px 16px;">
+                <form method="POST" action="{{ route('asisten.presensi.asistensi.reset-semua',[$praktikum,$ke]) }}" id="formResetSemuaAsistensi{{ $ke }}">@csrf @method('DELETE')
+                <button class="btn btn-sm btn-danger" type="button" data-konfirm="Reset semua absensi Asistensi {{ $ke }} menjadi 0? Tindakan ini tidak dapat dibatalkan." data-konfirm-judul="Reset Semua Absensi Asistensi {{ $ke }}">Reset Semua</button></form>
+            </div>
+            <script>
+            document.getElementById('formResetSemuaAsistensi{{ $ke }}')?.addEventListener('submit', function () {
+                try { sessionStorage.removeItem('draft_asistensi_{{ $praktikum->id }}_ke{{ $ke }}'); } catch (e) {}
+            });
+            </script>
+            @endif
         </div>
         @endforeach
     </div>
