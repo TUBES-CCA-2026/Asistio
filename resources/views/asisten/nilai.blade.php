@@ -18,8 +18,18 @@
             <th>Mahasiswa</th>
             @for($i = 1; $i <= $jumlahPertemuan; $i++)
             @php $pi = $pertemuanInfo[$i] ?? null; @endphp
-            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);min-width:120px;">
-                <div style="font-weight:700;">P{{ $i }}</div>
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);min-width:120px;" data-pertemuan-th="{{ $i }}">
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                    <span style="font-weight:700;">P{{ $i }}</span>
+                    @if($i === $jumlahPertemuan)
+                    <button type="button"
+                        class="btn-hapus-pertemuan"
+                        data-pertemuan="{{ $i }}"
+                        title="Hapus pertemuan P{{ $i }} beserta nilainya"
+                        style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;
+                               padding:1px 5px;font-size:10px;cursor:pointer;line-height:1.4;flex-shrink:0;">✕</button>
+                    @endif
+                </div>
                 @if($pi)
                 <div style="font-size:10px;color:var(--text-muted);font-weight:400;">{{ $pi->hari }}, {{ $pi->tanggal?->isoFormat('D MMM Y') }}</div>
                 @endif
@@ -238,13 +248,13 @@
     <div class="modal-body">
         <p style="font-size:14px;color:#374151;margin:0 0 12px;">Tindakan ini akan mereset <strong>seluruh nilai mahasiswa</strong> di kelas ini ke 0, meliputi:</p>
         <ul style="font-size:13px;color:#6B7280;margin:0 0 16px;padding-left:20px;line-height:1.8;">
-            <li>Nilai Kegiatan & Evaluasi Praktikum, P1–P14</li>
-            <li>Nilai Asistensi 1, 2, dan 3</li>
-            <li>Nilai MID dan UAS</li>
-            <li>Rekap nilai akhir (dihitung ulang otomatis)</li>
+            <li>Nilai Kegiatan & Evaluasi Praktikum, semua pertemuan → <strong>null</strong></li>
+            <li>Nilai Asistensi 1, 2, dan 3 → <strong>null</strong></li>
+            <li>Nilai MID dan UAS → <strong>null</strong></li>
+            <li>Rekap nilai akhir dihitung ulang otomatis</li>
         </ul>
         <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#B91C1C;">
-            <strong>Tindakan ini tidak dapat dibatalkan.</strong> Berlaku untuk semua mahasiswa di kelas ini. Data presensi tidak ikut terhapus.
+            <strong>Tindakan ini tidak dapat dibatalkan.</strong> Semua nilai dihapus dari database. Data pertemuan (hari/tanggal/materi) dan presensi tidak ikut terhapus.
         </div>
         <p style="font-size:13px;color:#374151;margin:0 0 8px;">Ketik <strong>RESET SEMUA</strong> untuk konfirmasi:</p>
         <input type="text" id="konfirmasiResetNilai" class="form-control" placeholder="RESET SEMUA" autocomplete="off">
@@ -277,15 +287,14 @@
 </script>
 
 <script>
-// ── Tambah Pertemuan ────────────────────────────────────────────────────────
+// ── Tambah & Hapus Pertemuan ─────────────────────────────────────────────────
 (function () {
     var DRAFT_KEY_P   = 'draft_pertemuan_{{ $praktikum->id }}';
     var jumlahSaatIni = {{ $jumlahPertemuan }};
-    var TAMBAH_URL    = '{{ route('asisten.nilai.tambah-pertemuan', $praktikum) }}';
-    var CSRF          = document.querySelector('input[name=_token]')?.value || '';
+    var HAPUS_URL_TMPL = '{{ route('asisten.nilai.hapus-pertemuan', ['praktikum' => $praktikum->id, 'pertemuan' => '__P__']) }}';
+    var CSRF = document.querySelector('input[name=_token]')?.value || '';
 
-    // ── Render ulang tombol — diposisikan DI ATAS kolom pertemuan
-    // terakhir, tapi tetap di LUAR <table> (sibling sebelum table-wrapper) ──
+    // ── Tombol Tambah Pertemuan ────────────────────────────────────────
     function updateTombolTambah() {
         var oldBar = document.getElementById('pertemuanActionBar');
         if (oldBar) oldBar.remove();
@@ -312,14 +321,10 @@
         newBtn.addEventListener('click', handleTambah);
 
         bar.appendChild(newBtn);
-        // Sisipkan SEBELUM table-wrapper — sibling, bukan child dari <table>
         tableWrapper.insertAdjacentElement('beforebegin', bar);
-
         requestAnimationFrame(posisikanTombolTambah);
     }
 
-    // ── Hitung posisi horizontal tombol agar sejajar kolom pertemuan
-    // terakhir, ikut bergeser saat tabel di-scroll horizontal ──────────
     function posisikanTombolTambah() {
         var btn = document.getElementById('btnTambahPertemuan');
         var bar = document.getElementById('pertemuanActionBar');
@@ -329,8 +334,8 @@
         var theadRow1 = document.querySelector('form table thead tr');
         if (!theadRow1) return;
 
-        var thsPertemuan = Array.from(theadRow1.querySelectorAll('th[colspan="3"]'));
-        var thTerakhir    = thsPertemuan[thsPertemuan.length - 1];
+        var thsPertemuan = Array.from(theadRow1.querySelectorAll('th[data-pertemuan-th]'));
+        var thTerakhir   = thsPertemuan[thsPertemuan.length - 1];
         if (!thTerakhir) return;
 
         var thRect   = thTerakhir.getBoundingClientRect();
@@ -362,45 +367,78 @@
         try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
     }
 
-    // Render tombol setelah DOM siap (termasuk setelah restore draft)
     updateTombolTambah();
+    pasangTombolHapus(); // pasang listener untuk th yang di-render server
 
-    // Reposisi tombol saat tabel di-scroll horizontal atau window di-resize
     var tableWrapperEl = document.querySelector('form .table-wrapper');
     if (tableWrapperEl) tableWrapperEl.addEventListener('scroll', posisikanTombolTambah);
     window.addEventListener('resize', posisikanTombolTambah);
 
+    // ── Tambah kolom secara client-side ───────────────────────────────
     function tambahKolomClient(nPertemuan, hari, tanggal, isDraft) {
-        // Tambah th di thead baris 1 — sisipkan sebelum th Asist 1
         var theadRows = document.querySelectorAll('form table thead tr');
         var theadRow1 = theadRows[0] || null;
         var theadRow2 = theadRows[1] || null;
 
         if (theadRow1) {
             var thAsist1 = Array.from(theadRow1.querySelectorAll('th')).find(function(t) {
-                return t.childNodes[0]?.textContent?.trim() === 'Asist 1'
-                    || t.textContent.trim() === 'Asist 1';
+                return t.textContent.trim() === 'Asist 1'
+                    || (t.childNodes[0] && t.childNodes[0].textContent && t.childNodes[0].textContent.trim() === 'Asist 1');
             });
             if (thAsist1) {
-                // Hapus tombol dari th pertemuan sebelumnya (sekarang bukan terakhir lagi)
-                var oldWrap = document.querySelector('thead tr:first-child th .th-tambah-wrap');
-                if (oldWrap) oldWrap.remove();
+                // Hapus tombol hapus dari kolom yang SEBELUMNYA terakhir
+                var prevBtnHapus = theadRow1.querySelector('.btn-hapus-pertemuan');
+                if (prevBtnHapus) prevBtnHapus.remove();
 
                 var th = document.createElement('th');
                 th.colSpan = 3;
-                th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
-                th.innerHTML = '<div style="font-weight:700;">P' + nPertemuan + '</div>'
-                    + (hari ? '<div style="font-size:10px;color:var(--text-muted);font-weight:400;">' + hari + (tanggal ? ', ' + tanggal : '') + '</div>' : '')
-                    + '<input type="text" class="input-materi-pertemuan" data-ke="' + nPertemuan + '" value="" placeholder="Tulis materi..."'
-                    + ' style="width:100%;margin-top:3px;font-size:10px;font-weight:400;border:1px dashed var(--border);border-radius:4px;padding:2px 5px;background:transparent;color:var(--text-muted);text-align:center;outline:none;cursor:text;">';
+                th.setAttribute('data-pertemuan-th', nPertemuan); // ← wajib agar hapusKolomClient bisa menemukannya
+                th.style.cssText = 'text-align:center;border-left:2px solid var(--border);min-width:120px;';
+
+                var divJudul = document.createElement('div');
+                divJudul.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:4px;';
+                var spanLabel = document.createElement('span');
+                spanLabel.style.fontWeight = '700';
+                spanLabel.textContent = 'P' + nPertemuan;
+                divJudul.appendChild(spanLabel);
+
+                // Tombol hapus untuk kolom baru (karena ini pasti jadi kolom terakhir)
+                var btnH = document.createElement('button');
+                btnH.type = 'button';
+                btnH.className = 'btn-hapus-pertemuan';
+                btnH.dataset.pertemuan = nPertemuan;
+                btnH.title = 'Hapus pertemuan P' + nPertemuan + ' beserta nilainya';
+                btnH.style.cssText = 'background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;'
+                    + 'border-radius:4px;padding:1px 5px;font-size:10px;cursor:pointer;line-height:1.4;flex-shrink:0;';
+                btnH.textContent = '✕';
+                divJudul.appendChild(btnH);
+                th.appendChild(divJudul);
+
+                if (hari) {
+                    var divInfo = document.createElement('div');
+                    divInfo.style.cssText = 'font-size:10px;color:var(--text-muted);font-weight:400;';
+                    divInfo.textContent = hari + (tanggal ? ', ' + tanggal : '');
+                    th.appendChild(divInfo);
+                }
+
+                var inpMateri = document.createElement('input');
+                inpMateri.type = 'text';
+                inpMateri.className = 'input-materi-pertemuan';
+                inpMateri.dataset.ke = nPertemuan;
+                inpMateri.value = '';
+                inpMateri.placeholder = 'Tulis materi...';
+                inpMateri.style.cssText = 'width:100%;margin-top:3px;font-size:10px;font-weight:400;'
+                    + 'border:1px dashed var(--border);border-radius:4px;padding:2px 5px;'
+                    + 'background:transparent;color:var(--text-muted);text-align:center;outline:none;cursor:text;';
+                th.appendChild(inpMateri);
+
                 if (isDraft) th.style.opacity = '0.7';
                 theadRow1.insertBefore(th, thAsist1);
+                pasangTombolHapus(); // pasang listener pada tombol baru
             }
         }
 
-        // Tambah th tombol reset di thead baris 2 — sisipkan sebelum th Reset Asist 1
         if (theadRow2) {
-            // Cari th yang mengandung tombol data-reset-field="nilai_asistensi1"
             var thResetAsist1 = Array.from(theadRow2.querySelectorAll('th')).find(function(t) {
                 return t.querySelector('button[data-reset-field="nilai_asistensi1"]');
             });
@@ -434,19 +472,15 @@
             }
         }
 
-        // Tambah td di setiap baris tbody
         var tbody = document.querySelector('form table tbody');
         if (!tbody) return;
         tbody.querySelectorAll('tr').forEach(function (tr) {
             var mhsId = tr.querySelector('.input-nilai')?.name?.match(/\[(\d+)\]/)?.[1];
             if (!mhsId) return;
 
-            // Sisipkan sebelum td asistensi pertama (input nilai_asistensi1)
             var tdAsistensi = tr.querySelector('td input[name*="nilai_asistensi1"]')?.closest('td');
-            var tdTambah = tdAsistensi || null;
-            if (!tdTambah) return;
+            if (!tdAsistensi) return;
 
-            // Kolom Kegiatan
             var tdKeg = document.createElement('td');
             tdKeg.className = 'td-nilai';
             tdKeg.style.borderLeft = '2px solid var(--border)';
@@ -461,9 +495,8 @@
             inpKeg.dataset.asal = '';
             inpKeg.placeholder = '—';
             tdKeg.appendChild(inpKeg);
-            tr.insertBefore(tdKeg, tdTambah);
+            tr.insertBefore(tdKeg, tdAsistensi);
 
-            // Kolom Evaluasi
             var tdEval = document.createElement('td');
             tdEval.className = 'td-nilai';
             var inpEval = document.createElement('input');
@@ -477,9 +510,8 @@
             inpEval.dataset.asal = '';
             inpEval.placeholder = '—';
             tdEval.appendChild(inpEval);
-            tr.insertBefore(tdEval, tdTambah);
+            tr.insertBefore(tdEval, tdAsistensi);
 
-            // Kolom Nilai (readonly)
             var tdNilai = document.createElement('td');
             tdNilai.className = 'td-nilai';
             tdNilai.style.background = 'var(--bg-page)';
@@ -492,29 +524,31 @@
             inpNilai.placeholder = '—';
             inpNilai.tabIndex = -1;
             tdNilai.appendChild(inpNilai);
-            tr.insertBefore(tdNilai, tdTambah);
+            tr.insertBefore(tdNilai, tdAsistensi);
 
-            // Pasang event listener pada input baru (agar terintegrasi dengan sistem dirty/draft)
-            [inpKeg, inpEval].forEach(function (inp) {
+            var capturedKeg  = inpKeg;
+            var capturedEval = inpEval;
+            [capturedKeg, capturedEval].forEach(function (inp) {
                 inp.addEventListener('input', function () {
-                    if (window._initNilaiDisplay) {
-                        // Trigger sistem dirty
-                        var ev = new Event('input', { bubbles: true });
-                        // Langsung dispatch ke listener yang sudah dipasang
+                    var sekarang = this.value === '—' ? '' : this.value;
+                    var asal     = this.dataset.asal || '';
+                    if (sekarang !== asal) {
+                        this.classList.add('is-draft', 'nilai-dirty');
+                    } else {
+                        this.classList.remove('is-draft', 'nilai-dirty');
                     }
-                    // Hitung nilai P
                     var bKeg  = parseFloat(document.querySelector('form[action*="simpan-semua"]')?.dataset.bobotKegiatan || 50) / 100;
                     var bEval = parseFloat(document.querySelector('form[action*="simpan-semua"]')?.dataset.bobotEvaluasi || 50) / 100;
-                    var vKeg  = inpKeg.value === '—' ? '' : inpKeg.value.trim();
-                    var vEval = inpEval.value === '—' ? '' : inpEval.value.trim();
+                    var vKeg  = capturedKeg.value  === '—' ? '' : capturedKeg.value.trim();
+                    var vEval = capturedEval.value === '—' ? '' : capturedEval.value.trim();
                     var elP   = document.getElementById('nilai_p' + nPertemuan + '_' + mhsId);
                     if (!elP) return;
                     if (vKeg === '' && vEval === '') { elP.value = ''; return; }
                     var kN = vKeg  !== '' ? parseFloat(vKeg)  : null;
                     var eN = vEval !== '' ? parseFloat(vEval) : null;
-                    var total = bKeg + bEval;
-                    if (total <= 0) return;
-                    elP.value = (((bKeg * (kN ?? 0)) + (bEval * (eN ?? 0))) / total).toFixed(2);
+                    elP.value = (((bKeg * (kN ?? 0)) + (bEval * (eN ?? 0)))).toFixed(2);
+                    if (window._simpanDraftNilai) window._simpanDraftNilai();
+                    if (window._updateNilaiUI)    window._updateNilaiUI();
                 });
             });
         });
@@ -524,68 +558,153 @@
         var nBaru = jumlahSaatIni + 1;
         if (nBaru > 14) return;
 
-        // Langsung kirim ke server dulu, lalu tampilkan kolom setelah dapat respons
         fetch('{{ route('asisten.nilai.tambah-pertemuan', $praktikum) }}', {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('input[name=_token]')?.value || '',
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({}),
         })
         .then(function (r) { return r.json(); })
         .then(function (json) {
-            if (!json.success) return;
+            if (!json.success) { alert(json.pesan || 'Gagal menambah pertemuan.'); return; }
             tambahKolomClient(json.jumlah, json.hari, json.tanggal, false);
             jumlahSaatIni = json.jumlah;
             updateTombolTambah();
-            if (window._initNilaiDisplay) window._initNilaiDisplay();
-            // Fokus ke input materi kolom baru
             setTimeout(function() {
                 var inputs = document.querySelectorAll('.input-materi-pertemuan');
                 if (inputs.length) inputs[inputs.length - 1].focus();
+                posisikanTombolTambah();
             }, 100);
         })
-        .catch(function () {
-            alert('Gagal menambah pertemuan. Periksa koneksi.');
+        .catch(function () { alert('Gagal menambah pertemuan. Periksa koneksi.'); });
+    }
+
+    // ── Tombol Hapus Pertemuan ─────────────────────────────────────────
+    function pasangTombolHapus() {
+        document.querySelectorAll('.btn-hapus-pertemuan').forEach(function (btn) {
+            if (btn.dataset.listenerPasang) return;
+            btn.dataset.listenerPasang = '1';
+            btn.addEventListener('click', function () {
+                var n = parseInt(btn.dataset.pertemuan);
+                if (!confirm('Hapus pertemuan P' + n + ' beserta semua nilainya?\nTindakan ini tidak dapat dibatalkan.')) return;
+
+                btn.disabled    = true;
+                btn.textContent = '…';
+
+                fetch(HAPUS_URL_TMPL.replace('__P__', n), {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    if (!json.success) {
+                        alert(json.pesan || 'Gagal menghapus pertemuan.');
+                        btn.disabled    = false;
+                        btn.textContent = '✕';
+                        return;
+                    }
+                    hapusKolomClient(n);
+                    jumlahSaatIni = json.jumlah;
+                    updateTombolTambah();
+                    posisikanTombolTambah();
+                })
+                .catch(function () {
+                    alert('Gagal menghapus. Periksa koneksi.');
+                    btn.disabled    = false;
+                    btn.textContent = '✕';
+                });
+            });
         });
     }
 
-    // ── Simpan materi inline saat blur atau Enter ─────────────────────
+    function hapusKolomClient(nPertemuan) {
+        // Hapus th baris 1
+        var theadRow1 = document.querySelector('form table thead tr');
+        if (theadRow1) {
+            var thTarget = Array.from(theadRow1.querySelectorAll('th[data-pertemuan-th]'))
+                .find(function (th) { return parseInt(th.getAttribute('data-pertemuan-th')) === nPertemuan; });
+            if (thTarget) thTarget.remove();
+        }
+
+        // Hapus th baris 2 (Keg, Eval, Nilai)
+        var theadRow2 = document.querySelectorAll('form table thead tr')[1];
+        if (theadRow2) {
+            var thKegTarget = Array.from(theadRow2.querySelectorAll('th')).find(function (th) {
+                return th.querySelector('button[data-reset-field="p' + nPertemuan + '_kegiatan"]');
+            });
+            if (thKegTarget) {
+                var next1 = thKegTarget.nextElementSibling;
+                var next2 = next1 ? next1.nextElementSibling : null;
+                thKegTarget.remove();
+                if (next1) next1.remove();
+                if (next2 && next2.textContent.trim() === 'Nilai') next2.remove();
+            }
+        }
+
+        // Hapus td dari setiap baris tbody
+        document.querySelectorAll('form table tbody tr').forEach(function (tr) {
+            var inpKeg = tr.querySelector('input[name*="[p' + nPertemuan + '_kegiatan]"]');
+            if (!inpKeg) return;
+            var tdKeg   = inpKeg.closest('td');
+            var tdEval  = tdKeg ? tdKeg.nextElementSibling : null;
+            var tdNilai = tdEval ? tdEval.nextElementSibling : null;
+            if (tdKeg)   tdKeg.remove();
+            if (tdEval)  tdEval.remove();
+            if (tdNilai && tdNilai.querySelector('input[readonly]')) tdNilai.remove();
+        });
+
+        // Tambahkan tombol hapus ke kolom yang kini jadi terakhir
+        if (nPertemuan > 1) {
+            var row1 = document.querySelector('form table thead tr');
+            if (row1) {
+                var allThP  = Array.from(row1.querySelectorAll('th[data-pertemuan-th]'));
+                var thBaru  = allThP[allThP.length - 1];
+                if (thBaru && !thBaru.querySelector('.btn-hapus-pertemuan')) {
+                    var nBaru   = parseInt(thBaru.getAttribute('data-pertemuan-th'));
+                    var divJudul = thBaru.querySelector('div');
+                    if (divJudul) {
+                        var btnHapusBaru = document.createElement('button');
+                        btnHapusBaru.type = 'button';
+                        btnHapusBaru.className = 'btn-hapus-pertemuan';
+                        btnHapusBaru.dataset.pertemuan = nBaru;
+                        btnHapusBaru.title = 'Hapus pertemuan P' + nBaru + ' beserta nilainya';
+                        btnHapusBaru.style.cssText = 'background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;'
+                            + 'border-radius:4px;padding:1px 5px;font-size:10px;cursor:pointer;line-height:1.4;flex-shrink:0;';
+                        btnHapusBaru.textContent = '✕';
+                        divJudul.appendChild(btnHapusBaru);
+                        pasangTombolHapus();
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Simpan materi inline ──────────────────────────────────────────
     document.addEventListener('blur', function(e) {
         if (!e.target.classList.contains('input-materi-pertemuan')) return;
         var ke  = e.target.dataset.ke;
         var val = e.target.value.trim();
         fetch('{{ route('asisten.nilai.pertemuan.materi', ['praktikum' => $praktikum->id, 'ke' => '__KE__']) }}'.replace('__KE__', ke), {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('input[name=_token]')?.value || '',
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ materi: val }),
         });
     }, true);
 
     document.addEventListener('keydown', function(e) {
-        if (e.key !== 'Enter') return;
-        if (!e.target.classList.contains('input-materi-pertemuan')) return;
+        if (e.key !== 'Enter' || !e.target.classList.contains('input-materi-pertemuan')) return;
         e.target.blur();
     });
 
-    // Hapus draft pertemuan saat form nilai di-submit
+    // Hapus draft pertemuan saat submit atau navigasi keluar
     var formNilai = document.querySelector('form[action*="simpan-semua"]');
     if (formNilai) {
         formNilai.addEventListener('submit', function () {
             try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
         });
     }
-
-    // Hapus draft pertemuan saat navigasi keluar
     window.addEventListener('pagehide', function () {
         var navT = (performance.getEntriesByType('navigation')[0] || {}).type;
-        if (navT !== 'reload') {
-            try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
-        }
+        if (navT !== 'reload') { try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {} }
     });
 })();
 </script>

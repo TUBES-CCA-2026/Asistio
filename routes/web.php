@@ -84,6 +84,7 @@ Route::prefix('asisten')->middleware(['auth','role:asisten'])->name('asisten.')-
     Route::post('/nilai/{praktikum}/reset-semua',                     [AsistenController::class,'nilaiResetSemua'])->name('nilai.reset-semua');
     Route::post('/nilai/{praktikum}/simpan-semua',                    [AsistenController::class,'nilaiSimpanSemua'])->name('nilai.simpan-semua');
     Route::patch('/nilai/{praktikum}/tambah-pertemuan',   [AsistenController::class,'tambahPertemuan'])->name('nilai.tambah-pertemuan');
+    Route::delete('/nilai/{praktikum}/hapus-pertemuan/{pertemuan}', [AsistenController::class,'hapusPertemuan'])->name('nilai.hapus-pertemuan');
     Route::patch('/nilai/{praktikum}/pertemuan/{ke}/materi', [AsistenController::class,'simpanMateriPertemuan'])->name('nilai.pertemuan.materi');
     Route::post('/nilai/{praktikum}/autosave',      [AsistenController::class,'nilaiAutosave'])->name('nilai.autosave');
     Route::post('/presensi/{praktikum}/autosave',   [AsistenController::class,'presensiAutosave'])->name('presensi.autosave');

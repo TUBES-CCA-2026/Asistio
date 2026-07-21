@@ -559,6 +559,50 @@ class AsistenController extends Controller
         return back()->with('success', "Kolom {$label} semua mahasiswa direset ke 0.");
     }
 
+    /**
+     * Hapus pertemuan terakhir beserta semua nilainya (Kegiatan, Evaluasi, Nilai P)
+     * dan data Pertemuan (hari/tanggal/materi).
+     * Hanya pertemuan TERAKHIR yang boleh dihapus agar urutan tidak berlubang.
+     */
+    public function hapusPertemuan(Praktikum $praktikum, int $pertemuan): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($this->isAuthorizedForKelas($praktikum), 403);
+
+        $maks = $praktikum->jumlah_pertemuan;
+
+        if ($pertemuan !== $maks) {
+            return response()->json([
+                'success' => false,
+                'pesan'   => "Hanya pertemuan terakhir (P{$maks}) yang bisa dihapus.",
+            ], 422);
+        }
+
+        if ($pertemuan < 1) {
+            return response()->json(['success' => false, 'pesan' => 'Tidak ada pertemuan untuk dihapus.'], 422);
+        }
+
+        // Hapus record Pertemuan (hari, tanggal, materi)
+        Pertemuan::where(['praktikum_id' => $praktikum->id, 'pertemuan_ke' => $pertemuan])->delete();
+
+        // Reset nilai sub-kolom pertemuan ini ke null
+        NilaiEvaluasi::where('praktikum_id', $praktikum->id)->update([
+            "p{$pertemuan}"            => null,
+            "p{$pertemuan}_kegiatan"   => null,
+            "p{$pertemuan}_evaluasi"   => null,
+        ]);
+
+        // Hitung ulang rekap semua mahasiswa
+        $praktikum->mahasiswa->each(fn($m) => RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id));
+
+        $baru = $pertemuan - 1;
+
+        return response()->json([
+            'success' => true,
+            'jumlah'  => $baru,
+            'pesan'   => "Pertemuan P{$pertemuan} berhasil dihapus.",
+        ]);
+    }
+
     /** Reset nilai satu kolom pertemuan (p1–p14) untuk semua mahasiswa di kelas */
     public function nilaiResetPertemuan(Praktikum $praktikum, int $pertemuan): RedirectResponse
     {
@@ -583,7 +627,7 @@ class AsistenController extends Controller
         return back()->with('success', "Nilai pertemuan {$pertemuan} semua mahasiswa direset ke 0.");
     }
 
-    /** Reset SEMUA nilai (P1–P14 + sub kegiatan/evaluasi, Asistensi 1–3, MID, UAS) untuk seluruh mahasiswa di kelas ini sekaligus */
+    /** Reset SEMUA nilai DAN hapus semua pertemuan untuk seluruh mahasiswa di kelas ini */
     public function nilaiResetSemua(Praktikum $praktikum): RedirectResponse
     {
         abort_unless($this->isAuthorizedForKelas($praktikum), 403, 'Anda tidak berwenang mengakses kelas ini.');
@@ -592,6 +636,9 @@ class AsistenController extends Controller
         if ($mahasiswaIds->isEmpty()) {
             return back()->with('error', 'Belum ada mahasiswa di kelas ini.');
         }
+
+        // Hapus semua record Pertemuan (hari/tanggal/materi) agar jumlah_pertemuan kembali ke 0
+        Pertemuan::where('praktikum_id', $praktikum->id)->delete();
 
         // Reset P1–P14 beserta sub-kolom Kegiatan & Evaluasi Praktikum ke null
         $updateEvaluasi = [];
@@ -615,10 +662,10 @@ class AsistenController extends Controller
             'nilai_UAS' => null,
         ]);
 
-        // Hitung ulang rekap nilai akhir seluruh mahasiswa di kelas ini
+        // Hitung ulang rekap nilai akhir seluruh mahasiswa
         $praktikum->mahasiswa->each(fn($m) => RekapDetailNilai::hitungDanSimpan($m->id, $praktikum->id));
 
-        return back()->with('success', "Semua nilai mahasiswa di kelas {$praktikum->nama_kelas} berhasil direset ke 0.");
+        return back()->with('success', "Semua nilai dan pertemuan kelas {$praktikum->nama_kelas} berhasil direset.");
     }
 
     /** Rekap nilai, presensi, dan absensi asistensi per kelas */
