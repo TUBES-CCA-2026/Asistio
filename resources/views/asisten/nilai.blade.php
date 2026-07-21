@@ -17,7 +17,7 @@
         <tr>
             <th>Mahasiswa</th>
             @for($i = 1; $i <= $jumlahPertemuan; $i++)
-            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);" id="{{ $i === $jumlahPertemuan ? 'thUltimatePertemuan' : '' }}">P{{ $i }}</th>
+            <th colspan="3" style="text-align:center;border-left:2px solid var(--border);">P{{ $i }}</th>
             @endfor
             <th style="text-align:center;">Asist 1</th>
             <th style="text-align:center;">Asist 2</th>
@@ -198,16 +198,7 @@
 
 </form>
 
-{{-- Tombol Tambah Pertemuan — mengambang di atas kolom pertemuan terakhir --}}
-@if($jumlahPertemuan < 14)
-<button type="button" id="btnTambahPertemuan"
-    style="position:fixed;z-index:400;display:none;
-           background:var(--primary);color:#fff;border:none;border-radius:20px;
-           padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;
-           box-shadow:0 3px 12px rgba(0,0,0,.2);white-space:nowrap;
-           transform:translateX(-50%);"
-    title="Tambah satu pertemuan">+ P{{ $jumlahPertemuan + 1 }}</button>
-@endif
+{{-- Tombol Tambah Pertemuan dipindah ke dalam tabel — tidak floating --}}
 
 {{-- Tombol floating Reset Semua Nilai (kanan atas — terpisah dari form Simpan) --}}
 <button type="button" data-modal-open="modalResetSemuaNilai"
@@ -273,35 +264,72 @@
 <script>
 // ── Tambah Pertemuan ────────────────────────────────────────────────────────
 (function () {
-    var btn = document.getElementById('btnTambahPertemuan');
-    if (!btn) return;
+    var DRAFT_KEY_P   = 'draft_pertemuan_{{ $praktikum->id }}';
+    var jumlahSaatIni = {{ $jumlahPertemuan }};
+    var TAMBAH_URL    = '{{ route('asisten.nilai.tambah-pertemuan', $praktikum) }}';
+    var CSRF          = document.querySelector('input[name=_token]')?.value || '';
 
-    function posisikanTombol() {
-        var thLast = document.getElementById('thUltimatePertemuan');
-        if (!thLast) { btn.style.display = 'none'; return; }
-        var rect = thLast.getBoundingClientRect();
-        // Sembunyikan jika th tidak terlihat di viewport
-        if (rect.right < 0 || rect.left > window.innerWidth) {
-            btn.style.display = 'none';
-            return;
-        }
-        // Tengah-kan tombol secara horizontal di atas th, tepat di atas tabel
-        var centerX = rect.left + rect.width / 2;
-        var topY    = rect.top - 36; // 36px di atas th (di luar tabel)
-        btn.style.left    = centerX + 'px';
-        btn.style.top     = Math.max(60, topY) + 'px';
-        btn.style.display = 'block';
+    // ── Render ulang tombol — diposisikan DI ATAS kolom pertemuan
+    // terakhir, tapi tetap di LUAR <table> (sibling sebelum table-wrapper) ──
+    function updateTombolTambah() {
+        var oldBar = document.getElementById('pertemuanActionBar');
+        if (oldBar) oldBar.remove();
+
+        if (jumlahSaatIni >= 14) return;
+
+        var tableWrapper = document.querySelector('form .table-wrapper');
+        if (!tableWrapper) return;
+
+        var bar = document.createElement('div');
+        bar.id = 'pertemuanActionBar';
+        bar.style.cssText = 'position:relative;height:38px;';
+
+        var newBtn = document.createElement('button');
+        newBtn.type = 'button';
+        newBtn.id   = 'btnTambahPertemuan';
+        newBtn.style.cssText = 'position:absolute;top:2px;transform:translateX(-50%);'
+            + 'background:var(--primary);color:#fff;border:none;'
+            + 'border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;'
+            + 'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap;'
+            + 'display:inline-flex;align-items:center;gap:5px;z-index:5;';
+        newBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+            + 'Tambah Pertemuan P' + (jumlahSaatIni + 1);
+        newBtn.addEventListener('click', handleTambah);
+
+        bar.appendChild(newBtn);
+        // Sisipkan SEBELUM table-wrapper — sibling, bukan child dari <table>
+        tableWrapper.insertAdjacentElement('beforebegin', bar);
+
+        requestAnimationFrame(posisikanTombolTambah);
     }
 
-    // Posisikan ulang saat load, scroll (horizontal maupun vertikal), dan resize
-    window.addEventListener('load', posisikanTombol);
-    window.addEventListener('scroll', posisikanTombol, true);
-    window.addEventListener('resize', posisikanTombol);
-    setTimeout(posisikanTombol, 100);
+    // ── Hitung posisi horizontal tombol agar sejajar kolom pertemuan
+    // terakhir, ikut bergeser saat tabel di-scroll horizontal ──────────
+    function posisikanTombolTambah() {
+        var btn = document.getElementById('btnTambahPertemuan');
+        var bar = document.getElementById('pertemuanActionBar');
+        var tableWrapper = document.querySelector('form .table-wrapper');
+        if (!btn || !bar || !tableWrapper) return;
 
-    // Draft pertemuan sementara — berapa pertemuan yang sudah ditambah tapi belum di-save ke DB
-    var DRAFT_KEY_P  = 'draft_pertemuan_{{ $praktikum->id }}';
-    var jumlahSaatIni = {{ $jumlahPertemuan }};
+        var theadRow1 = document.querySelector('form table thead tr');
+        if (!theadRow1) return;
+
+        var thsPertemuan = Array.from(theadRow1.querySelectorAll('th[colspan="3"]'));
+        var thTerakhir    = thsPertemuan[thsPertemuan.length - 1];
+        if (!thTerakhir) return;
+
+        var thRect   = thTerakhir.getBoundingClientRect();
+        var barRect  = bar.getBoundingClientRect();
+        var wrapRect = tableWrapper.getBoundingClientRect();
+
+        var terlihat = thRect.right > wrapRect.left && thRect.left < wrapRect.right;
+        btn.style.display = terlihat ? 'inline-flex' : 'none';
+        if (!terlihat) return;
+
+        var left = thRect.left - barRect.left + (thRect.width / 2);
+        left = Math.max(60, Math.min(left, barRect.width - 60));
+        btn.style.left = left + 'px';
+    }
 
     // Restore draft pertemuan saat refresh
     var navType = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
@@ -309,27 +337,23 @@
         try {
             var draftP = JSON.parse(sessionStorage.getItem(DRAFT_KEY_P) || 'null');
             if (draftP && draftP.jumlah > jumlahSaatIni) {
-                // Tambahkan kolom sementara tanpa kirim ke server
                 for (var p = jumlahSaatIni + 1; p <= draftP.jumlah; p++) {
                     tambahKolomClient(p, true);
                 }
                 jumlahSaatIni = draftP.jumlah;
-                updateTombolTambah();
             }
         } catch (e) {}
     } else {
-        // Navigasi masuk — bersihkan draft pertemuan
         try { sessionStorage.removeItem(DRAFT_KEY_P); } catch (e) {}
     }
 
-    function updateTombolTambah() {
-        if (jumlahSaatIni >= 14) {
-            btn.style.display = 'none';
-        } else {
-            btn.textContent = '+ P' + (jumlahSaatIni + 1);
-            posisikanTombol();
-        }
-    }
+    // Render tombol setelah DOM siap (termasuk setelah restore draft)
+    updateTombolTambah();
+
+    // Reposisi tombol saat tabel di-scroll horizontal atau window di-resize
+    var tableWrapperEl = document.querySelector('form .table-wrapper');
+    if (tableWrapperEl) tableWrapperEl.addEventListener('scroll', posisikanTombolTambah);
+    window.addEventListener('resize', posisikanTombolTambah);
 
     function tambahKolomClient(nPertemuan, isDraft) {
         // Tambah th di thead baris 1 — sisipkan sebelum th Asist 1
@@ -339,14 +363,16 @@
 
         if (theadRow1) {
             var thAsist1 = Array.from(theadRow1.querySelectorAll('th')).find(function(t) {
-                return t.textContent.trim() === 'Asist 1';
+                return t.childNodes[0]?.textContent?.trim() === 'Asist 1'
+                    || t.textContent.trim() === 'Asist 1';
             });
             if (thAsist1) {
-                var oldLast = document.getElementById('thUltimatePertemuan');
-                if (oldLast) oldLast.removeAttribute('id');
+                // Hapus tombol dari th pertemuan sebelumnya (sekarang bukan terakhir lagi)
+                var oldWrap = document.querySelector('thead tr:first-child th .th-tambah-wrap');
+                if (oldWrap) oldWrap.remove();
+
                 var th = document.createElement('th');
                 th.colSpan = 3;
-                th.id = 'thUltimatePertemuan';
                 th.style.cssText = 'text-align:center;border-left:2px solid var(--border);';
                 th.textContent = 'P' + nPertemuan;
                 if (isDraft) th.style.opacity = '0.7';
@@ -520,8 +546,6 @@
             // akan retry otomatis saat user save form utama
         });
     }
-
-    btn.addEventListener('click', handleTambah);
 
     // Hapus draft pertemuan saat form nilai di-submit
     var formNilai = document.querySelector('form[action*="simpan-semua"]');
