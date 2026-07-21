@@ -311,13 +311,11 @@
         var newBtn = document.createElement('button');
         newBtn.type = 'button';
         newBtn.id   = 'btnTambahPertemuan';
-        newBtn.style.cssText = 'position:absolute;top:2px;transform:translateX(-50%);'
-            + 'background:var(--primary);color:#fff;border:none;'
-            + 'border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;'
-            + 'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap;'
-            + 'display:inline-flex;align-items:center;gap:5px;z-index:5;';
-        newBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
-            + 'Tambah Pertemuan P' + (jumlahSaatIni + 1);
+        newBtn.style.cssText = 'position:absolute;top:8px;transform:translateX(-50%);'
+            + 'background:#cffafe;border:1px solid #67e8f9;color:#0e7490;'
+            + 'border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;'
+            + 'cursor:pointer;white-space:nowrap;line-height:1.5;z-index:5;';
+        newBtn.textContent = '+';
         newBtn.addEventListener('click', handleTambah);
 
         bar.appendChild(newBtn);
@@ -332,11 +330,17 @@
         if (!btn || !bar || !tableWrapper) return;
 
         var theadRow1 = document.querySelector('form table thead tr');
-        if (!theadRow1) return;
-
-        var thsPertemuan = Array.from(theadRow1.querySelectorAll('th[data-pertemuan-th]'));
+        var thsPertemuan = theadRow1 ? Array.from(theadRow1.querySelectorAll('th[data-pertemuan-th]')) : [];
         var thTerakhir   = thsPertemuan[thsPertemuan.length - 1];
-        if (!thTerakhir) return;
+
+        // Belum ada satu pun kolom pertemuan — taruh tombol di tengah atas
+        // (tidak ada th terakhir untuk dijadikan acuan posisi).
+        if (!thTerakhir) {
+            var barRectKosong = bar.getBoundingClientRect();
+            btn.style.display = 'inline-flex';
+            btn.style.left    = (barRectKosong.width / 2) + 'px';
+            return;
+        }
 
         var thRect   = thTerakhir.getBoundingClientRect();
         var barRect  = bar.getBoundingClientRect();
